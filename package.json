@@ -1,0 +1,20 @@
+{
+  "name": "22lr-rifle-championship",
+  "version": "1.0.0",
+  "description": "Full-stack web application for organizing and tracking .22 rifle competitions",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "start": "cd server && npm start"
+  },
+  "keywords": ["rifle", "competition", "22lr", "shooting", "sports"],
+  "author": "22LR Rifle Championship",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
