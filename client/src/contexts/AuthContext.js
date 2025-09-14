@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { authAPI } from '../services/api';
+import { auth as fbAuth, db } from '../services/firebaseClient';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
+import { classificationFromScores } from '../services/classification';
 
 const AuthContext = createContext();
 
@@ -53,75 +56,74 @@ const authReducer = (state, action) => {
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Set up axios interceptor for authentication
+  // Listen for Firebase Auth changes and load profile
   useEffect(() => {
-    if (state.token) {
-      authAPI.setAuthToken(state.token);
-      localStorage.setItem('token', state.token);
-    } else {
-      authAPI.removeAuthToken();
-      localStorage.removeItem('token');
-    }
-  }, [state.token]);
-
-  // Check if user is authenticated on app load
-  useEffect(() => {
-    const checkAuth = async () => {
-      if (state.token) {
+    const unsub = onAuthStateChanged(fbAuth, async (firebaseUser) => {
+      if (firebaseUser) {
         try {
-          const response = await authAPI.getCurrentUser();
+          const token = await firebaseUser.getIdToken();
+          const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
+          let profile = snap.exists() ? snap.data() : { email: firebaseUser.email };
+
+          // Compute classification from recent scores if not present
+          if (!profile.classification) {
+            const scoresSnap = await getDocs(query(collection(db, 'scores'), where('competitorId', '==', firebaseUser.uid)));
+            const scores = scoresSnap.docs.map(d => d.data());
+            const cls = classificationFromScores(scores);
+            if (cls) {
+              profile = { ...profile, classification: cls };
+              // Update user doc in background (no await needed)
+              setDoc(doc(db, 'users', firebaseUser.uid), { classification: cls }, { merge: true }).catch(()=>{});
+            }
+          }
           dispatch({
             type: 'LOGIN_SUCCESS',
-            payload: { user: response.data.user, token: state.token }
+            payload: { user: { id: firebaseUser.uid, ...profile }, token }
           });
-        } catch (error) {
-          dispatch({ type: 'LOGOUT' });
+        } catch (e) {
+          dispatch({ type: 'LOGIN_FAILURE', payload: e.message || 'Failed to load profile' });
         }
       } else {
-        dispatch({ type: 'SET_LOADING', payload: false });
+        dispatch({ type: 'LOGOUT' });
       }
-    };
-
-    checkAuth();
+    });
+    return () => unsub();
   }, []);
 
   const login = async (email, password) => {
     dispatch({ type: 'LOGIN_START' });
     try {
-      const response = await authAPI.login(email, password);
-      dispatch({
-        type: 'LOGIN_SUCCESS',
-        payload: response.data
-      });
+      await signInWithEmailAndPassword(fbAuth, email, password);
       return { success: true };
     } catch (error) {
-      dispatch({
-        type: 'LOGIN_FAILURE',
-        payload: error.response?.data?.message || 'Login failed'
-      });
-      return { success: false, error: error.response?.data?.message || 'Login failed' };
+      dispatch({ type: 'LOGIN_FAILURE', payload: error.message || 'Login failed' });
+      return { success: false, error: error.message || 'Login failed' };
     }
   };
 
   const register = async (userData) => {
     dispatch({ type: 'LOGIN_START' });
     try {
-      const response = await authAPI.register(userData);
-      dispatch({
-        type: 'LOGIN_SUCCESS',
-        payload: response.data
-      });
+      const { email, password, username, firstName, lastName, role } = userData;
+      const cred = await createUserWithEmailAndPassword(fbAuth, email, password);
+      const profile = {
+        email,
+        username: username || email.split('@')[0],
+        firstName: firstName || '',
+        lastName: lastName || '',
+        role: role || 'competitor',
+        createdAt: serverTimestamp(),
+      };
+      await setDoc(doc(db, 'users', cred.user.uid), profile, { merge: true });
       return { success: true };
     } catch (error) {
-      dispatch({
-        type: 'LOGIN_FAILURE',
-        payload: error.response?.data?.message || 'Registration failed'
-      });
-      return { success: false, error: error.response?.data?.message || 'Registration failed' };
+      dispatch({ type: 'LOGIN_FAILURE', payload: error.message || 'Registration failed' });
+      return { success: false, error: error.message || 'Registration failed' };
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await signOut(fbAuth);
     dispatch({ type: 'LOGOUT' });
   };
 
