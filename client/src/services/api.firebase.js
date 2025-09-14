@@ -207,7 +207,8 @@ export const scoresAPI = {
   },
   getPendingVerification: async () => {
     const snap = await getDocs(query(collection(db, 'scores'), where('verificationStatus', '==', 'pending')));
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const scores = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return { scores };
   },
 };
 
