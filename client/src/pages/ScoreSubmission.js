@@ -307,17 +307,17 @@ const ScoreSubmission = () => {
             Required shots for this competition: {selectedComp?.shotsPerTarget || 10}
           </p>
           
-          <div className="grid grid-cols-5 md:grid-cols-10 gap-3 mb-4">
+          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-10 gap-3 mb-4">
             {shotScores.map((shot, index) => (
               <div key={index} className="text-center">
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   Shot {index + 1}
                 </label>
-                <div className="flex items-center gap-2 justify-center">
+                <div className="flex flex-col items-center gap-1 sm:flex-row sm:gap-2 sm:justify-center">
                   <select
                     value={shot.value}
                     onChange={(e) => handleShotValueChange(index, e.target.value)}
-                    className="w-16 px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-14 sm:w-16 px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">--</option>
                     {Array.from({ length: 11 }, (_, i) => i).map((n) => (
@@ -534,7 +534,8 @@ const ScoreSubmission = () => {
             type="button"
             onClick={() => {
               reset();
-              setShotScores(Array(10).fill(''));
+              const count = selectedComp?.shotsPerTarget || 10;
+              setShotScores(Array(count).fill({ value: '', isX: false }));
               setUploadedFiles([]);
             }}
             className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
