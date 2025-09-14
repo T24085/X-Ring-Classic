@@ -383,17 +383,61 @@ export const usersAPI = {
 
 // Admin API (stubs/minimal)
 export const adminAPI = {
-  getDashboard: async () => ({ data: { totals: await publicAPI.getStats() } }),
-  getUsers: async () => {
+  getDashboard: async () => {
+    const totals = await publicAPI.getStats();
+    return {
+      stats: {
+        totalUsers: totals.totalUsers || 0,
+        activeCompetitions: totals.activeCompetitions || 0,
+        totalCompetitions: totals.activeCompetitions || 0,
+        totalScores: totals.totalScores || 0,
+      },
+      recentActivity: [],
+    };
+  },
+  getUsers: async (params = {}) => {
     const snap = await getDocs(collection(db, 'users'));
-    const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    return { data: { users } };
+    let users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const { role, search, page = 1, limit = 20 } = params || {};
+    if (role) users = users.filter(u => (u.role || 'competitor') === role);
+    if (search) {
+      const q = String(search).toLowerCase();
+      users = users.filter(u =>
+        (u.username || '').toLowerCase().includes(q) ||
+        (u.firstName || '').toLowerCase().includes(q) ||
+        (u.lastName || '').toLowerCase().includes(q) ||
+        (u.email || '').toLowerCase().includes(q)
+      );
+    }
+    // Sort newest first if createdAt present
+    users.sort((a, b) => {
+      const ad = a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt || 0).getTime();
+      const bd = b.createdAt?.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt || 0).getTime();
+      return bd - ad;
+    });
+    const totalUsers = users.length;
+    const start = (Number(page) - 1) * Number(limit);
+    const paged = users.slice(start, start + Number(limit));
+    const totalPages = Math.max(1, Math.ceil(totalUsers / Number(limit)));
+    return {
+      users: paged,
+      pagination: {
+        current: Number(page),
+        total: totalPages,
+        hasPrev: Number(page) > 1,
+        hasNext: Number(page) < totalPages,
+        totalUsers,
+      },
+    };
   },
   getCompetitions: async (params) => competitionsAPI.getAll(params),
-  getScores: async () => {
+  getScores: async (params = {}) => {
     const snap = await getDocs(collection(db, 'scores'));
-    const scores = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    return { data: scores };
+    let scores = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (params?.verificationStatus) {
+      scores = scores.filter(s => (s.verificationStatus || 'approved') === params.verificationStatus);
+    }
+    return { scores };
   },
   updateCompetitionStatus: async (competitionId, status) => competitionsAPI.update(competitionId, { status }).then(r => r.data),
   deleteScore: async (scoreId) => {
