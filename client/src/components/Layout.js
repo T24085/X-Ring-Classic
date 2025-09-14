@@ -49,7 +49,7 @@ const Layout = () => {
             <div className="flex items-center">
               <Link to="/" className="flex items-center space-x-3">
                 <img 
-                  src="/TheXringClassic.png" 
+                  src={`${process.env.PUBLIC_URL}/TheXringClassic.png`} 
                   alt="The X-Ring Classic" 
                   className="h-12 w-auto object-contain"
                 />
@@ -82,11 +82,19 @@ const Layout = () => {
               {isAuthenticated ? (
                 <>
                   <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-rifle-100 rounded-full flex items-center justify-center">
-                      <span className="text-rifle-600 font-medium text-sm">
-                        {user?.profile?.firstName?.[0] || user?.username?.[0] || 'U'}
-                      </span>
-                    </div>
+                    {user?.classification ? (
+                      <img
+                        src={`${process.env.PUBLIC_URL}/${(user.classification.includes('Grand') ? 'GM' : user.classification).replace(' ', '')}.png`}
+                        alt={user.classification}
+                        className="w-8 h-8 object-contain"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-rifle-100 rounded-full flex items-center justify-center">
+                        <span className="text-rifle-600 font-medium text-sm">
+                          {user?.profile?.firstName?.[0] || user?.username?.[0] || 'U'}
+                        </span>
+                      </div>
+                    )}
                     <span className="text-sm text-gray-700">
                       {user?.profile?.firstName || user?.username}
                     </span>
@@ -117,11 +125,28 @@ const Layout = () => {
               )}
             </div>
 
-            {/* Mobile menu button */}
-            <div className="md:hidden">
+            {/* Mobile actions */}
+            <div className="md:hidden flex items-center gap-3">
+              {!isAuthenticated && (
+                <>
+                  <Link
+                    to="/login"
+                    className="text-sm text-gray-700 hover:text-gray-900"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="px-3 py-1 text-sm rounded-md bg-rifle-600 text-white hover:bg-rifle-700"
+                  >
+                    Register
+                  </Link>
+                </>
+              )}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="text-gray-600 hover:text-gray-900"
+                aria-label="Toggle menu"
               >
                 {mobileMenuOpen ? (
                   <XMarkIcon className="w-6 h-6" />
@@ -155,7 +180,7 @@ const Layout = () => {
                   </Link>
                 );
               })}
-              {isAuthenticated && (
+              {isAuthenticated ? (
                 <button
                   onClick={() => {
                     handleLogout();
@@ -166,6 +191,11 @@ const Layout = () => {
                   <ArrowRightOnRectangleIcon className="w-4 h-4" />
                   <span>Logout</span>
                 </button>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-2">
+                  <Link to="/login" className="text-sm text-gray-700 hover:text-gray-900" onClick={() => setMobileMenuOpen(false)}>Login</Link>
+                  <Link to="/register" className="px-3 py-1 text-sm rounded-md bg-rifle-600 text-white hover:bg-rifle-700" onClick={() => setMobileMenuOpen(false)}>Register</Link>
+                </div>
               )}
             </nav>
           </div>
@@ -184,7 +214,7 @@ const Layout = () => {
             {/* Banner in Footer */}
             <div className="mb-6">
               <img 
-                src="/TheXringClassic.png" 
+                src={`${process.env.PUBLIC_URL}/TheXringClassic.png`} 
                 alt="The X-Ring Classic" 
                 className="h-16 w-auto mx-auto object-contain"
               />

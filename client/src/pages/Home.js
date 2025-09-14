@@ -123,6 +123,22 @@ const Home = () => {
     { staleTime: 2 * 60 * 1000 }
   );
 
+  // Small-screen quick auth CTA
+  const MobileAuthCta = () => (
+    <div className="sm:hidden mb-4">
+      <div className="bg-white border rounded-xl p-4 flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-600">Welcome to The X-Ring Classic</p>
+          <p className="text-base font-medium text-gray-900">Sign in or create an account</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link to="/login" className="text-sm text-gray-700 hover:text-gray-900">Login</Link>
+          <Link to="/register" className="px-3 py-1 text-sm rounded-md bg-rifle-600 text-white hover:bg-rifle-700">Register</Link>
+        </div>
+      </div>
+    </div>
+  );
+
   const fmt = (n) => {
     if (!Number.isFinite(n)) return '0';
     if (n >= 1000) return `${(n/1000).toFixed(n % 1000 === 0 ? 0 : 1)}k+`;
@@ -135,12 +151,13 @@ const Home = () => {
 
   return (
     <div className="space-y-12">
+      <MobileAuthCta />
       {/* Hero Section with Banner */}
       <section className="relative overflow-hidden rounded-2xl">
         {/* Banner Image */}
         <div className="relative">
           <img 
-            src="/TheXringClassic.png" 
+            src={`${process.env.PUBLIC_URL}/TheXringClassic.png`} 
             alt="The X-Ring Classic Banner" 
             className="w-full h-auto object-cover"
           />
