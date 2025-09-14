@@ -98,9 +98,31 @@ export const competitionsAPI = {
     return { data: { competitions: sliced, pagination: { current: 1, total: 1, hasNext: false, hasPrev: false } } };
   },
   getById: async (id) => {
-    const snap = await getDoc(doc(db, 'competitions', id));
-    if (!snap.exists()) throw new Error('Competition not found');
-    return { data: { competition: { id: snap.id, ...snap.data() } } };
+    const compSnap = await getDoc(doc(db, 'competitions', id));
+    if (!compSnap.exists()) throw new Error('Competition not found');
+
+    // Hydrate participants from registrations collection
+    const regsSnap = await getDocs(query(collection(db, 'registrations'), where('competitionId', '==', id)));
+    const regs = regsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const userIds = Array.from(new Set(regs.map(r => r.userId).filter(Boolean)));
+    const userSnaps = await Promise.all(userIds.map(uid => getDoc(doc(db, 'users', uid))));
+    const userMap = new Map(userSnaps.map((s, i) => [userIds[i], s.exists() ? { id: userIds[i], ...s.data() } : null]));
+    const participants = regs.map(r => {
+      const u = userMap.get(r.userId);
+      const name = u ? (u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : (u.username || u.email || 'User')) : 'User';
+      return {
+        userId: r.userId,
+        userName: name,
+        location: u?.location || '',
+        registeredAt: r.registeredAt || r.createdAt || new Date().toISOString(),
+      };
+    });
+
+    const comp = { id: compSnap.id, ...compSnap.data() };
+    comp.participants = participants;
+    comp.participantCount = participants.length;
+    comp.registeredCount = participants.length;
+    return { data: { competition: comp } };
   },
   create: async (competitionData) => {
     const ref = await addDoc(collection(db, 'competitions'), {
