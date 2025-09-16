@@ -65,17 +65,17 @@ export const AuthProvider = ({ children }) => {
           const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
           let profile = snap.exists() ? snap.data() : { email: firebaseUser.email };
 
-          // Compute classification from recent scores if not present
-          if (!profile.classification) {
+          // Always compute classification from recent scores; override stale profile value
+          try {
             const scoresSnap = await getDocs(query(collection(db, 'scores'), where('competitorId', '==', firebaseUser.uid)));
             const scores = scoresSnap.docs.map(d => d.data());
             const cls = classificationFromScores(scores);
             if (cls) {
               profile = { ...profile, classification: cls };
-              // Update user doc in background (no await needed)
+              // Persist in background so other views stay consistent
               setDoc(doc(db, 'users', firebaseUser.uid), { classification: cls }, { merge: true }).catch(()=>{});
             }
-          }
+          } catch {}
           dispatch({
             type: 'LOGIN_SUCCESS',
             payload: { user: { id: firebaseUser.uid, ...profile }, token }
