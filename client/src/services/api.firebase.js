@@ -222,7 +222,24 @@ export const scoresAPI = {
   },
   getByCompetition: async (competitionId) => {
     const snap = await getDocs(query(collection(db, 'scores'), where('competitionId', '==', competitionId)));
-    const scores = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const raw = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const ids = Array.from(new Set(raw.map(s => s.competitorId).filter(Boolean)));
+    const userSnaps = await Promise.all(ids.map(uid => getDoc(doc(db, 'users', uid))));
+    const userMap = new Map(userSnaps.map((s, i) => [ids[i], s.exists() ? { id: ids[i], ...s.data() } : null]));
+    const scores = raw.map(s => ({
+      ...s,
+      competitor: userMap.get(s.competitorId) || null,
+      submittedAt: (() => {
+        const d = s.createdAt || s.updatedAt || s.submittedAt;
+        try {
+          if (typeof d?.toMillis === 'function') return new Date(d.toMillis()).toISOString();
+          if (typeof d?.toDate === 'function') return d.toDate().toISOString();
+          if (typeof d?.seconds === 'number') return new Date(d.seconds * 1000).toISOString();
+          const t = Date.parse(d);
+          return Number.isFinite(t) ? new Date(t).toISOString() : new Date().toISOString();
+        } catch { return new Date().toISOString(); }
+      })(),
+    }));
     return { data: { scores } };
   },
   verify: async (scoreId, status, notes) => {
@@ -268,7 +285,9 @@ export const leaderboardsAPI = {
       const u = userMap.get(s.competitorId);
       const competitor = u ? u : { id: s.competitorId, username: s.username || 'user', firstName: 'Shooter', lastName: '' };
       const avg = s.averageScore || s.score || 0;
-      const xAvg = s.tiebreakerData?.xCount || 0;
+      const xAvg = (typeof s.tiebreakerData?.xCount === 'number')
+        ? s.tiebreakerData.xCount
+        : (Array.isArray(s.shots) ? s.shots.filter(sh => (Number(sh?.value) === 10 && (sh?.isX === true))).length : 0);
       const cls = competitor.classification || classificationFromAvg(avg, xAvg) || undefined;
       if (cls) competitor.classification = cls;
       return {
