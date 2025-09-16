@@ -285,9 +285,9 @@ export const leaderboardsAPI = {
       const u = userMap.get(s.competitorId);
       const competitor = u ? u : { id: s.competitorId, username: s.username || 'user', firstName: 'Shooter', lastName: '' };
       const avg = s.averageScore || s.score || 0;
-      const xAvg = (typeof s.tiebreakerData?.xCount === 'number')
-        ? s.tiebreakerData.xCount
-        : (Array.isArray(s.shots) ? s.shots.filter(sh => (Number(sh?.value) === 10 && (sh?.isX === true))).length : 0);
+      const computedX = (Array.isArray(s.shots) ? s.shots.filter(sh => (Number(sh?.value) === 10 && (sh?.isX === true))).length : 0);
+      const xCount = (typeof s.tiebreakerData?.xCount === 'number') ? s.tiebreakerData.xCount : computedX;
+      const xAvg = xCount; // for single-score rows; multi-score averaging not implemented here
       const cls = competitor.classification || classificationFromAvg(avg, xAvg) || undefined;
       if (cls) competitor.classification = cls;
       return {
@@ -297,6 +297,7 @@ export const leaderboardsAPI = {
         bestScore: s.bestScore || s.score || 0,
         averageScore: s.averageScore || s.score || 0,
         competitionsCount: s.competitionsCount || 1,
+        tiebreakerData: { xCount },
       };
     });
     return { data: { leaderboard } };
