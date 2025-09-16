@@ -182,11 +182,18 @@ export const scoresAPI = {
   submit: async (scoreData) => {
     const uid = auth.currentUser?.uid;
     if (!uid) throw new Error('Not authenticated');
+    const shots = Array.isArray(scoreData?.shots) ? scoreData.shots : [];
+    const xCount = shots.filter(s => (s?.isX === true) || (Number(s?.value) === 10 && s?.isX)).length;
     const payload = {
       ...scoreData,
       competitorId: uid,
       createdAt: serverTimestamp(),
       verificationStatus: 'pending',
+      tiebreakerData: {
+        ...(scoreData?.tiebreakerData || {}),
+        xCount,
+        perfectShots: xCount,
+      },
     };
     const ref = await addDoc(collection(db, 'scores'), payload);
     const snap = await getDoc(ref);
@@ -196,11 +203,18 @@ export const scoresAPI = {
     // For client-only: same as submit but accept competitorId in payload
     const uid = scoreData?.competitorId || auth.currentUser?.uid;
     if (!uid) throw new Error('Not authenticated');
+    const shots = Array.isArray(scoreData?.shots) ? scoreData.shots : [];
+    const xCount = shots.filter(s => (s?.isX === true) || (Number(s?.value) === 10 && s?.isX)).length;
     const payload = {
       ...scoreData,
       competitorId: uid,
       createdAt: serverTimestamp(),
       verificationStatus: 'pending',
+      tiebreakerData: {
+        ...(scoreData?.tiebreakerData || {}),
+        xCount,
+        perfectShots: xCount,
+      },
     };
     const ref = await addDoc(collection(db, 'scores'), payload);
     const snap = await getDoc(ref);
