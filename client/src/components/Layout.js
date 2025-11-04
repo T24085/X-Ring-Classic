@@ -72,7 +72,7 @@ const Layout = () => {
   return (
     <div className="min-h-screen relative z-10">
       {/* Header */}
-      <header className="bg-white/95 backdrop-blur-sm shadow-md border-b border-gray-300 relative z-50">
+      <header className="bg-slate-800/95 backdrop-blur-sm shadow-md border-b border-slate-700 relative z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-3">
             {/* Logo */}
@@ -97,8 +97,8 @@ const Layout = () => {
                     to={item.href}
                     className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive
-                        ? 'text-rifle-600 bg-rifle-50'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        ? 'text-rifle-400 bg-rifle-900/30'
+                        : 'text-gray-300 hover:text-white hover:bg-slate-700'
                     }`}
                   >
                     <item.icon className="w-4 h-4" />
@@ -113,8 +113,8 @@ const Layout = () => {
                   to="/profile"
                   className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     location.pathname === '/profile'
-                      ? 'text-rifle-600 bg-rifle-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'text-rifle-400 bg-rifle-900/30'
+                      : 'text-gray-300 hover:text-white hover:bg-slate-700'
                   }`}
                 >
                   <UserIcon className="w-4 h-4" />
@@ -129,8 +129,8 @@ const Layout = () => {
                     onClick={() => setAdminDropdownOpen(!adminDropdownOpen)}
                     className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isAdminRoute
-                        ? 'text-rifle-600 bg-rifle-50'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        ? 'text-rifle-400 bg-rifle-900/30'
+                        : 'text-gray-300 hover:text-white hover:bg-slate-700'
                     }`}
                   >
                     <CogIcon className="w-4 h-4" />
@@ -140,7 +140,7 @@ const Layout = () => {
 
                   {/* Dropdown menu */}
                   {adminDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-[9999]">
+                    <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-slate-800 border border-slate-700 z-[9999]">
                       <div className="py-1" role="menu">
                         {adminMenuItems
                           .filter(item => {
@@ -159,8 +159,8 @@ const Layout = () => {
                                 onClick={() => setAdminDropdownOpen(false)}
                                 className={`flex items-center space-x-2 px-4 py-2 text-sm transition-colors ${
                                   isActive
-                                    ? 'bg-rifle-50 text-rifle-600'
-                                    : 'text-gray-700 hover:bg-gray-50'
+                                    ? 'bg-rifle-900/30 text-rifle-400'
+                                    : 'text-gray-300 hover:bg-slate-700'
                                 }`}
                                 role="menuitem"
                               >
@@ -205,13 +205,13 @@ const Layout = () => {
                         </span>
                       </div>
                     )}
-                    <span className="text-sm text-gray-700">
+                    <span className="text-sm text-gray-200">
                       {user?.profile?.firstName || user?.username}
                     </span>
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
+                    className="flex items-center space-x-1 text-gray-300 hover:text-white transition-colors"
                   >
                     <ArrowRightOnRectangleIcon className="w-4 h-4" />
                     <span className="text-sm">Logout</span>
@@ -221,7 +221,7 @@ const Layout = () => {
                 <div className="flex items-center space-x-4">
                   <Link
                     to="/login"
-                    className="text-gray-600 hover:text-gray-900 text-sm font-medium"
+                    className="text-gray-300 hover:text-white text-sm font-medium"
                   >
                     Login
                   </Link>
@@ -241,7 +241,7 @@ const Layout = () => {
                 <>
                   <Link
                     to="/login"
-                    className="text-sm text-gray-700 hover:text-gray-900"
+                    className="text-sm text-gray-300 hover:text-white"
                   >
                     Login
                   </Link>
@@ -255,7 +255,7 @@ const Layout = () => {
               )}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="text-gray-600 hover:text-gray-900"
+                className="text-gray-300 hover:text-white"
                 aria-label="Toggle menu"
               >
                 {mobileMenuOpen ? (
@@ -270,7 +270,7 @@ const Layout = () => {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200">
+          <div className="md:hidden border-t border-slate-700">
             <nav className="px-4 py-2 space-y-1">
               {/* Main navigation */}
               {mainNavigation.map((item) => {
@@ -282,8 +282,8 @@ const Layout = () => {
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive
-                        ? 'text-rifle-600 bg-rifle-50'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        ? 'text-rifle-400 bg-rifle-900/30'
+                        : 'text-gray-300 hover:text-white hover:bg-slate-700'
                     }`}
                   >
                     <item.icon className="w-4 h-4" />
@@ -322,8 +322,8 @@ const Layout = () => {
 
               {/* Admin section */}
               {hasAdminAccess && (
-                <div className="pt-2 border-t border-gray-200">
-                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <div className="pt-2 border-t border-slate-700">
+                  <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                     Admin
                   </div>
                   {adminMenuItems
@@ -361,14 +361,14 @@ const Layout = () => {
                     handleLogout();
                     setMobileMenuOpen(false);
                   }}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 w-full"
+                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-slate-700 w-full"
                 >
                   <ArrowRightOnRectangleIcon className="w-4 h-4" />
                   <span>Logout</span>
                 </button>
               ) : (
                 <div className="flex items-center gap-2 px-3 py-2">
-                  <Link to="/login" className="text-sm text-gray-700 hover:text-gray-900" onClick={() => setMobileMenuOpen(false)}>Login</Link>
+                  <Link to="/login" className="text-sm text-gray-300 hover:text-white" onClick={() => setMobileMenuOpen(false)}>Login</Link>
                   <Link to="/register" className="px-3 py-1 text-sm rounded-md bg-rifle-600 text-white hover:bg-rifle-700" onClick={() => setMobileMenuOpen(false)}>Register</Link>
                 </div>
               )}
@@ -383,7 +383,7 @@ const Layout = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-800/95 backdrop-blur-sm border-t border-gray-700 mt-auto text-white">
+      <footer className="bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 mt-auto text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             {/* Banner in Footer */}
@@ -394,7 +394,7 @@ const Layout = () => {
                 className="h-16 w-auto mx-auto object-contain"
               />
             </div>
-            <div className="text-gray-300 text-sm">
+            <div className="text-gray-400 text-sm">
               <p>&copy; 2024 The X-Ring Classic. All rights reserved.</p>
               <p className="mt-2">
                 Powered by precision and passion
