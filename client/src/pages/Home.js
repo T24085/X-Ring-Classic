@@ -126,7 +126,7 @@ const Home = () => {
   // Small-screen quick auth CTA
   const MobileAuthCta = () => (
       <div className="sm:hidden mb-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between">
+      <div className="bg-gray-900 border border-red-900/60 rounded-xl p-4 flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-300">Welcome to The X-Ring Classic</p>
           <p className="text-base font-medium text-gray-100">Sign in or create an account</p>
@@ -322,7 +322,7 @@ const Home = () => {
                 {(topShooters?.leaderboard || []).map((shooter, index) => (
                   <div
                     key={`${shooter.competitor.id}-${index}`}
-                    className={`flex items-center justify-between py-3 border-b border-gray-800 last:border-b-0 ${getClassRowBg(shooter.competitor?.classification)}`}
+                    className={`flex items-center justify-between py-3 border-b border-red-900/40 last:border-b-0 ${getClassRowBg(shooter.competitor?.classification)}`}
                   >
                   <div className="flex items-center space-x-4">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
@@ -363,7 +363,7 @@ const Home = () => {
             {/* Show loading placeholders when loading or no data */}
             {(shootersLoading || !topShooters?.leaderboard?.length) && (
               Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between py-3 border-b border-gray-800 last:border-b-0 animate-pulse">
+                <div key={i} className="flex items-center justify-between py-3 border-b border-red-900/40 last:border-b-0 animate-pulse">
                   <div className="flex items-center space-x-4">
                     <div className="w-8 h-8 bg-gray-800 rounded-full"></div>
                     <div>
@@ -381,7 +381,7 @@ const Home = () => {
           </div>
         </div>
         {/* Classification Legend */}
-        <div className="mt-4 bg-gray-900 rounded-lg shadow-sm border border-gray-800 p-4">
+        <div className="mt-4 bg-gray-900 rounded-lg shadow-sm border border-red-900/60 p-4">
           <h3 className="text-sm font-semibold text-gray-100 mb-3">Classification Legend</h3>
           <div className="flex flex-wrap gap-2">
             {[
@@ -404,7 +404,7 @@ const Home = () => {
       </section>
 
       {/* Call to Action */}
-      <section className="text-center py-16 bg-gray-900 rounded-2xl border border-gray-800">
+      <section className="text-center py-16 bg-gray-900 rounded-2xl border border-red-900/60">
         <h2 className="text-3xl font-bold text-gray-100 mb-4">
           Ready to Compete?
         </h2>

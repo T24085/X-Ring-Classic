@@ -72,7 +72,7 @@ const Layout = () => {
   return (
     <div className="min-h-screen relative z-10">
       {/* Header */}
-      <header className="bg-gray-900/95 backdrop-blur-sm shadow-md border-b border-gray-800 relative z-50">
+      <header className="bg-gray-900/95 backdrop-blur-sm shadow-md border-b border-red-900 relative z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-3">
             {/* Logo */}
@@ -140,7 +140,7 @@ const Layout = () => {
 
                   {/* Dropdown menu */}
                   {adminDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-gray-900 border border-gray-800 z-[9999]">
+                    <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-gray-900 border border-red-900 z-[9999]">
                       <div className="py-1" role="menu">
                         {adminMenuItems
                           .filter(item => {
@@ -270,7 +270,7 @@ const Layout = () => {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-800">
+          <div className="md:hidden border-t border-red-900">
             <nav className="px-4 py-2 space-y-1">
               {/* Main navigation */}
               {mainNavigation.map((item) => {
@@ -322,7 +322,7 @@ const Layout = () => {
 
               {/* Admin section */}
               {hasAdminAccess && (
-                <div className="pt-2 border-t border-gray-800">
+                <div className="pt-2 border-t border-red-900">
                   <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                     Admin
                   </div>
@@ -383,7 +383,7 @@ const Layout = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-950/95 backdrop-blur-sm border-t border-gray-900 mt-auto text-white">
+      <footer className="bg-gray-950/95 backdrop-blur-sm border-t border-red-900 mt-auto text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             {/* Banner in Footer */}
