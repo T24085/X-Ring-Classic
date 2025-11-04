@@ -612,8 +612,8 @@ const Profile = () => {
     return (
       <div className="space-y-6">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Profile</h1>
-          <p className="text-gray-600">Manage your account and view your statistics</p>
+          <h1 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">Profile</h1>
+          <p className="text-gray-100 drop-shadow-md">Manage your account and view your statistics</p>
         </div>
         <div className="bg-white rounded-lg shadow p-6">
           <div className="text-center py-8">

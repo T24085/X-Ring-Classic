@@ -121,8 +121,8 @@ const CreateCompetition = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Create Competition</h1>
-          <p className="text-gray-600">Set up a new .22LR rifle competition</p>
+          <h1 className="text-3xl font-bold text-white drop-shadow-lg">Create Competition</h1>
+          <p className="text-gray-100 drop-shadow-md">Set up a new .22LR rifle competition</p>
         </div>
         <div className="flex items-center space-x-2">
           <div className={`px-3 py-1 rounded-full text-sm font-medium ${
