@@ -8,9 +8,31 @@
   }
   
   body {
-    @apply bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200 text-gray-900;
+    @apply text-gray-900;
     min-height: 100vh;
+    background: linear-gradient(to bottom right, #f9fafb, #f3f4f6, #e5e7eb);
   }
+}
+
+/* Tiled background with Gun Guys II logo - background-image set via JS */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: 200px 200px;
+  background-repeat: repeat;
+  opacity: 0.08;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Ensure content is above background */
+body > * {
+  position: relative;
+  z-index: 1;
 }
 
 @layer components {

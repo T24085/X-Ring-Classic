@@ -174,6 +174,17 @@ const Layout = () => {
                   )}
                 </div>
               )}
+
+              {/* Shop Now Button */}
+              <a
+                href="https://shop.thegunguys.net/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-1 px-4 py-2 rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors shadow-md"
+              >
+                <TrophyIcon className="w-4 h-4" />
+                <span>Shop Now</span>
+              </a>
             </nav>
 
             {/* User Menu */}
@@ -297,6 +308,18 @@ const Layout = () => {
                 </Link>
               )}
 
+              {/* Shop Now Button (Mobile) */}
+              <a
+                href="https://shop.thegunguys.net/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <TrophyIcon className="w-4 h-4" />
+                <span>Shop Now</span>
+              </a>
+
               {/* Admin section */}
               {hasAdminAccess && (
                 <div className="pt-2 border-t border-gray-200">
@@ -375,6 +398,16 @@ const Layout = () => {
               <p>&copy; 2024 The X-Ring Classic. All rights reserved.</p>
               <p className="mt-2">
                 Powered by precision and passion
+              </p>
+              <p className="mt-4">
+                <a 
+                  href="https://www.thegunguys.net/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-gray-300 hover:text-white underline transition-colors"
+                >
+                  Visit Gun Guys II
+                </a>
               </p>
             </div>
           </div>
