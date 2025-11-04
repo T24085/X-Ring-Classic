@@ -21,13 +21,13 @@ const Home = () => {
       case 'diamond':
         return 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30';
       case 'platinum':
-        return 'bg-slate-700/50 text-gray-300 border border-slate-600';
+        return 'bg-gray-800/50 text-gray-300 border border-gray-700';
       case 'gold':
         return 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
       case 'bronze':
         return 'bg-orange-500/20 text-orange-400 border border-orange-500/30';
       default:
-        return 'bg-slate-700/50 text-gray-300 border border-slate-600';
+        return 'bg-gray-800/50 text-gray-300 border border-gray-700';
     }
   };
 
@@ -59,13 +59,13 @@ const Home = () => {
       case 'diamond':
         return 'bg-cyan-500/10';
       case 'platinum':
-        return 'bg-slate-700/30';
+        return 'bg-gray-800/30';
       case 'gold':
         return 'bg-yellow-500/10';
       case 'bronze':
         return 'bg-orange-500/10';
       default:
-        return 'bg-slate-800/50';
+        return 'bg-gray-900/50';
     }
   };
 
@@ -126,7 +126,7 @@ const Home = () => {
   // Small-screen quick auth CTA
   const MobileAuthCta = () => (
       <div className="sm:hidden mb-4">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 flex items-center justify-between">
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-300">Welcome to The X-Ring Classic</p>
           <p className="text-base font-medium text-gray-100">Sign in or create an account</p>
@@ -290,13 +290,13 @@ const Home = () => {
           {(competitionsLoading || !competitions?.competitions?.length) && (
             Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="card animate-pulse">
-                <div className="h-4 bg-slate-700 rounded w-1/4 mb-4"></div>
-                <div className="h-6 bg-slate-700 rounded w-3/4 mb-2"></div>
-                <div className="h-4 bg-slate-700 rounded w-full mb-4"></div>
-                <div className="h-4 bg-slate-700 rounded w-1/2 mb-4"></div>
+                <div className="h-4 bg-gray-800 rounded w-1/4 mb-4"></div>
+                <div className="h-6 bg-gray-800 rounded w-3/4 mb-2"></div>
+                <div className="h-4 bg-gray-800 rounded w-full mb-4"></div>
+                <div className="h-4 bg-gray-800 rounded w-1/2 mb-4"></div>
                 <div className="flex justify-between">
-                  <div className="h-6 bg-slate-700 rounded w-1/4"></div>
-                  <div className="h-8 bg-slate-700 rounded w-1/3"></div>
+                  <div className="h-6 bg-gray-800 rounded w-1/4"></div>
+                  <div className="h-8 bg-gray-800 rounded w-1/3"></div>
                 </div>
               </div>
             ))
@@ -322,12 +322,12 @@ const Home = () => {
                 {(topShooters?.leaderboard || []).map((shooter, index) => (
                   <div
                     key={`${shooter.competitor.id}-${index}`}
-                    className={`flex items-center justify-between py-3 border-b border-slate-700 last:border-b-0 ${getClassRowBg(shooter.competitor?.classification)}`}
+                    className={`flex items-center justify-between py-3 border-b border-gray-800 last:border-b-0 ${getClassRowBg(shooter.competitor?.classification)}`}
                   >
                   <div className="flex items-center space-x-4">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                       index === 0 ? 'bg-yellow-500/30 text-yellow-300' :
-                      index === 1 ? 'bg-slate-600 text-gray-200' :
+                      index === 1 ? 'bg-gray-700 text-gray-200' :
                       index === 2 ? 'bg-orange-500/30 text-orange-300' :
                       'bg-blue-500/30 text-blue-300'
                     }`}>
@@ -363,17 +363,17 @@ const Home = () => {
             {/* Show loading placeholders when loading or no data */}
             {(shootersLoading || !topShooters?.leaderboard?.length) && (
               Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between py-3 border-b border-slate-700 last:border-b-0 animate-pulse">
+                <div key={i} className="flex items-center justify-between py-3 border-b border-gray-800 last:border-b-0 animate-pulse">
                   <div className="flex items-center space-x-4">
-                    <div className="w-8 h-8 bg-slate-700 rounded-full"></div>
+                    <div className="w-8 h-8 bg-gray-800 rounded-full"></div>
                     <div>
-                      <div className="h-4 bg-slate-700 rounded w-32 mb-1"></div>
-                      <div className="h-3 bg-slate-700 rounded w-20"></div>
+                      <div className="h-4 bg-gray-800 rounded w-32 mb-1"></div>
+                      <div className="h-3 bg-gray-800 rounded w-20"></div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="h-4 bg-slate-700 rounded w-12 mb-1"></div>
-                    <div className="h-3 bg-slate-700 rounded w-20"></div>
+                    <div className="h-4 bg-gray-800 rounded w-12 mb-1"></div>
+                    <div className="h-3 bg-gray-800 rounded w-20"></div>
                   </div>
                 </div>
               ))
@@ -381,7 +381,7 @@ const Home = () => {
           </div>
         </div>
         {/* Classification Legend */}
-        <div className="mt-4 bg-slate-800 rounded-lg shadow-sm border border-slate-700 p-4">
+        <div className="mt-4 bg-gray-900 rounded-lg shadow-sm border border-gray-800 p-4">
           <h3 className="text-sm font-semibold text-gray-100 mb-3">Classification Legend</h3>
           <div className="flex flex-wrap gap-2">
             {[
@@ -404,7 +404,7 @@ const Home = () => {
       </section>
 
       {/* Call to Action */}
-      <section className="text-center py-16 bg-slate-800 rounded-2xl border border-slate-700">
+      <section className="text-center py-16 bg-gray-900 rounded-2xl border border-gray-800">
         <h2 className="text-3xl font-bold text-gray-100 mb-4">
           Ready to Compete?
         </h2>

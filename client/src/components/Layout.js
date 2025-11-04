@@ -72,7 +72,7 @@ const Layout = () => {
   return (
     <div className="min-h-screen relative z-10">
       {/* Header */}
-      <header className="bg-slate-800/95 backdrop-blur-sm shadow-md border-b border-slate-700 relative z-50">
+      <header className="bg-gray-900/95 backdrop-blur-sm shadow-md border-b border-gray-800 relative z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-3">
             {/* Logo */}
@@ -98,7 +98,7 @@ const Layout = () => {
                     className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive
                         ? 'text-rifle-400 bg-rifle-900/30'
-                        : 'text-gray-300 hover:text-white hover:bg-slate-700'
+                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
                     }`}
                   >
                     <item.icon className="w-4 h-4" />
@@ -114,7 +114,7 @@ const Layout = () => {
                   className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     location.pathname === '/profile'
                       ? 'text-rifle-400 bg-rifle-900/30'
-                      : 'text-gray-300 hover:text-white hover:bg-slate-700'
+                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
                   }`}
                 >
                   <UserIcon className="w-4 h-4" />
@@ -130,7 +130,7 @@ const Layout = () => {
                     className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isAdminRoute
                         ? 'text-rifle-400 bg-rifle-900/30'
-                        : 'text-gray-300 hover:text-white hover:bg-slate-700'
+                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
                     }`}
                   >
                     <CogIcon className="w-4 h-4" />
@@ -140,7 +140,7 @@ const Layout = () => {
 
                   {/* Dropdown menu */}
                   {adminDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-slate-800 border border-slate-700 z-[9999]">
+                    <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-gray-900 border border-gray-800 z-[9999]">
                       <div className="py-1" role="menu">
                         {adminMenuItems
                           .filter(item => {
@@ -160,7 +160,7 @@ const Layout = () => {
                                 className={`flex items-center space-x-2 px-4 py-2 text-sm transition-colors ${
                                   isActive
                                     ? 'bg-rifle-900/30 text-rifle-400'
-                                    : 'text-gray-300 hover:bg-slate-700'
+                                    : 'text-gray-300 hover:bg-gray-800'
                                 }`}
                                 role="menuitem"
                               >
@@ -270,7 +270,7 @@ const Layout = () => {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-700">
+          <div className="md:hidden border-t border-gray-800">
             <nav className="px-4 py-2 space-y-1">
               {/* Main navigation */}
               {mainNavigation.map((item) => {
@@ -283,7 +283,7 @@ const Layout = () => {
                     className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive
                         ? 'text-rifle-400 bg-rifle-900/30'
-                        : 'text-gray-300 hover:text-white hover:bg-slate-700'
+                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
                     }`}
                   >
                     <item.icon className="w-4 h-4" />
@@ -322,7 +322,7 @@ const Layout = () => {
 
               {/* Admin section */}
               {hasAdminAccess && (
-                <div className="pt-2 border-t border-slate-700">
+                <div className="pt-2 border-t border-gray-800">
                   <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                     Admin
                   </div>
@@ -361,7 +361,7 @@ const Layout = () => {
                     handleLogout();
                     setMobileMenuOpen(false);
                   }}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-slate-700 w-full"
+                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 w-full"
                 >
                   <ArrowRightOnRectangleIcon className="w-4 h-4" />
                   <span>Logout</span>
@@ -383,7 +383,7 @@ const Layout = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 mt-auto text-white">
+      <footer className="bg-gray-950/95 backdrop-blur-sm border-t border-gray-900 mt-auto text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             {/* Banner in Footer */}
