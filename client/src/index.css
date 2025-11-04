@@ -82,6 +82,41 @@ body > * {
   }
 }
 
+/* Form input styling for better readability */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="url"],
+textarea,
+select {
+  color: #1f2937 !important; /* text-gray-800 - dark text */
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #6b7280 !important; /* text-gray-500 - medium gray for placeholders */
+  opacity: 1;
+}
+
+input:focus,
+textarea:focus {
+  color: #111827 !important; /* text-gray-900 - even darker when focused */
+}
+
+/* Ensure select dropdowns have readable text */
+select {
+  color: #1f2937 !important;
+}
+
+select option {
+  color: #1f2937 !important;
+  background-color: white !important;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
