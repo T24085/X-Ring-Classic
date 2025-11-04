@@ -97,7 +97,7 @@ const Layout = () => {
                     to={item.href}
                     className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive
-                        ? 'text-rifle-400 bg-rifle-900/30'
+                        ? 'text-gray-200 bg-gray-800/50'
                         : 'text-gray-300 hover:text-white hover:bg-gray-800'
                     }`}
                   >
@@ -113,7 +113,7 @@ const Layout = () => {
                   to="/profile"
                   className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     location.pathname === '/profile'
-                      ? 'text-rifle-400 bg-rifle-900/30'
+                      ? 'text-gray-200 bg-gray-800/50'
                         : 'text-gray-300 hover:text-white hover:bg-gray-800'
                   }`}
                 >
@@ -129,7 +129,7 @@ const Layout = () => {
                     onClick={() => setAdminDropdownOpen(!adminDropdownOpen)}
                     className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isAdminRoute
-                        ? 'text-rifle-400 bg-rifle-900/30'
+                        ? 'text-gray-200 bg-gray-800/50'
                         : 'text-gray-300 hover:text-white hover:bg-gray-800'
                     }`}
                   >
@@ -159,7 +159,7 @@ const Layout = () => {
                                 onClick={() => setAdminDropdownOpen(false)}
                                 className={`flex items-center space-x-2 px-4 py-2 text-sm transition-colors ${
                                   isActive
-                                    ? 'bg-rifle-900/30 text-rifle-400'
+                                    ? 'bg-gray-800/50 text-gray-200'
                                     : 'text-gray-300 hover:bg-gray-800'
                                 }`}
                                 role="menuitem"
@@ -180,7 +180,7 @@ const Layout = () => {
                 href="https://shop.thegunguys.net/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-1 px-4 py-2 rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors shadow-md"
+                className="flex items-center space-x-1 px-4 py-2 rounded-md text-sm font-medium bg-gray-700 hover:bg-gray-600 text-white transition-colors shadow-md"
               >
                 <TrophyIcon className="w-4 h-4" />
                 <span>Shop Now</span>
@@ -199,8 +199,8 @@ const Layout = () => {
                         className="w-8 h-8 object-contain"
                       />
                     ) : (
-                      <div className="w-8 h-8 bg-rifle-100 rounded-full flex items-center justify-center">
-                        <span className="text-rifle-600 font-medium text-sm">
+                      <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
+                        <span className="text-gray-200 font-medium text-sm">
                           {user?.profile?.firstName?.[0] || user?.username?.[0] || 'U'}
                         </span>
                       </div>
@@ -247,7 +247,7 @@ const Layout = () => {
                   </Link>
                   <Link
                     to="/register"
-                    className="px-3 py-1 text-sm rounded-md bg-rifle-600 text-white hover:bg-rifle-700"
+                    className="px-3 py-1 text-sm rounded-md bg-gray-700 text-white hover:bg-gray-600"
                   >
                     Register
                   </Link>
@@ -282,7 +282,7 @@ const Layout = () => {
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive
-                        ? 'text-rifle-400 bg-rifle-900/30'
+                        ? 'text-gray-200 bg-gray-800/50'
                         : 'text-gray-300 hover:text-white hover:bg-gray-800'
                     }`}
                   >
@@ -299,8 +299,8 @@ const Layout = () => {
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     location.pathname === '/profile'
-                      ? 'text-rifle-600 bg-rifle-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'text-gray-200 bg-gray-800/50'
+                      : 'text-gray-300 hover:text-white hover:bg-gray-800'
                   }`}
                 >
                   <UserIcon className="w-4 h-4" />
@@ -313,7 +313,7 @@ const Layout = () => {
                 href="https://shop.thegunguys.net/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors"
+                className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium bg-gray-700 hover:bg-gray-600 text-white transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <TrophyIcon className="w-4 h-4" />
@@ -342,8 +342,8 @@ const Layout = () => {
                           onClick={() => setMobileMenuOpen(false)}
                           className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ml-4 ${
                             isActive
-                              ? 'text-rifle-600 bg-rifle-50'
-                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                              ? 'text-gray-200 bg-gray-800/50'
+                              : 'text-gray-300 hover:text-white hover:bg-gray-800'
                           }`}
                         >
                           <item.icon className="w-4 h-4" />

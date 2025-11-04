@@ -15,17 +15,17 @@ const Home = () => {
   const getClassStyles = (classification) => {
     switch ((classification || '').toLowerCase()) {
       case 'grand master':
-        return 'bg-purple-500/20 text-purple-400 border border-purple-500/30';
+        return 'bg-gray-700/30 text-gray-200 border border-gray-600/50';
       case 'master':
-        return 'bg-blue-500/20 text-blue-400 border border-blue-500/30';
+        return 'bg-gray-700/30 text-gray-200 border border-gray-600/50';
       case 'diamond':
-        return 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30';
+        return 'bg-gray-700/30 text-gray-200 border border-gray-600/50';
       case 'platinum':
         return 'bg-gray-800/50 text-gray-300 border border-gray-700';
       case 'gold':
-        return 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30';
+        return 'bg-gray-700/30 text-gray-200 border border-gray-600/50';
       case 'bronze':
-        return 'bg-orange-500/20 text-orange-400 border border-orange-500/30';
+        return 'bg-gray-700/30 text-gray-200 border border-gray-600/50';
       default:
         return 'bg-gray-800/50 text-gray-300 border border-gray-700';
     }
@@ -53,17 +53,17 @@ const Home = () => {
   const getClassRowBg = (classification) => {
     switch ((classification || '').toLowerCase()) {
       case 'grand master':
-        return 'bg-purple-500/10';
+        return 'bg-gray-800/30';
       case 'master':
-        return 'bg-blue-500/10';
+        return 'bg-gray-800/30';
       case 'diamond':
-        return 'bg-cyan-500/10';
+        return 'bg-gray-800/30';
       case 'platinum':
         return 'bg-gray-800/30';
       case 'gold':
-        return 'bg-yellow-500/10';
+        return 'bg-gray-800/30';
       case 'bronze':
-        return 'bg-orange-500/10';
+        return 'bg-gray-800/30';
       default:
         return 'bg-gray-900/50';
     }
@@ -133,7 +133,7 @@ const Home = () => {
         </div>
         <div className="flex items-center gap-2">
           <Link to="/login" className="text-sm text-gray-300 hover:text-white">Login</Link>
-          <Link to="/register" className="px-3 py-1 text-sm rounded-md bg-rifle-600 text-white hover:bg-rifle-700">Register</Link>
+          <Link to="/register" className="px-3 py-1 text-sm rounded-md bg-gray-700 text-white hover:bg-gray-600">Register</Link>
         </div>
       </div>
     </div>
@@ -190,29 +190,29 @@ const Home = () => {
       {/* Stats Section */}
       <section className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="card text-center">
-          <div className="flex items-center justify-center w-12 h-12 bg-blue-500/20 rounded-lg mx-auto mb-4">
-            <TrophyIcon className="w-6 h-6 text-blue-400" />
+          <div className="flex items-center justify-center w-12 h-12 bg-gray-700/30 rounded-lg mx-auto mb-4">
+            <TrophyIcon className="w-6 h-6 text-gray-300" />
           </div>
           <h3 className="text-2xl font-bold text-gray-100 mb-2">{fmt(landingStats?.activeCompetitions ?? 0)}</h3>
           <p className="text-gray-300">Active Competitions</p>
         </div>
         <div className="card text-center">
-          <div className="flex items-center justify-center w-12 h-12 bg-green-500/20 rounded-lg mx-auto mb-4">
-            <UsersIcon className="w-6 h-6 text-green-400" />
+          <div className="flex items-center justify-center w-12 h-12 bg-gray-700/30 rounded-lg mx-auto mb-4">
+            <UsersIcon className="w-6 h-6 text-gray-300" />
           </div>
           <h3 className="text-2xl font-bold text-gray-100 mb-2">{fmt(landingStats?.totalUsers ?? 0)}</h3>
           <p className="text-gray-300">Registered Shooters</p>
         </div>
         <div className="card text-center">
-          <div className="flex items-center justify-center w-12 h-12 bg-purple-500/20 rounded-lg mx-auto mb-4">
-            <ViewfinderCircleIcon className="w-6 h-6 text-purple-400" />
+          <div className="flex items-center justify-center w-12 h-12 bg-gray-700/30 rounded-lg mx-auto mb-4">
+            <ViewfinderCircleIcon className="w-6 h-6 text-gray-300" />
           </div>
           <h3 className="text-2xl font-bold text-gray-100 mb-2">{fmt(landingStats?.totalScores ?? 0)}</h3>
           <p className="text-gray-300">Scores Submitted</p>
         </div>
         <div className="card text-center">
-          <div className="flex items-center justify-center w-12 h-12 bg-orange-500/20 rounded-lg mx-auto mb-4">
-            <MapPinIcon className="w-6 h-6 text-orange-400" />
+          <div className="flex items-center justify-center w-12 h-12 bg-gray-700/30 rounded-lg mx-auto mb-4">
+            <MapPinIcon className="w-6 h-6 text-gray-300" />
           </div>
           <h3 className="text-2xl font-bold text-gray-100 mb-2">{fmt(landingStats?.rangesPartnered ?? 0)}</h3>
           <p className="text-gray-300">Ranges Partnered</p>
@@ -225,7 +225,7 @@ const Home = () => {
           <h2 className="text-3xl font-bold text-gray-100">Featured Competitions</h2>
           <Link
             to="/competitions"
-            className="flex items-center space-x-2 text-rifle-600 hover:text-rifle-700 font-medium"
+            className="flex items-center space-x-2 text-gray-300 hover:text-gray-200 font-medium"
           >
             <span>View All</span>
             <ArrowRightIcon className="w-4 h-4" />
@@ -310,7 +310,7 @@ const Home = () => {
           <h2 className="text-3xl font-bold text-gray-100">Top Shooters</h2>
           <Link
             to="/leaderboard"
-            className="flex items-center space-x-2 text-rifle-600 hover:text-rifle-700 font-medium"
+            className="flex items-center space-x-2 text-gray-300 hover:text-gray-200 font-medium"
           >
             <span>View Full Leaderboard</span>
             <ArrowRightIcon className="w-4 h-4" />
@@ -326,10 +326,10 @@ const Home = () => {
                   >
                   <div className="flex items-center space-x-4">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      index === 0 ? 'bg-yellow-500/30 text-yellow-300' :
+                      index === 0 ? 'bg-gray-600 text-gray-200' :
                       index === 1 ? 'bg-gray-700 text-gray-200' :
-                      index === 2 ? 'bg-orange-500/30 text-orange-300' :
-                      'bg-blue-500/30 text-blue-300'
+                      index === 2 ? 'bg-gray-600 text-gray-200' :
+                      'bg-gray-700 text-gray-200'
                     }`}>
                       {index + 1}
                     </div>
