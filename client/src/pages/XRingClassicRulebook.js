@@ -143,13 +143,13 @@ const XRingClassicRulebook = () => {
             )}
           </section>
         ))}
-        <div className="text-sm text-gray-500 pt-2 border-t">Version 1.0 • Effective {new Date().toLocaleDateString()}</div>
+        <div className="text-sm text-gray-700 pt-2 border-t">Version 1.0 • Effective {new Date().toLocaleDateString()}</div>
       </div>
 
       {/* Legacy PDF link for reference */}
       <div className="bg-white rounded-lg shadow-sm border p-4">
         <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600">Looking for the previous PDF?</div>
+          <div className="text-sm text-gray-700">Looking for the previous PDF?</div>
           <a href={pdfPath} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-gray-800 text-white rounded hover:bg-gray-900 text-sm">Open Previous PDF</a>
         </div>
       </div>

@@ -178,10 +178,10 @@ const Competitions = () => {
                 </span>
               </div>
               
-              <p className="text-gray-600 text-sm mb-4">{competition.description}</p>
+              <p className="text-gray-700 text-sm mb-4">{competition.description}</p>
               
               {/* Competition Details */}
-              <div className="space-y-2 text-sm text-gray-500">
+              <div className="space-y-2 text-sm text-gray-700">
                               <div className="flex items-center space-x-2">
                 <Calendar className="h-4 w-4" />
                 <span>
@@ -216,8 +216,8 @@ const Competitions = () => {
                   <span className="text-sm font-medium text-gray-900">${competition.prizePool || 0}</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Clock className="h-4 w-4 text-gray-400" />
-                  <span className="text-sm text-gray-500">{competition.duration || 'TBD'}</span>
+                  <Clock className="h-4 w-4 text-gray-600" />
+                  <span className="text-sm text-gray-700">{competition.duration || 'TBD'}</span>
                 </div>
               </div>
 

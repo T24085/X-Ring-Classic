@@ -294,7 +294,7 @@ const ScoreSubmission = () => {
               />
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">Optional: add links to photos or videos for quicker verification.</p>
+          <p className="text-xs text-gray-700 mt-2">Optional: add links to photos or videos for quicker verification.</p>
         </div>
 
         {/* Shot-by-Shot Scoring */}
@@ -303,7 +303,7 @@ const ScoreSubmission = () => {
             <Target className="h-5 w-5 mr-2" />
             Shot-by-Shot Scoring
           </h2>
-          <p className="text-sm text-gray-600 mb-3">
+          <p className="text-sm text-gray-700 mb-3">
             Required shots for this competition: {selectedComp?.shotsPerTarget || 10}
           </p>
           
@@ -474,8 +474,8 @@ const ScoreSubmission = () => {
           </h2>
           
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-            <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 mb-4">
+            <Upload className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-700 mb-4">
               Upload photos or videos of your target, setup, or shooting process
             </p>
             <input

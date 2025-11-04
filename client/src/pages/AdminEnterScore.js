@@ -144,7 +144,7 @@ const AdminEnterScore = () => {
                 ))}
               </select>
               {!competitionId && (
-                <p className="text-xs text-gray-500 mt-1">Choose a competition to see registered participants.</p>
+                <p className="text-xs text-gray-700 mt-1">Choose a competition to see registered participants.</p>
               )}
               {competitionId && participants.length === 0 && (
                 <p className="text-xs text-gray-500 mt-1">No registered participants found for this competition.</p>

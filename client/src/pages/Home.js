@@ -241,7 +241,7 @@ const Home = () => {
                 }`}>
                   {competition.competitionType || competition.type}
                 </span>
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-700">
                   {competition.maxDistance ? `${competition.maxDistance} yards` : competition.distance || 'TBD'}
                 </span>
               </div>
@@ -254,7 +254,7 @@ const Home = () => {
                 {competition.description}
               </p>
               
-              <div className="flex items-center space-x-4 text-sm text-gray-600 mb-4">
+              <div className="flex items-center space-x-4 text-sm text-gray-700 mb-4">
                 <div className="flex items-center space-x-1">
                   <CalendarIcon className="w-4 h-4" />
                   <span>
@@ -396,7 +396,7 @@ const Home = () => {
                 <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getClassStyles(cls)}`}>
                   {cls}
                 </span>
-                <span className="text-xs text-gray-400">{getLegendDescription(cls)}</span>
+                <span className="text-xs text-gray-600">{getLegendDescription(cls)}</span>
               </div>
             ))}
           </div>

@@ -61,7 +61,7 @@ const ScoreVerification = () => {
       case 'flagged':
         return <AlertTriangle className="w-5 h-5 text-orange-500" />;
       default:
-        return <Clock className="w-5 h-5 text-gray-500" />;
+        return <Clock className="w-5 h-5 text-gray-600" />;
     }
   };
 
@@ -105,7 +105,7 @@ const ScoreVerification = () => {
           <div className="flex items-center">
             <Clock className="w-8 h-8 text-yellow-500" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Pending</p>
+              <p className="text-sm font-medium text-gray-700">Pending</p>
               <p className="text-2xl font-bold text-gray-900">{scores.length}</p>
             </div>
           </div>
@@ -121,7 +121,7 @@ const ScoreVerification = () => {
         {scores.length === 0 ? (
           <div className="p-8 text-center">
             <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-            <p className="text-gray-600">No pending scores to verify</p>
+            <p className="text-gray-700">No pending scores to verify</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
@@ -135,13 +135,13 @@ const ScoreVerification = () => {
                         <span className="text-sm font-medium text-gray-900">
                           {score.competitor?.firstName} {score.competitor?.lastName}
                         </span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-gray-700">
                           (@{score.competitor?.username})
                         </span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Trophy className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">
+                        <Trophy className="w-4 h-4 text-gray-600" />
+                        <span className="text-sm text-gray-700">
                           {score.competition?.title}
                         </span>
                       </div>
@@ -149,17 +149,17 @@ const ScoreVerification = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                       <div>
-                        <p className="text-sm text-gray-500">Score</p>
+                        <p className="text-sm text-gray-700">Score</p>
                         <p className="text-2xl font-bold text-gray-900">{score.score}/100</p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-500">Perfect Shots</p>
+                        <p className="text-sm text-gray-700">Perfect Shots</p>
                         <p className="text-lg font-semibold text-gray-900">
                           {score.tiebreakerData?.perfectShots || 0}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-500">Submitted</p>
+                        <p className="text-sm text-gray-700">Submitted</p>
                         <p className="text-sm text-gray-900">
                           {new Date(score.createdAt).toLocaleDateString()}
                         </p>
@@ -199,7 +199,7 @@ const ScoreVerification = () => {
                     {score.notes && (
                       <div className="mb-4">
                         <p className="text-sm font-medium text-gray-700 mb-1">Notes:</p>
-                        <p className="text-sm text-gray-600">{score.notes}</p>
+                        <p className="text-sm text-gray-700">{score.notes}</p>
                       </div>
                     )}
                   </div>
@@ -248,7 +248,7 @@ const ScoreVerification = () => {
                 <h2 className="text-2xl font-bold text-gray-900">Review Score</h2>
                 <button
                   onClick={() => setSelectedScore(null)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-600 hover:text-gray-800"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -262,13 +262,13 @@ const ScoreVerification = () => {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Score Details</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-500">Competitor</p>
+                      <p className="text-sm text-gray-700">Competitor</p>
                       <p className="font-medium">
                         {selectedScore.competitor?.firstName} {selectedScore.competitor?.lastName}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Competition</p>
+                      <p className="text-sm text-gray-700">Competition</p>
                       <p className="font-medium">{selectedScore.competition?.title}</p>
                     </div>
                     <div>
@@ -352,7 +352,7 @@ const ScoreVerification = () => {
                 <div className="flex justify-end space-x-3">
                   <button
                     onClick={() => setSelectedScore(null)}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                    className="px-4 py-2 text-gray-700 hover:text-gray-900"
                   >
                     Cancel
                   </button>
