@@ -117,7 +117,7 @@ const RangeAdminManagement = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold text-white mb-4 drop-shadow-lg">Range Admin Management</h1>
-          <p className="text-xl text-gray-100 drop-shadow-md">
+          <p className="text-xl text-white drop-shadow-md">
             Create and manage range admin accounts for hosting ranges
           </p>
         </div>

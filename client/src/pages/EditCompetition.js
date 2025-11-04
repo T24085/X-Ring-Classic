@@ -110,7 +110,7 @@ const EditCompetition = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white drop-shadow-lg">Edit Competition</h1>
-          <p className="text-gray-100 drop-shadow-md">Update competition details</p>
+          <p className="text-white drop-shadow-md">Update competition details</p>
         </div>
         <div className={`px-3 py-1 rounded-full text-sm font-medium ${
           watchedStatus === 'draft' ? 'bg-yellow-100 text-yellow-800' :

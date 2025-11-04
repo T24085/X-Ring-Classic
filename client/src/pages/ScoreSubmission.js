@@ -219,7 +219,7 @@ const ScoreSubmission = () => {
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">Submit Score</h1>
-        <p className="text-gray-100 drop-shadow-md">Submit your competition score with verification</p>
+        <p className="text-white drop-shadow-md">Submit your competition score with verification</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">

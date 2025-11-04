@@ -103,7 +103,7 @@ const Competitions = () => {
           />
         </div>
         <h1 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">Competitions</h1>
-        <p className="text-gray-100 drop-shadow-md">Browse and join .22LR rifle competitions</p>
+        <p className="text-white drop-shadow-md">Browse and join .22LR rifle competitions</p>
       </div>
 
       {/* Filters */}

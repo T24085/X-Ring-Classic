@@ -134,7 +134,7 @@ const Leaderboard = () => {
           <span className="mr-3">{getCategoryIcon(selectedCategory)}</span>
           {getCategoryTitle(selectedCategory)}
         </h1>
-        <p className="text-gray-100 drop-shadow-md">Top performers in .22LR rifle competitions</p>
+        <p className="text-white drop-shadow-md">Top performers in .22LR rifle competitions</p>
       </div>
 
       {/* Category and Time Filters */}

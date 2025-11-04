@@ -102,7 +102,7 @@ const AdminEnterScore = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white drop-shadow-lg">Enter Score (Admin)</h1>
-          <p className="text-gray-100 drop-shadow-md">Submit a score for a registered competitor. Submissions are auto-approved.</p>
+          <p className="text-white drop-shadow-md">Submit a score for a registered competitor. Submissions are auto-approved.</p>
         </div>
         <CheckCircle className="w-8 h-8 text-green-500" />
       </div>

@@ -94,7 +94,7 @@ const ScoreVerification = () => {
       {/* Header */}
       <div className="text-center">
         <h1 className="text-4xl font-bold text-white mb-4 drop-shadow-lg">Score Verification</h1>
-        <p className="text-xl text-gray-100 max-w-3xl mx-auto drop-shadow-md">
+        <p className="text-xl text-white max-w-3xl mx-auto drop-shadow-md">
           Review and verify pending score submissions from competitors
         </p>
       </div>
