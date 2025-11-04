@@ -65,7 +65,7 @@ const Home = () => {
       case 'bronze':
         return 'bg-orange-600/15';
       default:
-        return 'bg-gray-900/50';
+        return 'bg-red-900/30';
     }
   };
 
@@ -126,7 +126,7 @@ const Home = () => {
   // Small-screen quick auth CTA
   const MobileAuthCta = () => (
       <div className="sm:hidden mb-4">
-      <div className="bg-gray-900 border border-red-900/60 rounded-xl p-4 flex items-center justify-between">
+      <div className="bg-red-900 border border-red-800/60 rounded-xl p-4 flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-300">Welcome to The X-Ring Classic</p>
           <p className="text-base font-medium text-gray-100">Sign in or create an account</p>
@@ -381,7 +381,7 @@ const Home = () => {
           </div>
         </div>
         {/* Classification Legend */}
-        <div className="mt-4 bg-gray-900 rounded-lg shadow-sm border border-red-900/60 p-4">
+        <div className="mt-4 bg-red-900 rounded-lg shadow-sm border border-red-800/60 p-4">
           <h3 className="text-sm font-semibold text-gray-100 mb-3">Classification Legend</h3>
           <div className="flex flex-wrap gap-2">
             {[
@@ -404,7 +404,7 @@ const Home = () => {
       </section>
 
       {/* Call to Action */}
-      <section className="text-center py-16 bg-gray-900 rounded-2xl border border-red-900/60">
+      <section className="text-center py-16 bg-red-900 rounded-2xl border border-red-800/60">
         <h2 className="text-3xl font-bold text-gray-100 mb-4">
           Ready to Compete?
         </h2>
