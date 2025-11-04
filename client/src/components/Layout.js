@@ -70,9 +70,9 @@ const Layout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200">
+    <div className="min-h-screen relative z-10">
       {/* Header */}
-      <header className="bg-white/95 backdrop-blur-sm shadow-md border-b border-gray-300">
+      <header className="bg-white/95 backdrop-blur-sm shadow-md border-b border-gray-300 relative z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-3">
             {/* Logo */}
@@ -124,7 +124,7 @@ const Layout = () => {
 
               {/* Admin dropdown menu */}
               {hasAdminAccess && (
-                <div className="relative" ref={adminDropdownRef}>
+                <div className="relative z-[100]" ref={adminDropdownRef}>
                   <button
                     onClick={() => setAdminDropdownOpen(!adminDropdownOpen)}
                     className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -140,7 +140,7 @@ const Layout = () => {
 
                   {/* Dropdown menu */}
                   {adminDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                    <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-[9999]">
                       <div className="py-1" role="menu">
                         {adminMenuItems
                           .filter(item => {

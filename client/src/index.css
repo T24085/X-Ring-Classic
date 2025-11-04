@@ -14,7 +14,14 @@
   }
 }
 
-/* Tiled background with Gun Guys II logo - background-image set via JS */
+/* Tiled background with Gun Guys II logo - image set via JavaScript */
+body {
+  background-size: 200px 200px;
+  background-repeat: repeat;
+  background-attachment: fixed;
+  background-position: 0 0;
+}
+
 body::before {
   content: '';
   position: fixed;
@@ -22,9 +29,7 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background-size: 200px 200px;
-  background-repeat: repeat;
-  opacity: 0.08;
+  background: linear-gradient(to bottom right, rgba(249, 250, 251, 0.92), rgba(243, 244, 246, 0.92), rgba(229, 231, 235, 0.92));
   z-index: 0;
   pointer-events: none;
 }

@@ -16,11 +16,11 @@ const queryClient = new QueryClient({
   },
 });
 
-// Set tiled background image
+// Set tiled background image dynamically
 const bgStyle = document.createElement('style');
 bgStyle.textContent = `
-  body::before {
-    background-image: url('${process.env.PUBLIC_URL || ''}/gunguys-logo.png');
+  body {
+    background-image: url('${process.env.PUBLIC_URL || '/X-Ring-Classic'}/gunguys-logo.png');
   }
 `;
 document.head.appendChild(bgStyle);
