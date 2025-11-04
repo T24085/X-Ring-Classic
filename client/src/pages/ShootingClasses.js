@@ -97,8 +97,8 @@ const ShootingClasses = () => {
             className="h-20 w-auto mx-auto object-contain"
           />
         </div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Shooting Classes</h1>
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+        <h1 className="text-4xl font-bold text-white mb-4 drop-shadow-lg">Shooting Classes</h1>
+        <p className="text-xl text-gray-100 max-w-3xl mx-auto drop-shadow-md">
           The X-Ring Classic features a comprehensive classification system designed to recognize 
           skill progression and create fair competition across all levels of marksmanship.
         </p>
@@ -115,7 +115,7 @@ const ShootingClasses = () => {
 
       {/* Classification Tiers */}
       <div className="space-y-6">
-        <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">
+        <h2 className="text-3xl font-bold text-white text-center mb-8 drop-shadow-lg">
           📊 Classification Tiers
         </h2>
         

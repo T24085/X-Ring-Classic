@@ -130,11 +130,11 @@ const Leaderboard = () => {
             className="h-20 w-auto mx-auto object-contain"
           />
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-4 flex items-center justify-center">
+        <h1 className="text-3xl font-bold text-white mb-4 flex items-center justify-center drop-shadow-lg">
           <span className="mr-3">{getCategoryIcon(selectedCategory)}</span>
           {getCategoryTitle(selectedCategory)}
         </h1>
-        <p className="text-gray-600">Top performers in .22LR rifle competitions</p>
+        <p className="text-gray-100 drop-shadow-md">Top performers in .22LR rifle competitions</p>
       </div>
 
       {/* Category and Time Filters */}

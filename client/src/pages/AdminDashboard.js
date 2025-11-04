@@ -82,8 +82,8 @@ const AdminDashboard = () => {
             className="h-20 w-auto mx-auto object-contain"
           />
         </div>
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600">Platform overview and management</p>
+        <h1 className="text-3xl font-bold text-white drop-shadow-lg">Admin Dashboard</h1>
+        <p className="text-gray-100 drop-shadow-md">Platform overview and management</p>
       </div>
       
       <div className="flex items-center justify-between">
