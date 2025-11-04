@@ -20,7 +20,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename={process.env.PUBLIC_URL || '/X-Ring-Classic'}>
         <AuthProvider>
           <App />
           <Toaster
