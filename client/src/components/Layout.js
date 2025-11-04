@@ -159,12 +159,12 @@ const Layout = () => {
                                 onClick={() => setAdminDropdownOpen(false)}
                                 className={`flex items-center space-x-2 px-4 py-2 text-sm transition-colors ${
                                   isActive
-                                    ? 'bg-gray-800/50 text-gray-200'
-                                    : 'text-gray-300 hover:bg-gray-800'
+                                    ? 'bg-blue-50 text-blue-700 font-medium'
+                                    : 'text-gray-900 hover:bg-gray-100'
                                 }`}
                                 role="menuitem"
                               >
-                                <item.icon className="w-4 h-4" />
+                                <item.icon className={`w-4 h-4 ${isActive ? 'text-blue-700' : 'text-gray-700'}`} />
                                 <span>{item.name}</span>
                               </Link>
                             );
