@@ -17,6 +17,10 @@ firebase-service-account.json
 *service-account*.json
 .firebase/
 
+# JWT secrets
+JWT_SECRET.*
+*.JWT
+
 # Build outputs
 client/build/
 client/dist/
