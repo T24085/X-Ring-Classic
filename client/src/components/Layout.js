@@ -180,7 +180,7 @@ const Layout = () => {
                 href="https://shop.thegunguys.net/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-1 px-4 py-2 rounded-md text-sm font-medium bg-gray-700 hover:bg-gray-600 text-white transition-colors shadow-md"
+                className="flex items-center space-x-1 px-4 py-2 rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors shadow-md"
               >
                 <TrophyIcon className="w-4 h-4" />
                 <span>Shop Now</span>
@@ -318,7 +318,7 @@ const Layout = () => {
                 href="https://shop.thegunguys.net/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+                className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <TrophyIcon className="w-4 h-4" />
