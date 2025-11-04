@@ -111,7 +111,7 @@ const Competitions = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 h-4 w-4" />
             <input
               type="text"
               placeholder="Search competitions..."
@@ -181,10 +181,10 @@ const Competitions = () => {
               <p className="text-gray-700 text-sm mb-4">{competition.description}</p>
               
               {/* Competition Details */}
-              <div className="space-y-2 text-sm text-gray-700">
+              <div className="space-y-2 text-sm">
                               <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4" />
-                <span>
+                <Calendar className="h-4 w-4 text-gray-600" />
+                <span className="text-gray-900">
                   {competition.schedule?.competitionDate 
                     ? new Date(competition.schedule.competitionDate).toLocaleDateString()
                     : competition.startDate 
@@ -194,14 +194,14 @@ const Competitions = () => {
                 </span>
               </div>
                 <div className="flex items-center space-x-2">
-                  <MapPin className="h-4 w-4" />
-                  <span>
+                  <MapPin className="h-4 w-4 text-gray-600" />
+                  <span className="text-gray-900">
                     {competition.range?.name || competition.location || 'TBD'}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Users className="h-4 w-4" />
-                  <span>
+                  <Users className="h-4 w-4 text-gray-600" />
+                  <span className="text-gray-900">
                     {(competition.participantCount || competition.registeredCount || 0)} / {competition.maxParticipants} participants
                   </span>
                 </div>
@@ -246,7 +246,7 @@ const Competitions = () => {
       {/* Empty State */}
       {(!competitions?.competitions || competitions.competitions.length === 0) && (
         <div className="text-center py-12">
-          <div className="text-gray-400 mb-4">
+          <div className="text-gray-600 mb-4">
             <Trophy className="h-16 w-16 mx-auto" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No competitions found</h3>

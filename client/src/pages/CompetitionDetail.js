@@ -208,7 +208,7 @@ const CompetitionDetail = () => {
             <Calendar className="h-5 w-5 text-gray-600" />
             <div>
               <p className="text-sm text-gray-700">Date</p>
-              <p className="font-medium">
+              <p className="font-medium text-gray-900">
                 {competition.schedule?.competitionDate 
                   ? new Date(competition.schedule.competitionDate).toLocaleDateString()
                   : competition.startDate 
@@ -222,21 +222,21 @@ const CompetitionDetail = () => {
             <MapPin className="h-5 w-5 text-gray-600" />
             <div>
               <p className="text-sm text-gray-700">Location</p>
-              <p className="font-medium">{competition.range?.name || competition.location || 'TBD'}</p>
+              <p className="font-medium text-gray-900">{competition.range?.name || competition.location || 'TBD'}</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
             <Users className="h-5 w-5 text-gray-600" />
             <div>
               <p className="text-sm text-gray-700">Participants</p>
-              <p className="font-medium">{(competition.participantCount || competition.registeredCount || 0)} / {competition.maxParticipants}</p>
+              <p className="font-medium text-gray-900">{(competition.participantCount || competition.registeredCount || 0)} / {competition.maxParticipants}</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
             <Trophy className="h-5 w-5 text-gray-600" />
             <div>
               <p className="text-sm text-gray-700">Prize Pool</p>
-              <p className="font-medium">${competition.prizePool || 0}</p>
+              <p className="font-medium text-gray-900">${competition.prizePool || 0}</p>
             </div>
           </div>
         </div>

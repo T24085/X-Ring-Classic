@@ -254,10 +254,10 @@ const Home = () => {
                 {competition.description}
               </p>
               
-              <div className="flex items-center space-x-4 text-sm text-gray-700 mb-4">
+              <div className="flex items-center space-x-4 text-sm mb-4">
                 <div className="flex items-center space-x-1">
-                  <CalendarIcon className="w-4 h-4" />
-                  <span>
+                  <CalendarIcon className="w-4 h-4 text-gray-600" />
+                  <span className="text-gray-900">
                     {competition.schedule?.competitionDate 
                       ? new Date(competition.schedule.competitionDate).toLocaleDateString()
                       : competition.startDate 
@@ -267,8 +267,8 @@ const Home = () => {
                   </span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <MapPinIcon className="w-4 h-4" />
-                  <span>{competition.range?.name || competition.location || 'TBD'}</span>
+                  <MapPinIcon className="w-4 h-4 text-gray-600" />
+                  <span className="text-gray-900">{competition.range?.name || competition.location || 'TBD'}</span>
                 </div>
               </div>
               
