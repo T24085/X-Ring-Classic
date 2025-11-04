@@ -65,7 +65,7 @@ const Home = () => {
       case 'bronze':
         return 'bg-orange-600/15';
       default:
-        return 'bg-red-900/30';
+        return 'bg-gray-50';
     }
   };
 
@@ -126,13 +126,13 @@ const Home = () => {
   // Small-screen quick auth CTA
   const MobileAuthCta = () => (
       <div className="sm:hidden mb-4">
-      <div className="bg-red-900 border border-red-800/60 rounded-xl p-4 flex items-center justify-between">
+      <div className="bg-white border-2 border-red-800 rounded-xl p-4 flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-300">Welcome to The X-Ring Classic</p>
-          <p className="text-base font-medium text-gray-100">Sign in or create an account</p>
+          <p className="text-sm text-gray-600">Welcome to The X-Ring Classic</p>
+          <p className="text-base font-medium text-gray-900">Sign in or create an account</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/login" className="text-sm text-gray-300 hover:text-white">Login</Link>
+          <Link to="/login" className="text-sm text-gray-700 hover:text-gray-900">Login</Link>
           <Link to="/register" className="px-3 py-1 text-sm rounded-md bg-gray-700 text-white hover:bg-gray-600">Register</Link>
         </div>
       </div>
@@ -193,29 +193,29 @@ const Home = () => {
           <div className="flex items-center justify-center w-12 h-12 bg-blue-600/40 rounded-lg mx-auto mb-4">
             <TrophyIcon className="w-6 h-6 text-blue-200" />
           </div>
-          <h3 className="text-2xl font-bold text-gray-100 mb-2">{fmt(landingStats?.activeCompetitions ?? 0)}</h3>
-          <p className="text-gray-300">Active Competitions</p>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">{fmt(landingStats?.activeCompetitions ?? 0)}</h3>
+          <p className="text-gray-700">Active Competitions</p>
         </div>
         <div className="card text-center">
           <div className="flex items-center justify-center w-12 h-12 bg-green-600/40 rounded-lg mx-auto mb-4">
             <UsersIcon className="w-6 h-6 text-green-200" />
           </div>
-          <h3 className="text-2xl font-bold text-gray-100 mb-2">{fmt(landingStats?.totalUsers ?? 0)}</h3>
-          <p className="text-gray-300">Registered Shooters</p>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">{fmt(landingStats?.totalUsers ?? 0)}</h3>
+          <p className="text-gray-700">Registered Shooters</p>
         </div>
         <div className="card text-center">
           <div className="flex items-center justify-center w-12 h-12 bg-purple-600/40 rounded-lg mx-auto mb-4">
             <ViewfinderCircleIcon className="w-6 h-6 text-purple-200" />
           </div>
-          <h3 className="text-2xl font-bold text-gray-100 mb-2">{fmt(landingStats?.totalScores ?? 0)}</h3>
-          <p className="text-gray-300">Scores Submitted</p>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">{fmt(landingStats?.totalScores ?? 0)}</h3>
+          <p className="text-gray-700">Scores Submitted</p>
         </div>
         <div className="card text-center">
           <div className="flex items-center justify-center w-12 h-12 bg-orange-600/40 rounded-lg mx-auto mb-4">
             <MapPinIcon className="w-6 h-6 text-orange-200" />
           </div>
-          <h3 className="text-2xl font-bold text-gray-100 mb-2">{fmt(landingStats?.rangesPartnered ?? 0)}</h3>
-          <p className="text-gray-300">Ranges Partnered</p>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">{fmt(landingStats?.rangesPartnered ?? 0)}</h3>
+          <p className="text-gray-700">Ranges Partnered</p>
         </div>
       </section>
 
@@ -241,20 +241,20 @@ const Home = () => {
                 }`}>
                   {competition.competitionType || competition.type}
                 </span>
-                <span className="text-sm text-gray-400">
+                <span className="text-sm text-gray-600">
                   {competition.maxDistance ? `${competition.maxDistance} yards` : competition.distance || 'TBD'}
                 </span>
               </div>
               
-              <h3 className="text-xl font-semibold text-gray-100 mb-2">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 {competition.title}
               </h3>
               
-              <p className="text-gray-300 mb-4 line-clamp-2">
+              <p className="text-gray-700 mb-4 line-clamp-2">
                 {competition.description}
               </p>
               
-              <div className="flex items-center space-x-4 text-sm text-gray-400 mb-4">
+              <div className="flex items-center space-x-4 text-sm text-gray-600 mb-4">
                 <div className="flex items-center space-x-1">
                   <CalendarIcon className="w-4 h-4" />
                   <span>
@@ -273,7 +273,7 @@ const Home = () => {
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-lg font-semibold text-gray-100">
+                <span className="text-lg font-semibold text-gray-900">
                   ${competition.prizePool}
                 </span>
                                   <Link
@@ -335,7 +335,7 @@ const Home = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="font-semibold text-gray-100">
+                        <h4 className="font-semibold text-gray-900">
                           {shooter.competitor.firstName} {shooter.competitor.lastName}
                         </h4>
                         {shooter.competitor.classification && (
@@ -348,12 +348,12 @@ const Home = () => {
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-400">@{shooter.competitor.username}</p>
+                      <p className="text-sm text-gray-600">@{shooter.competitor.username}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-semibold text-gray-100">{(shooter.bestScore ?? shooter.score)?.toFixed(1)}</div>
-                    <div className="text-sm text-gray-400">
+                    <div className="font-semibold text-gray-900">{(shooter.bestScore ?? shooter.score)?.toFixed(1)}</div>
+                    <div className="text-sm text-gray-600">
                       {(shooter.competitionsCount ?? 1)} {((shooter.competitionsCount ?? 1) === 1 ? 'competition' : 'competitions')}
                     </div>
                   </div>
@@ -381,8 +381,8 @@ const Home = () => {
           </div>
         </div>
         {/* Classification Legend */}
-        <div className="mt-4 bg-red-900 rounded-lg shadow-sm border border-red-800/60 p-4">
-          <h3 className="text-sm font-semibold text-gray-100 mb-3">Classification Legend</h3>
+        <div className="mt-4 bg-white rounded-lg shadow-sm border-2 border-red-800 p-4">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Classification Legend</h3>
           <div className="flex flex-wrap gap-2">
             {[
               'Grand Master',
@@ -404,11 +404,11 @@ const Home = () => {
       </section>
 
       {/* Call to Action */}
-      <section className="text-center py-16 bg-red-900 rounded-2xl border border-red-800/60">
-        <h2 className="text-3xl font-bold text-gray-100 mb-4">
+      <section className="text-center py-16 bg-white rounded-2xl border-2 border-red-800">
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">
           Ready to Compete?
         </h2>
-        <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+        <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
           Join thousands of precision shooters in the ultimate .22LR rifle championship platform.
           Register today and start your journey to the top of the leaderboard.
         </p>

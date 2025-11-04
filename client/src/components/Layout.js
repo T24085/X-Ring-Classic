@@ -72,7 +72,7 @@ const Layout = () => {
   return (
     <div className="min-h-screen relative z-10">
       {/* Header */}
-      <header className="bg-red-900/95 backdrop-blur-sm shadow-md border-b border-red-800 relative z-50">
+      <header className="bg-gray-900/95 backdrop-blur-sm shadow-md border-b-2 border-red-800 relative z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-3">
             {/* Logo */}
@@ -140,7 +140,7 @@ const Layout = () => {
 
                   {/* Dropdown menu */}
                   {adminDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-red-900 border border-red-800 z-[9999]">
+                    <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white border-2 border-red-800 z-[9999]">
                       <div className="py-1" role="menu">
                         {adminMenuItems
                           .filter(item => {
