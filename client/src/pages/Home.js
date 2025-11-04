@@ -15,17 +15,17 @@ const Home = () => {
   const getClassStyles = (classification) => {
     switch ((classification || '').toLowerCase()) {
       case 'grand master':
-        return 'bg-purple-600/40 text-purple-200 border border-purple-500/60';
+        return 'bg-purple-600 text-white border-2 border-purple-700';
       case 'master':
-        return 'bg-blue-600/40 text-blue-200 border border-blue-500/60';
+        return 'bg-blue-600 text-white border-2 border-blue-700';
       case 'diamond':
-        return 'bg-cyan-500/40 text-cyan-100 border border-cyan-400/60';
+        return 'bg-cyan-500 text-white border-2 border-cyan-600';
       case 'platinum':
-        return 'bg-slate-500/40 text-slate-200 border border-slate-400/60';
+        return 'bg-slate-500 text-white border-2 border-slate-600';
       case 'gold':
-        return 'bg-yellow-500/40 text-yellow-100 border border-yellow-400/60';
+        return 'bg-yellow-500 text-yellow-900 border-2 border-yellow-600';
       case 'bronze':
-        return 'bg-orange-600/40 text-orange-200 border border-orange-500/60';
+        return 'bg-orange-600 text-white border-2 border-orange-700';
       default:
         return 'bg-gray-800/50 text-gray-300 border border-gray-700';
     }
