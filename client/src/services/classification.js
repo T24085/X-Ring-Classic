@@ -14,17 +14,29 @@ function to250(avgPoints, perCardMaxPoints = 250) {
 }
 
 // Preferred: classify using average card score (normalized to 250) and avg X count
+// Score is primary; X-count enhances classification but doesn't downgrade
 export function classificationFromAvg(avgCardPoints250, avgXCount = 0) {
   if (avgCardPoints250 == null || isNaN(avgCardPoints250)) return 'Bronze';
   const score = avgCardPoints250;
   const xAvg = Number.isFinite(avgXCount) ? avgXCount : 0;
 
-  if (score >= 249.0 && xAvg >= 15) return 'Grand Master';
-  if (score >= 247.0 && xAvg >= 10) return 'Master';
-  if (score >= 245.0 && xAvg >= 8)  return 'Diamond';
-  if (score >= 242.0 && xAvg >= 6)  return 'Platinum';
-  if (score >= 238.0 && xAvg >= 4)  return 'Gold';
-  return 'Bronze';
+  // Score-based classification (primary)
+  let baseClassification = 'Bronze';
+  if (score >= 249.0) baseClassification = 'Grand Master';
+  else if (score >= 247.0) baseClassification = 'Master';
+  else if (score >= 245.0) baseClassification = 'Diamond';
+  else if (score >= 242.0) baseClassification = 'Platinum';
+  else if (score >= 238.0) baseClassification = 'Gold';
+  
+  // X-count can enhance classification but not downgrade
+  // If they meet the X requirement for a higher tier, they can be upgraded
+  if (baseClassification === 'Master' && score >= 249.0 && xAvg >= 15) return 'Grand Master';
+  if (baseClassification === 'Diamond' && score >= 247.0 && xAvg >= 10) return 'Master';
+  if (baseClassification === 'Platinum' && score >= 245.0 && xAvg >= 8) return 'Diamond';
+  if (baseClassification === 'Gold' && score >= 242.0 && xAvg >= 6) return 'Platinum';
+  if (baseClassification === 'Bronze' && score >= 238.0 && xAvg >= 4) return 'Gold';
+  
+  return baseClassification;
 }
 
 // Backward-compat: classification from percent [0..100]
