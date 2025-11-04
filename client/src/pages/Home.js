@@ -15,17 +15,17 @@ const Home = () => {
   const getClassStyles = (classification) => {
     switch ((classification || '').toLowerCase()) {
       case 'grand master':
-        return 'bg-gray-700/30 text-gray-200 border border-gray-600/50';
+        return 'bg-purple-600/40 text-purple-200 border border-purple-500/60';
       case 'master':
-        return 'bg-gray-700/30 text-gray-200 border border-gray-600/50';
+        return 'bg-blue-600/40 text-blue-200 border border-blue-500/60';
       case 'diamond':
-        return 'bg-gray-700/30 text-gray-200 border border-gray-600/50';
+        return 'bg-cyan-500/40 text-cyan-100 border border-cyan-400/60';
       case 'platinum':
-        return 'bg-gray-800/50 text-gray-300 border border-gray-700';
+        return 'bg-slate-500/40 text-slate-200 border border-slate-400/60';
       case 'gold':
-        return 'bg-gray-700/30 text-gray-200 border border-gray-600/50';
+        return 'bg-yellow-500/40 text-yellow-100 border border-yellow-400/60';
       case 'bronze':
-        return 'bg-gray-700/30 text-gray-200 border border-gray-600/50';
+        return 'bg-orange-600/40 text-orange-200 border border-orange-500/60';
       default:
         return 'bg-gray-800/50 text-gray-300 border border-gray-700';
     }
@@ -53,17 +53,17 @@ const Home = () => {
   const getClassRowBg = (classification) => {
     switch ((classification || '').toLowerCase()) {
       case 'grand master':
-        return 'bg-gray-800/30';
+        return 'bg-purple-600/15';
       case 'master':
-        return 'bg-gray-800/30';
+        return 'bg-blue-600/15';
       case 'diamond':
-        return 'bg-gray-800/30';
+        return 'bg-cyan-500/15';
       case 'platinum':
-        return 'bg-gray-800/30';
+        return 'bg-slate-500/15';
       case 'gold':
-        return 'bg-gray-800/30';
+        return 'bg-yellow-500/15';
       case 'bronze':
-        return 'bg-gray-800/30';
+        return 'bg-orange-600/15';
       default:
         return 'bg-gray-900/50';
     }
@@ -190,29 +190,29 @@ const Home = () => {
       {/* Stats Section */}
       <section className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="card text-center">
-          <div className="flex items-center justify-center w-12 h-12 bg-gray-700/30 rounded-lg mx-auto mb-4">
-            <TrophyIcon className="w-6 h-6 text-gray-300" />
+          <div className="flex items-center justify-center w-12 h-12 bg-blue-600/40 rounded-lg mx-auto mb-4">
+            <TrophyIcon className="w-6 h-6 text-blue-200" />
           </div>
           <h3 className="text-2xl font-bold text-gray-100 mb-2">{fmt(landingStats?.activeCompetitions ?? 0)}</h3>
           <p className="text-gray-300">Active Competitions</p>
         </div>
         <div className="card text-center">
-          <div className="flex items-center justify-center w-12 h-12 bg-gray-700/30 rounded-lg mx-auto mb-4">
-            <UsersIcon className="w-6 h-6 text-gray-300" />
+          <div className="flex items-center justify-center w-12 h-12 bg-green-600/40 rounded-lg mx-auto mb-4">
+            <UsersIcon className="w-6 h-6 text-green-200" />
           </div>
           <h3 className="text-2xl font-bold text-gray-100 mb-2">{fmt(landingStats?.totalUsers ?? 0)}</h3>
           <p className="text-gray-300">Registered Shooters</p>
         </div>
         <div className="card text-center">
-          <div className="flex items-center justify-center w-12 h-12 bg-gray-700/30 rounded-lg mx-auto mb-4">
-            <ViewfinderCircleIcon className="w-6 h-6 text-gray-300" />
+          <div className="flex items-center justify-center w-12 h-12 bg-purple-600/40 rounded-lg mx-auto mb-4">
+            <ViewfinderCircleIcon className="w-6 h-6 text-purple-200" />
           </div>
           <h3 className="text-2xl font-bold text-gray-100 mb-2">{fmt(landingStats?.totalScores ?? 0)}</h3>
           <p className="text-gray-300">Scores Submitted</p>
         </div>
         <div className="card text-center">
-          <div className="flex items-center justify-center w-12 h-12 bg-gray-700/30 rounded-lg mx-auto mb-4">
-            <MapPinIcon className="w-6 h-6 text-gray-300" />
+          <div className="flex items-center justify-center w-12 h-12 bg-orange-600/40 rounded-lg mx-auto mb-4">
+            <MapPinIcon className="w-6 h-6 text-orange-200" />
           </div>
           <h3 className="text-2xl font-bold text-gray-100 mb-2">{fmt(landingStats?.rangesPartnered ?? 0)}</h3>
           <p className="text-gray-300">Ranges Partnered</p>
@@ -326,10 +326,10 @@ const Home = () => {
                   >
                   <div className="flex items-center space-x-4">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      index === 0 ? 'bg-gray-600 text-gray-200' :
-                      index === 1 ? 'bg-gray-700 text-gray-200' :
-                      index === 2 ? 'bg-gray-600 text-gray-200' :
-                      'bg-gray-700 text-gray-200'
+                      index === 0 ? 'bg-yellow-500 text-yellow-900' :
+                      index === 1 ? 'bg-slate-400 text-slate-900' :
+                      index === 2 ? 'bg-orange-500 text-orange-900' :
+                      'bg-blue-500 text-blue-900'
                     }`}>
                       {index + 1}
                     </div>

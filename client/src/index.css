@@ -66,19 +66,19 @@ body > * {
   }
   
   .badge-success {
-    @apply bg-gray-700/30 text-gray-300 border border-gray-600/50;
+    @apply bg-green-600/40 text-green-100 border border-green-500/60;
   }
   
   .badge-warning {
-    @apply bg-gray-600/30 text-gray-300 border border-gray-500/50;
+    @apply bg-yellow-500/40 text-yellow-900 border border-yellow-400/60;
   }
   
   .badge-danger {
-    @apply bg-gray-700/30 text-gray-300 border border-gray-600/50;
+    @apply bg-red-600/40 text-red-100 border border-red-500/60;
   }
   
   .badge-info {
-    @apply bg-gray-700/30 text-gray-300 border border-gray-600/50;
+    @apply bg-blue-600/40 text-blue-100 border border-blue-500/60;
   }
 }
 
