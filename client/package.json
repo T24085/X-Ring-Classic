@@ -21,14 +21,21 @@
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
     "date-fns": "^2.30.0",
-    "react-query": "^3.39.3"
+    "react-query": "^3.39.3",
+    "firebase": "^10.13.0"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.1.1"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
+  "homepage": ".",
   "eslintConfig": {
     "extends": [
       "react-app",
