@@ -92,7 +92,7 @@ const ShootingClasses = () => {
       <div className="text-center">
         <div className="mb-6">
           <img 
-            src="/TheXringClassic.png" 
+            src={`${process.env.PUBLIC_URL}/TheXringClassic.png`} 
             alt="The X-Ring Classic" 
             className="h-20 w-auto mx-auto object-contain"
           />
@@ -107,7 +107,7 @@ const ShootingClasses = () => {
       {/* Classification Banner Image */}
       <div className="text-center">
         <img 
-          src="/GrandMasterClasses.png" 
+          src={`${process.env.PUBLIC_URL}/GrandMasterClasses.png`} 
           alt="Grand Master Classes Classification System" 
           className="w-full max-w-4xl mx-auto rounded-lg shadow-lg"
         />

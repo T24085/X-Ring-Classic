@@ -69,11 +69,13 @@ export const AuthProvider = ({ children }) => {
           try {
             const scoresSnap = await getDocs(query(collection(db, 'scores'), where('competitorId', '==', firebaseUser.uid)));
             const scores = scoresSnap.docs.map(d => d.data());
-            const cls = classificationFromScores(scores);
-            if (cls) {
-              profile = { ...profile, classification: cls };
+            const clsResult = classificationFromScores(scores);
+            if (clsResult) {
+              // Extract the classification label string, not the whole object
+              const classificationLabel = clsResult.classificationLabel || clsResult.tier || profile.classification;
+              profile = { ...profile, classification: classificationLabel };
               // Persist in background so other views stay consistent
-              setDoc(doc(db, 'users', firebaseUser.uid), { classification: cls }, { merge: true }).catch(()=>{});
+              setDoc(doc(db, 'users', firebaseUser.uid), { classification: classificationLabel }, { merge: true }).catch(()=>{});
             }
           } catch {}
           dispatch({

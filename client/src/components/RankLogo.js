@@ -15,19 +15,20 @@ const toKey = (classification) => {
 
 const buildCandidates = (classification) => {
   const key = toKey(classification);
+  const publicUrl = process.env.PUBLIC_URL || '';
   const list = [];
   const add = (name) => {
     if (!name) return;
     const bases = [
-      '/ranks',
-      '/images/ranks',
-      '/img/ranks',
-      '/assets/ranks'
+      `${publicUrl}/ranks`,
+      `${publicUrl}/images/ranks`,
+      `${publicUrl}/img/ranks`,
+      `${publicUrl}/assets/ranks`
     ];
     ["png","svg","jpg","jpeg","webp"].forEach(ext => {
       bases.forEach(base => list.push(`${base}/${name}.${ext}`));
-      // also try the public root (e.g., /GM.png)
-      list.push(`/${name}.${ext}`);
+      // also try the public root (e.g., /GM.png or /X-Ring-Classic/GM.png)
+      list.push(`${publicUrl}/${name}.${ext}`);
     });
   };
   // canonical

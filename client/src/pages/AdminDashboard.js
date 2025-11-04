@@ -77,7 +77,7 @@ const AdminDashboard = () => {
       <div className="text-center mb-8">
         <div className="mb-6">
           <img 
-            src="/TheXringClassic.png" 
+            src={`${process.env.PUBLIC_URL}/TheXringClassic.png`} 
             alt="The X-Ring Classic" 
             className="h-20 w-auto mx-auto object-contain"
           />
