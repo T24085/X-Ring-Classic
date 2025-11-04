@@ -11,29 +11,59 @@ import {
   XMarkIcon,
   StarIcon,
   CheckCircleIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  ChevronDownIcon,
+  ChartBarIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const Layout = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [adminDropdownOpen, setAdminDropdownOpen] = useState(false);
+  const adminDropdownRef = useRef(null);
 
-  const navigation = [
+  // Main navigation items (always visible)
+  const mainNavigation = [
     { name: 'Home', href: '/', icon: HomeIcon },
     { name: 'Competitions', href: '/competitions', icon: TrophyIcon },
     { name: 'Leaderboard', href: '/leaderboard', icon: TrophyIcon },
     { name: 'Rulebook', href: '/rulebook', icon: StarIcon },
     { name: 'Shooting Classes', href: '/shooting-classes', icon: StarIcon },
-    ...(isAuthenticated ? [{ name: 'Profile', href: '/profile', icon: UserIcon }] : []),
-    ...(user?.role === 'admin' ? [{ name: 'Admin', href: '/admin', icon: CogIcon }] : []),
-    ...(user?.role === 'admin' ? [{ name: 'Range Management', href: '/admin/range-management', icon: ShieldCheckIcon }] : []),
-    ...(user?.role === 'admin' ? [{ name: 'Manage Users', href: '/admin/users', icon: ShieldCheckIcon }] : []),
-    ...(user?.role === 'range_admin' || user?.role === 'admin' ? [{ name: 'Create Competition', href: '/admin/create-competition', icon: TrophyIcon }] : []),
-    ...(user?.role === 'range_admin' || user?.role === 'admin' ? [{ name: 'Enter Score', href: '/admin/enter-score', icon: CheckCircleIcon }] : []),
-    ...(user?.role === 'range_admin' || user?.role === 'admin' ? [{ name: 'Score Verification', href: '/admin/score-verification', icon: CheckCircleIcon }] : []),
   ];
+
+  // Admin dropdown menu items
+  const adminMenuItems = [
+    { name: 'Dashboard', href: '/admin', icon: ChartBarIcon },
+    { name: 'Range Management', href: '/admin/range-management', icon: ShieldCheckIcon },
+    { name: 'Manage Users', href: '/admin/users', icon: UserGroupIcon },
+    { name: 'Create Competition', href: '/admin/create-competition', icon: TrophyIcon },
+    { name: 'Enter Score', href: '/admin/enter-score', icon: CheckCircleIcon },
+    { name: 'Score Verification', href: '/admin/score-verification', icon: CheckCircleIcon },
+  ];
+
+  // Check if user has admin access
+  const hasAdminAccess = user?.role === 'admin' || user?.role === 'range_admin';
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (adminDropdownRef.current && !adminDropdownRef.current.contains(event.target)) {
+        setAdminDropdownOpen(false);
+      }
+    };
+
+    if (adminDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [adminDropdownOpen]);
 
   const handleLogout = () => {
     logout();
@@ -57,8 +87,9 @@ const Layout = () => {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex flex-wrap items-center gap-4">
-              {navigation.map((item) => {
+            <nav className="hidden md:flex items-center gap-2">
+              {/* Main navigation items */}
+              {mainNavigation.map((item) => {
                 const isActive = location.pathname === item.href;
                 return (
                   <Link
@@ -75,6 +106,74 @@ const Layout = () => {
                   </Link>
                 );
               })}
+
+              {/* Profile link (if authenticated) */}
+              {isAuthenticated && (
+                <Link
+                  to="/profile"
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname === '/profile'
+                      ? 'text-rifle-600 bg-rifle-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <UserIcon className="w-4 h-4" />
+                  <span>Profile</span>
+                </Link>
+              )}
+
+              {/* Admin dropdown menu */}
+              {hasAdminAccess && (
+                <div className="relative" ref={adminDropdownRef}>
+                  <button
+                    onClick={() => setAdminDropdownOpen(!adminDropdownOpen)}
+                    className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      isAdminRoute
+                        ? 'text-rifle-600 bg-rifle-50'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
+                    <CogIcon className="w-4 h-4" />
+                    <span>Admin</span>
+                    <ChevronDownIcon className={`w-4 h-4 transition-transform ${adminDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* Dropdown menu */}
+                  {adminDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                      <div className="py-1" role="menu">
+                        {adminMenuItems
+                          .filter(item => {
+                            // Filter based on role
+                            if (item.href === '/admin/range-management' || item.href === '/admin/users') {
+                              return user?.role === 'admin';
+                            }
+                            return true;
+                          })
+                          .map((item) => {
+                            const isActive = location.pathname === item.href;
+                            return (
+                              <Link
+                                key={item.name}
+                                to={item.href}
+                                onClick={() => setAdminDropdownOpen(false)}
+                                className={`flex items-center space-x-2 px-4 py-2 text-sm transition-colors ${
+                                  isActive
+                                    ? 'bg-rifle-50 text-rifle-600'
+                                    : 'text-gray-700 hover:bg-gray-50'
+                                }`}
+                                role="menuitem"
+                              >
+                                <item.icon className="w-4 h-4" />
+                                <span>{item.name}</span>
+                              </Link>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </nav>
 
             {/* User Menu */}
@@ -162,7 +261,8 @@ const Layout = () => {
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200">
             <nav className="px-4 py-2 space-y-1">
-              {navigation.map((item) => {
+              {/* Main navigation */}
+              {mainNavigation.map((item) => {
                 const isActive = location.pathname === item.href;
                 return (
                   <Link
@@ -180,6 +280,58 @@ const Layout = () => {
                   </Link>
                 );
               })}
+
+              {/* Profile */}
+              {isAuthenticated && (
+                <Link
+                  to="/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname === '/profile'
+                      ? 'text-rifle-600 bg-rifle-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <UserIcon className="w-4 h-4" />
+                  <span>Profile</span>
+                </Link>
+              )}
+
+              {/* Admin section */}
+              {hasAdminAccess && (
+                <div className="pt-2 border-t border-gray-200">
+                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Admin
+                  </div>
+                  {adminMenuItems
+                    .filter(item => {
+                      if (item.href === '/admin/range-management' || item.href === '/admin/users') {
+                        return user?.role === 'admin';
+                      }
+                      return true;
+                    })
+                    .map((item) => {
+                      const isActive = location.pathname === item.href;
+                      return (
+                        <Link
+                          key={item.name}
+                          to={item.href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ml-4 ${
+                            isActive
+                              ? 'text-rifle-600 bg-rifle-50'
+                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                          }`}
+                        >
+                          <item.icon className="w-4 h-4" />
+                          <span>{item.name}</span>
+                        </Link>
+                      );
+                    })}
+                </div>
+              )}
+
+              {/* Logout/Login */}
               {isAuthenticated ? (
                 <button
                   onClick={() => {
