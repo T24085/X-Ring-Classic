@@ -197,14 +197,19 @@ const Layout = () => {
                         src={`${process.env.PUBLIC_URL}/${(user.classification.includes('Grand') ? 'GM' : user.classification).replace(/\s+/g, '')}.png`}
                         alt={user.classification}
                         className="w-8 h-8 object-contain"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
                       />
-                    ) : (
-                      <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
-                        <span className="text-gray-200 font-medium text-sm">
-                          {user?.profile?.firstName?.[0] || user?.username?.[0] || 'U'}
-                        </span>
-                      </div>
-                    )}
+                    ) : null}
+                    <div 
+                      className={`w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center ${user?.classification && typeof user.classification === 'string' ? 'hidden' : ''}`}
+                    >
+                      <span className="text-gray-200 font-medium text-sm">
+                        {user?.profile?.firstName?.[0] || user?.username?.[0] || 'U'}
+                      </span>
+                    </div>
                     <span className="text-sm text-gray-200">
                       {user?.profile?.firstName || user?.username}
                     </span>
