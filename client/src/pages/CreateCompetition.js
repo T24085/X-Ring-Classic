@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
-import { competitionsAPI, adminAPI } from '../services/api';
+import { competitionsAPI, adminAPI } from '../services/api.firebase';
 import { useForm } from 'react-hook-form';
 import { 
   Save, 

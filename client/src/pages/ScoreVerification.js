@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { scoresAPI } from '../services/api';
+import { scoresAPI } from '../services/api.firebase';
 import { 
   CheckCircle, 
   XCircle, 

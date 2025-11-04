@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuery } from 'react-query';
-import { usersAPI } from '../services/api';
+import { usersAPI } from '../services/api.firebase';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import RankLogo from '../components/RankLogo';

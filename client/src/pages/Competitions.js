@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
-import { competitionsAPI } from '../services/api';
+import { competitionsAPI } from '../services/api.firebase';
 import { Search, Calendar, MapPin, Users, Trophy, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 

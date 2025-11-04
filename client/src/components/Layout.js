@@ -70,9 +70,9 @@ const Layout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-white/95 backdrop-blur-sm shadow-md border-b border-gray-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-3">
             {/* Logo */}
@@ -181,9 +181,9 @@ const Layout = () => {
               {isAuthenticated ? (
                 <>
                   <div className="flex items-center space-x-2">
-                    {user?.classification ? (
+                    {user?.classification && typeof user.classification === 'string' ? (
                       <img
-                        src={`${process.env.PUBLIC_URL}/${(user.classification.includes('Grand') ? 'GM' : user.classification).replace(' ', '')}.png`}
+                        src={`${process.env.PUBLIC_URL}/${(user.classification.includes('Grand') ? 'GM' : user.classification).replace(/\s+/g, '')}.png`}
                         alt={user.classification}
                         className="w-8 h-8 object-contain"
                       />
@@ -360,7 +360,7 @@ const Layout = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-auto">
+      <footer className="bg-gray-800/95 backdrop-blur-sm border-t border-gray-700 mt-auto text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             {/* Banner in Footer */}
@@ -371,7 +371,7 @@ const Layout = () => {
                 className="h-16 w-auto mx-auto object-contain"
               />
             </div>
-            <div className="text-gray-600 text-sm">
+            <div className="text-gray-300 text-sm">
               <p>&copy; 2024 The X-Ring Classic. All rights reserved.</p>
               <p className="mt-2">
                 Powered by precision and passion

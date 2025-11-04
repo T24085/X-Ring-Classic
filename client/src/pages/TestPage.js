@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from 'react-query';
-import { competitionsAPI, leaderboardsAPI } from '../services/api';
+import { competitionsAPI, leaderboardsAPI } from '../services/api.firebase';
 
 const TestPage = () => {
   const { data: competitions, isLoading: compLoading, error: compError } = useQuery(

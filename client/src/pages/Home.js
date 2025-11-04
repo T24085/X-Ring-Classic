@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
-import { competitionsAPI, leaderboardsAPI, publicAPI } from '../services/api';
+import { competitionsAPI, leaderboardsAPI, publicAPI } from '../services/api.firebase';
 import { 
   TrophyIcon, 
   CalendarIcon, 

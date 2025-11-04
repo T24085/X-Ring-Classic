@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { competitionsAPI, scoresAPI } from '../services/api';
+import { competitionsAPI, scoresAPI } from '../services/api.firebase';
 import { Target, Users, Save, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 

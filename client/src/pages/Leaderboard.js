@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from 'react-query';
-import { leaderboardsAPI } from '../services/api';
+import { leaderboardsAPI } from '../services/api.firebase';
 import { Trophy, Target, Users, Calendar } from 'lucide-react';
 import RankLogo from '../components/RankLogo';
 

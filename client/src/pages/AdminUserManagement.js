@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { adminAPI, usersAPI } from '../services/api';
+import { adminAPI, usersAPI } from '../services/api.firebase';
 import { Search, Trash2, Shield, UserCheck, UserX, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 

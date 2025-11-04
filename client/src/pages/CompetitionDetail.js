@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { competitionsAPI, scoresAPI } from '../services/api';
+import { competitionsAPI, scoresAPI } from '../services/api.firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   Calendar, 

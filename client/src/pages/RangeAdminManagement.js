@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { adminAPI } from '../services/api';
+import { adminAPI } from '../services/api.firebase';
 import { 
   Plus, 
   User, 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { competitionsAPI, scoresAPI, usersAPI } from '../services/api';
+import { competitionsAPI, scoresAPI, usersAPI } from '../services/api.firebase';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useForm } from 'react-hook-form';
