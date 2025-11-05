@@ -302,7 +302,7 @@ const Register = () => {
           </div>
 
           <div className="text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-300">
               Already have an account?{' '}
               <Link
                 to="/login"

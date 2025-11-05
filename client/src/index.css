@@ -82,39 +82,53 @@ body > * {
   }
 }
 
-/* Form input styling for better readability */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="tel"],
-input[type="number"],
-input[type="date"],
-input[type="time"],
-input[type="url"],
-textarea,
-select {
+/* Form input styling for better readability - applies to white card inputs only */
+input[type="text"]:not(.input-field),
+input[type="email"]:not(.input-field),
+input[type="password"]:not(.input-field),
+input[type="tel"]:not(.input-field),
+input[type="number"]:not(.input-field),
+input[type="date"]:not(.input-field),
+input[type="time"]:not(.input-field),
+input[type="url"]:not(.input-field),
+textarea:not(.input-field),
+select:not(.input-field) {
   color: #1f2937 !important; /* text-gray-800 - dark text */
 }
 
-input::placeholder,
-textarea::placeholder {
+input:not(.input-field)::placeholder,
+textarea:not(.input-field)::placeholder {
   color: #6b7280 !important; /* text-gray-500 - medium gray for placeholders */
   opacity: 1;
 }
 
-input:focus,
-textarea:focus {
+input:not(.input-field):focus,
+textarea:not(.input-field):focus {
   color: #111827 !important; /* text-gray-900 - even darker when focused */
 }
 
-/* Ensure select dropdowns have readable text */
-select {
+/* Ensure select dropdowns have readable text (white card selects only) */
+select:not(.input-field) {
   color: #1f2937 !important;
 }
 
-select option {
+select:not(.input-field) option {
   color: #1f2937 !important;
   background-color: white !important;
+}
+
+/* Ensure .input-field maintains light text on dark background */
+.input-field {
+  color: #f3f4f6 !important; /* text-gray-100 - light text for dark inputs */
+}
+
+.input-field::placeholder {
+  color: #9ca3af !important; /* text-gray-400 - lighter placeholder for dark inputs */
+  opacity: 1;
+}
+
+.input-field:focus {
+  color: #ffffff !important; /* white text when focused on dark inputs */
 }
 
 /* Custom scrollbar */
