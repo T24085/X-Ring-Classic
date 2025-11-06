@@ -440,15 +440,143 @@ export const usersAPI = {
 
 // Admin API (stubs/minimal)
 export const adminAPI = {
-  getDashboard: async () => {
+  getDashboard: async (params = {}) => {
+    const period = params.period || '30-days';
+    
+    // Calculate date range based on period
+    const now = new Date();
+    let startDate = new Date();
+    switch (period) {
+      case '7-days':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case '30-days':
+        startDate.setDate(now.getDate() - 30);
+        break;
+      case '90-days':
+        startDate.setDate(now.getDate() - 90);
+        break;
+      case '1-year':
+        startDate.setFullYear(now.getFullYear() - 1);
+        break;
+      default:
+        startDate.setDate(now.getDate() - 30);
+    }
+
+    // Get all users and competitions
+    const [usersSnap, competitionsSnap, scoresSnap] = await Promise.all([
+      getDocs(collection(db, 'users')),
+      getDocs(collection(db, 'competitions')),
+      getDocs(collection(db, 'scores')),
+    ]);
+
+    const users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const competitions = competitionsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const scores = scoresSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Helper to convert Firestore timestamp to Date
+    const toDate = (ts) => {
+      if (!ts) return null;
+      if (ts.toMillis) return new Date(ts.toMillis());
+      if (ts.toDate) return ts.toDate();
+      if (typeof ts === 'string') return new Date(ts);
+      if (typeof ts === 'number') return new Date(ts);
+      return null;
+    };
+
+    // Calculate user growth data points
+    const userGrowthData = [];
+    const daysDiff = Math.ceil((now - startDate) / (1000 * 60 * 60 * 24));
+    const interval = daysDiff <= 7 ? 1 : daysDiff <= 30 ? 7 : daysDiff <= 90 ? 14 : 30; // days per data point
+    
+    for (let i = 0; i <= daysDiff; i += interval) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const usersBeforeDate = users.filter(u => {
+        const created = toDate(u.createdAt);
+        return created && created <= date;
+      }).length;
+      
+      userGrowthData.push({
+        date: dateStr,
+        users: usersBeforeDate,
+        label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      });
+    }
+
+    // Calculate competition activity data points
+    const competitionActivityData = [];
+    const statusCounts = {
+      published: 0,
+      draft: 0,
+      completed: 0,
+      cancelled: 0,
+    };
+
+    competitions.forEach(comp => {
+      const status = comp.status || 'draft';
+      if (statusCounts.hasOwnProperty(status)) {
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+      }
+    });
+
+    // Competition activity over time (by creation date)
+    for (let i = 0; i <= daysDiff; i += interval) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const compsBeforeDate = competitions.filter(c => {
+        const created = toDate(c.createdAt);
+        return created && created <= date;
+      }).length;
+      
+      const activeComps = competitions.filter(c => {
+        const created = toDate(c.createdAt);
+        const status = c.status || 'draft';
+        return created && created <= date && status === 'published';
+      }).length;
+      
+      competitionActivityData.push({
+        date: dateStr,
+        total: compsBeforeDate,
+        active: activeComps,
+        label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      });
+    }
+
+    // Calculate stats
+    const newUsersThisPeriod = users.filter(u => {
+      const created = toDate(u.createdAt);
+      return created && created >= startDate;
+    }).length;
+
+    const pendingScores = scores.filter(s => (s.verificationStatus || 'approved') === 'pending').length;
+
     const totals = await publicAPI.getStats();
+    
     return {
       stats: {
         totalUsers: totals.totalUsers || 0,
+        newUsersThisPeriod,
         activeCompetitions: totals.activeCompetitions || 0,
-        totalCompetitions: totals.activeCompetitions || 0,
+        totalCompetitions: competitions.length || 0,
+        publishedCompetitions: statusCounts.published || 0,
+        draftCompetitions: statusCounts.draft || 0,
+        completedCompetitions: statusCounts.completed || 0,
+        cancelledCompetitions: statusCounts.cancelled || 0,
         totalScores: totals.totalScores || 0,
+        pendingScores,
+        totalRevenue: 0, // TODO: Calculate from competition prize pools
+        revenueThisPeriod: 0,
+        activeSessions: 0,
+        failedLogins: 0,
+        suspiciousActivity: 0,
       },
+      userGrowthData,
+      competitionActivityData,
       recentActivity: [],
     };
   },

@@ -17,6 +17,18 @@ import {
   Settings,
   Plus
 } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -70,6 +82,8 @@ const AdminDashboard = () => {
 
   const stats = dashboardData?.stats || {};
   const recentActivity = dashboardData?.recentActivity || [];
+  const userGrowthData = dashboardData?.userGrowthData || [];
+  const competitionActivityData = dashboardData?.competitionActivityData || [];
 
   return (
     <div className="space-y-6">
@@ -196,12 +210,50 @@ const AdminDashboard = () => {
             <h3 className="text-lg font-semibold text-gray-900">User Growth</h3>
             <BarChart3 className="h-5 w-5 text-gray-400" />
           </div>
-          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-            <div className="text-center">
-              <Activity className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-600">Chart visualization coming soon</p>
+          {userGrowthData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={userGrowthData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  dataKey="label" 
+                  stroke="#6b7280"
+                  fontSize={12}
+                  tick={{ fill: '#6b7280' }}
+                />
+                <YAxis 
+                  stroke="#6b7280"
+                  fontSize={12}
+                  tick={{ fill: '#6b7280' }}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#fff', 
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    color: '#111827'
+                  }}
+                  labelStyle={{ color: '#6b7280', fontWeight: 'bold' }}
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="users" 
+                  name="Total Users"
+                  stroke="#3b82f6" 
+                  strokeWidth={2}
+                  dot={{ fill: '#3b82f6', r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+              <div className="text-center">
+                <Activity className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-600">No data available</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Competition Activity */}
@@ -210,24 +262,65 @@ const AdminDashboard = () => {
             <h3 className="text-lg font-semibold text-gray-900">Competition Activity</h3>
             <Target className="h-5 w-5 text-gray-400" />
           </div>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Published</span>
-              <span className="text-sm font-medium">{stats.publishedCompetitions || 0}</span>
+          {competitionActivityData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={competitionActivityData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  dataKey="label" 
+                  stroke="#6b7280"
+                  fontSize={12}
+                  tick={{ fill: '#6b7280' }}
+                />
+                <YAxis 
+                  stroke="#6b7280"
+                  fontSize={12}
+                  tick={{ fill: '#6b7280' }}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#fff', 
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    color: '#111827'
+                  }}
+                  labelStyle={{ color: '#6b7280', fontWeight: 'bold' }}
+                />
+                <Legend />
+                <Bar 
+                  dataKey="total" 
+                  name="Total Competitions"
+                  fill="#10b981" 
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar 
+                  dataKey="active" 
+                  name="Active Competitions"
+                  fill="#3b82f6" 
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Published</span>
+                <span className="text-sm font-medium text-gray-900">{stats.publishedCompetitions || 0}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Draft</span>
+                <span className="text-sm font-medium text-gray-900">{stats.draftCompetitions || 0}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Completed</span>
+                <span className="text-sm font-medium text-gray-900">{stats.completedCompetitions || 0}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Cancelled</span>
+                <span className="text-sm font-medium text-gray-900">{stats.cancelledCompetitions || 0}</span>
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Draft</span>
-              <span className="text-sm font-medium">{stats.draftCompetitions || 0}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Completed</span>
-              <span className="text-sm font-medium">{stats.completedCompetitions || 0}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Cancelled</span>
-              <span className="text-sm font-medium">{stats.cancelledCompetitions || 0}</span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
