@@ -314,25 +314,25 @@ const CompetitionDetail = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Type:</span>
-                      <span className="font-medium capitalize">{competition.competitionType || competition.type || 'TBD'}</span>
+                      <span className="font-medium text-gray-900 capitalize">{competition.competitionType || competition.type || 'TBD'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Duration:</span>
-                      <span className="font-medium">{competition.duration || 'TBD'}</span>
+                      <span className="font-medium text-gray-900">{competition.duration || 'TBD'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Distance:</span>
-                      <span className="font-medium">
+                      <span className="font-medium text-gray-900">
                         {competition.maxDistance ? `${competition.maxDistance} yards` : competition.distance || 'TBD'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Format:</span>
-                      <span className="font-medium capitalize">{competition.format || 'TBD'}</span>
+                      <span className="font-medium text-gray-900 capitalize">{competition.format || 'TBD'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Shots per Target:</span>
-                      <span className="font-medium">{competition.shotsPerTarget || 'TBD'}</span>
+                      <span className="font-medium text-gray-900">{competition.shotsPerTarget || 'TBD'}</span>
                     </div>
                   </div>
                 </div>
@@ -341,7 +341,7 @@ const CompetitionDetail = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Registration Deadline:</span>
-                      <span className="font-medium">
+                      <span className="font-medium text-gray-900">
                         {competition.schedule?.registrationDeadline 
                           ? new Date(competition.schedule.registrationDeadline).toLocaleDateString()
                           : competition.registrationDeadline 
@@ -352,13 +352,13 @@ const CompetitionDetail = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Start Time:</span>
-                      <span className="font-medium">
+                      <span className="font-medium text-gray-900">
                         {competition.schedule?.startTime || competition.startTime || 'TBD'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">End Time:</span>
-                      <span className="font-medium">
+                      <span className="font-medium text-gray-900">
                         {competition.schedule?.endTime || competition.endTime || 'TBD'}
                       </span>
                     </div>

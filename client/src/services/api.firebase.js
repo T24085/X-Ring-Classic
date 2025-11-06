@@ -82,6 +82,38 @@ export const competitionsAPI = {
     const q = filters.length ? query(col, ...filters) : col;
     const snap = await getDocs(q);
     let competitions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    
+    // Hydrate participant counts from registrations for all competitions
+    // Firestore 'in' operator has a limit of 10, so we batch queries
+    const compIds = competitions.map(c => c.id);
+    const regCounts = new Map();
+    
+    if (compIds.length > 0) {
+      // Batch queries in groups of 10
+      const batchSize = 10;
+      for (let i = 0; i < compIds.length; i += batchSize) {
+        const batch = compIds.slice(i, i + batchSize);
+        const batchRegsSnap = await getDocs(query(collection(db, 'registrations'), where('competitionId', 'in', batch)));
+        const batchRegs = batchRegsSnap.docs.map(d => d.data());
+        batchRegs.forEach(reg => {
+          if (reg.competitionId) {
+            const count = regCounts.get(reg.competitionId) || 0;
+            regCounts.set(reg.competitionId, count + 1);
+          }
+        });
+      }
+      
+      // Update competitions with actual participant counts
+      competitions = competitions.map(comp => {
+        const actualCount = regCounts.get(comp.id) || 0;
+        return {
+          ...comp,
+          participantCount: actualCount,
+          registeredCount: actualCount,
+        };
+      });
+    }
+    
     // Basic client-side date filtering and sorting
     const { dateFrom, dateTo } = params || {};
     if (dateFrom || dateTo) {
