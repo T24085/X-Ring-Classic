@@ -32,8 +32,8 @@ import {
   PencilIcon,
   CheckIcon,
   XMarkIcon,
-  TrendingUpIcon,
-  TrendingDownIcon
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon
 } from '@heroicons/react/24/outline';
 
 const Profile = () => {
@@ -574,7 +574,7 @@ const Profile = () => {
                 <p className="text-xs text-gray-500 mt-1">Lower is better</p>
               </div>
               <div className={`p-3 rounded-lg ${consistency < 5 ? 'bg-green-100' : consistency < 10 ? 'bg-yellow-100' : 'bg-red-100'}`}>
-                {consistency < 5 ? <TrendingUpIcon className="w-6 h-6 text-green-600" /> : <TrendingDownIcon className="w-6 h-6 text-red-600" />}
+                {consistency < 5 ? <ArrowTrendingUpIcon className="w-6 h-6 text-green-600" /> : <ArrowTrendingDownIcon className="w-6 h-6 text-red-600" />}
               </div>
             </div>
           </div>
@@ -588,9 +588,9 @@ const Profile = () => {
                 <p className="text-xs text-gray-500 mt-1">vs early performance</p>
               </div>
               {improvement >= 0 ? (
-                <TrendingUpIcon className="w-6 h-6 text-green-600" />
+                <ArrowTrendingUpIcon className="w-6 h-6 text-green-600" />
               ) : (
-                <TrendingDownIcon className="w-6 h-6 text-red-600" />
+                <ArrowTrendingDownIcon className="w-6 h-6 text-red-600" />
               )}
             </div>
           </div>
@@ -906,7 +906,8 @@ const Profile = () => {
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   const renderHistory = () => (
     <div className="space-y-6">
