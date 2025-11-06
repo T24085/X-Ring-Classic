@@ -319,7 +319,7 @@ const Profile = () => {
     </div>
   );
 
-  // Helpers
+  // Helpers - moved before useMemo to be in scope
   const toNumberScore = (s) => {
     if (!s) return 0;
     const v = typeof s.score === 'number' ? s.score : typeof s.totalScore === 'number' ? s.totalScore : parseInt(s.score, 10);
