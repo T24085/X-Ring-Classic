@@ -1,10 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuery } from 'react-query';
 import { usersAPI } from '../services/api.firebase';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import RankLogo from '../components/RankLogo';
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
 import { 
   UserIcon, 
   TrophyIcon, 
@@ -16,7 +31,9 @@ import {
   CogIcon,
   PencilIcon,
   CheckIcon,
-  XMarkIcon
+  XMarkIcon,
+  TrendingUpIcon,
+  TrendingDownIcon
 } from '@heroicons/react/24/outline';
 
 const Profile = () => {
@@ -326,100 +343,492 @@ const Profile = () => {
   };
 
   const scores = userStats?.scores || [];
-  // Sort scores newest-first and show full history
-  const sortedScores = [...scores].sort((a, b) => {
-    const ad = new Date(a?.createdAt || a?.submittedAt || a?.date || 0).getTime();
-    const bd = new Date(b?.createdAt || b?.submittedAt || b?.date || 0).getTime();
-    return bd - ad;
-  });
-  const totalScores = scores.length;
-  const totalCompetitions = new Set(scores.map(s => s.competitionId)).size;
-  const avgScore = totalScores > 0 ? Math.round(scores.reduce((sum, s) => sum + toNumberScore(s), 0) / totalScores) : 0;
-  const bestIndoor = scores
-    .filter(s => s?.competition?.competitionType === 'indoor')
-    .reduce((max, s) => Math.max(max, toNumberScore(s)), 0);
-  const bestOutdoor = scores
-    .filter(s => s?.competition?.competitionType === 'outdoor')
-    .reduce((max, s) => Math.max(max, toNumberScore(s)), 0);
+  
+  // Comprehensive statistics calculations using useMemo
+  const stats = useMemo(() => {
+    if (scores.length === 0) {
+      return {
+        totalScores: 0,
+        totalCompetitions: 0,
+        avgScore: 0,
+        bestIndoor: 0,
+        bestOutdoor: 0,
+        sortedScores: [],
+        scoreTrend: [],
+        scoreDistribution: [],
+        xCountData: [],
+        indoorVsOutdoor: [],
+        consistency: 0,
+        improvement: 0,
+        currentStreak: 0,
+        bestStreak: 0,
+        totalXCount: 0,
+        avgXCount: 0,
+        minScore: 0,
+        maxScore: 0,
+        medianScore: 0,
+      };
+    }
 
-  const renderStatistics = () => (
-    <div className="space-y-6">
-      {/* Performance Overview */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Overview</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-rifle-600">{avgScore || user?.averageScore || 0}</div>
-            <div className="text-sm text-gray-600">Average Score</div>
+    // Sort scores by date (oldest first for trend)
+    const sortedByDate = [...scores].sort((a, b) => {
+      const ad = new Date(a?.createdAt || a?.submittedAt || a?.date || 0).getTime();
+      const bd = new Date(b?.createdAt || b?.submittedAt || b?.date || 0).getTime();
+      return ad - bd;
+    });
+
+    // Sort scores newest-first for display
+    const sortedScores = [...sortedByDate].reverse();
+
+    const totalScores = scores.length;
+    const totalCompetitions = new Set(scores.map(s => s.competitionId)).size;
+    const scoreValues = scores.map(s => toNumberScore(s));
+    const avgScore = scoreValues.reduce((sum, s) => sum + s, 0) / totalScores;
+    const minScore = Math.min(...scoreValues);
+    const maxScore = Math.max(...scoreValues);
+    const sortedValues = [...scoreValues].sort((a, b) => a - b);
+    const medianScore = sortedValues.length % 2 === 0
+      ? (sortedValues[sortedValues.length / 2 - 1] + sortedValues[sortedValues.length / 2]) / 2
+      : sortedValues[Math.floor(sortedValues.length / 2)];
+
+    const bestIndoor = scores
+      .filter(s => s?.competition?.competitionType === 'indoor')
+      .reduce((max, s) => Math.max(max, toNumberScore(s)), 0);
+    const bestOutdoor = scores
+      .filter(s => s?.competition?.competitionType === 'outdoor')
+      .reduce((max, s) => Math.max(max, toNumberScore(s)), 0);
+
+    // Calculate X-count statistics
+    const getXCount = (s) => {
+      if (s?.tiebreakerData?.xCount !== undefined) return s.tiebreakerData.xCount;
+      if (Array.isArray(s?.shots)) return s.shots.filter(sh => sh?.isX === true).length;
+      return 0;
+    };
+    const xCounts = scores.map(getXCount);
+    const totalXCount = xCounts.reduce((sum, x) => sum + x, 0);
+    const avgXCount = totalXCount / totalScores;
+
+    // Score trend data (last 20 scores or all if less)
+    const recentScores = sortedByDate.slice(-20);
+    const scoreTrend = recentScores.map((s, idx) => {
+      const date = new Date(s?.createdAt || s?.submittedAt || s?.date || Date.now());
+      return {
+        index: idx + 1,
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        score: toNumberScore(s),
+        xCount: getXCount(s),
+      };
+    });
+
+    // Score distribution (bins: 0-200, 201-210, 211-220, 221-230, 231-240, 241-250)
+    const bins = [
+      { range: '0-200', min: 0, max: 200, count: 0 },
+      { range: '201-210', min: 201, max: 210, count: 0 },
+      { range: '211-220', min: 211, max: 220, count: 0 },
+      { range: '221-230', min: 221, max: 230, count: 0 },
+      { range: '231-240', min: 231, max: 240, count: 0 },
+      { range: '241-250', min: 241, max: 250, count: 0 },
+    ];
+    scoreValues.forEach(score => {
+      const bin = bins.find(b => score >= b.min && score <= b.max);
+      if (bin) bin.count++;
+    });
+    const scoreDistribution = bins;
+
+    // X-count distribution
+    const xBins = [
+      { range: '0-2', min: 0, max: 2, count: 0 },
+      { range: '3-5', min: 3, max: 5, count: 0 },
+      { range: '6-8', min: 6, max: 8, count: 0 },
+      { range: '9-12', min: 9, max: 12, count: 0 },
+      { range: '13-20', min: 13, max: 20, count: 0 },
+      { range: '21+', min: 21, max: 100, count: 0 },
+    ];
+    xCounts.forEach(x => {
+      const bin = xBins.find(b => x >= b.min && x <= b.max);
+      if (bin) bin.count++;
+    });
+    const xCountData = xBins;
+
+    // Indoor vs Outdoor comparison
+    const indoor = scores.filter(s => s?.competition?.competitionType === 'indoor');
+    const outdoor = scores.filter(s => s?.competition?.competitionType === 'outdoor');
+    const indoorVsOutdoor = [
+      { name: 'Indoor', count: indoor.length, avgScore: indoor.length > 0 ? indoor.reduce((sum, s) => sum + toNumberScore(s), 0) / indoor.length : 0 },
+      { name: 'Outdoor', count: outdoor.length, avgScore: outdoor.length > 0 ? outdoor.reduce((sum, s) => sum + toNumberScore(s), 0) / outdoor.length : 0 },
+    ];
+
+    // Consistency (standard deviation)
+    const variance = scoreValues.reduce((sum, s) => sum + Math.pow(s - avgScore, 2), 0) / totalScores;
+    const consistency = Math.sqrt(variance);
+
+    // Improvement trend (comparing first half vs second half)
+    const midpoint = Math.floor(totalScores / 2);
+    const firstHalf = sortedByDate.slice(0, midpoint);
+    const secondHalf = sortedByDate.slice(midpoint);
+    const firstHalfAvg = firstHalf.length > 0 ? firstHalf.reduce((sum, s) => sum + toNumberScore(s), 0) / firstHalf.length : 0;
+    const secondHalfAvg = secondHalf.length > 0 ? secondHalf.reduce((sum, s) => sum + toNumberScore(s), 0) / secondHalf.length : 0;
+    const improvement = secondHalfAvg - firstHalfAvg;
+
+    // Streak calculations
+    let currentStreak = 0;
+    let bestStreak = 0;
+    let tempStreak = 0;
+    for (let i = sortedByDate.length - 1; i >= 0; i--) {
+      const score = toNumberScore(sortedByDate[i]);
+      if (score >= avgScore) {
+        tempStreak++;
+        if (i === sortedByDate.length - 1) currentStreak = tempStreak;
+        bestStreak = Math.max(bestStreak, tempStreak);
+      } else {
+        tempStreak = 0;
+      }
+    }
+
+    return {
+      totalScores,
+      totalCompetitions,
+      avgScore: Math.round(avgScore * 10) / 10,
+      bestIndoor,
+      bestOutdoor,
+      sortedScores,
+      scoreTrend,
+      scoreDistribution,
+      xCountData,
+      indoorVsOutdoor,
+      consistency: Math.round(consistency * 10) / 10,
+      improvement: Math.round(improvement * 10) / 10,
+      currentStreak,
+      bestStreak,
+      totalXCount,
+      avgXCount: Math.round(avgXCount * 10) / 10,
+      minScore,
+      maxScore,
+      medianScore: Math.round(medianScore * 10) / 10,
+    };
+  }, [scores]);
+
+  const { totalScores, totalCompetitions, avgScore, bestIndoor, bestOutdoor, sortedScores, scoreTrend, scoreDistribution, xCountData, indoorVsOutdoor, consistency, improvement, currentStreak, bestStreak, totalXCount, avgXCount, minScore, maxScore, medianScore } = stats;
+
+  const renderStatistics = () => {
+    const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+    if (statsLoading) {
+      return (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rifle-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading statistics...</p>
+        </div>
+      );
+    }
+
+    if (totalScores === 0) {
+      return (
+        <div className="text-center py-12">
+          <TrophyIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600 text-lg">No scores submitted yet</p>
+          <p className="text-sm text-gray-500 mt-2">Participate in competitions to see your statistics</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Enhanced Performance Overview */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Overview</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 text-center border border-blue-200">
+              <div className="text-2xl font-bold text-blue-700">{avgScore}</div>
+              <div className="text-xs text-blue-600 mt-1">Average Score</div>
+            </div>
+            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 text-center border border-green-200">
+              <div className="text-2xl font-bold text-green-700">{maxScore}</div>
+              <div className="text-xs text-green-600 mt-1">Best Score</div>
+            </div>
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 text-center border border-purple-200">
+              <div className="text-2xl font-bold text-purple-700">{medianScore}</div>
+              <div className="text-xs text-purple-600 mt-1">Median Score</div>
+            </div>
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 text-center border border-orange-200">
+              <div className="text-2xl font-bold text-orange-700">{bestIndoor || '—'}</div>
+              <div className="text-xs text-orange-600 mt-1">Best Indoor</div>
+            </div>
+            <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-lg p-4 text-center border border-cyan-200">
+              <div className="text-2xl font-bold text-cyan-700">{bestOutdoor || '—'}</div>
+              <div className="text-xs text-cyan-600 mt-1">Best Outdoor</div>
+            </div>
+            <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-4 text-center border border-yellow-200">
+              <div className="text-2xl font-bold text-yellow-700">{avgXCount.toFixed(1)}</div>
+              <div className="text-xs text-yellow-600 mt-1">Avg X Count</div>
+            </div>
           </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-rifle-600">{bestIndoor || user?.personalBestIndoor || 0}</div>
-            <div className="text-sm text-gray-600">Personal Best (Indoor)</div>
+        </div>
+
+        {/* Advanced Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Consistency</p>
+                <p className="text-2xl font-bold text-gray-900">{consistency.toFixed(1)}</p>
+                <p className="text-xs text-gray-500 mt-1">Lower is better</p>
+              </div>
+              <div className={`p-3 rounded-lg ${consistency < 5 ? 'bg-green-100' : consistency < 10 ? 'bg-yellow-100' : 'bg-red-100'}`}>
+                {consistency < 5 ? <TrendingUpIcon className="w-6 h-6 text-green-600" /> : <TrendingDownIcon className="w-6 h-6 text-red-600" />}
+              </div>
+            </div>
           </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-rifle-600">{bestOutdoor || user?.personalBestOutdoor || 0}</div>
-            <div className="text-sm text-gray-600">Personal Best (Outdoor)</div>
+          <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Improvement</p>
+                <p className={`text-2xl font-bold ${improvement >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {improvement >= 0 ? '+' : ''}{improvement.toFixed(1)}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">vs early performance</p>
+              </div>
+              {improvement >= 0 ? (
+                <TrendingUpIcon className="w-6 h-6 text-green-600" />
+              ) : (
+                <TrendingDownIcon className="w-6 h-6 text-red-600" />
+              )}
+            </div>
           </div>
-          <div className="text-center">
-            {user?.classification && user.classification !== 'Unclassified' ? (
-              <>
-                <div className="flex items-center justify-center mb-2">
-                  <RankLogo classification={user.classification} size={32} />
-                </div>
-                <div className="text-lg font-bold text-rifle-600">{user.classification}</div>
-                <div className="text-sm text-gray-600">Current Rank</div>
-              </>
+          <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Current Streak</p>
+                <p className="text-2xl font-bold text-blue-600">{currentStreak}</p>
+                <p className="text-xs text-gray-500 mt-1">Above average</p>
+              </div>
+              <TrophyIcon className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Best Streak</p>
+                <p className="text-2xl font-bold text-purple-600">{bestStreak}</p>
+                <p className="text-xs text-gray-500 mt-1">All time</p>
+              </div>
+              <TrophyIcon className="w-6 h-6 text-purple-600" />
+            </div>
+          </div>
+        </div>
+
+        {/* Score Trend Chart */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Score Trend (Last 20 Competitions)</h3>
+          {scoreTrend.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={scoreTrend}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#6b7280"
+                  fontSize={11}
+                  tick={{ fill: '#6b7280' }}
+                />
+                <YAxis 
+                  domain={[Math.max(0, minScore - 10), Math.min(250, maxScore + 10)]}
+                  stroke="#6b7280"
+                  fontSize={11}
+                  tick={{ fill: '#6b7280' }}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#fff', 
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    color: '#111827'
+                  }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="score" 
+                  name="Score"
+                  stroke="#3b82f6" 
+                  strokeWidth={2}
+                  dot={{ fill: '#3b82f6', r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="text-center py-8 text-gray-500">No trend data available</div>
+          )}
+        </div>
+
+        {/* Charts Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Score Distribution */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Score Distribution</h3>
+            {scoreDistribution.some(b => b.count > 0) ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={scoreDistribution}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="range" 
+                    stroke="#6b7280"
+                    fontSize={11}
+                    tick={{ fill: '#6b7280' }}
+                  />
+                  <YAxis 
+                    stroke="#6b7280"
+                    fontSize={11}
+                    tick={{ fill: '#6b7280' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#fff', 
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      color: '#111827'
+                    }}
+                  />
+                  <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             ) : (
-              <>
-                <div className="text-2xl font-bold text-gray-400">—</div>
-                <div className="text-sm text-gray-600">No Rank Yet</div>
-              </>
+              <div className="text-center py-8 text-gray-500">No distribution data</div>
+            )}
+          </div>
+
+          {/* X-Count Analysis */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">X-Count Distribution</h3>
+            {xCountData.some(b => b.count > 0) ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={xCountData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="range" 
+                    stroke="#6b7280"
+                    fontSize={11}
+                    tick={{ fill: '#6b7280' }}
+                  />
+                  <YAxis 
+                    stroke="#6b7280"
+                    fontSize={11}
+                    tick={{ fill: '#6b7280' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#fff', 
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      color: '#111827'
+                    }}
+                  />
+                  <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center py-8 text-gray-500">No X-count data</div>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Recent Performance */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Performance</h3>
-        {statsLoading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rifle-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Loading statistics...</p>
-          </div>
-        ) : scores.length > 0 ? (
-          <div className="space-y-4">
-            {sortedScores.map((score) => (
-              <div key={score.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <div className="font-semibold text-gray-900">{score.competition?.title}</div>
-                  <div className="text-sm text-gray-600">{formatDate(score.createdAt)}</div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => setShotsModalScore(score)}
-                    className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-100"
+        {/* Indoor vs Outdoor Comparison */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Indoor vs Outdoor</h3>
+            {indoorVsOutdoor.some(d => d.count > 0) ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={indoorVsOutdoor}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="count"
                   >
-                    View Shots
-                  </button>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-rifle-600">{toNumberScore(score)}</div>
-                    <div className="text-sm text-gray-600">
-                      {(score.verificationStatus || 'approved') === 'approved' ? 'Approved' : (score.verificationStatus || 'Pending')}
+                    {indoorVsOutdoor.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center py-8 text-gray-500">No comparison data</div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Indoor vs Outdoor Average</h3>
+            {indoorVsOutdoor.some(d => d.count > 0) ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={indoorVsOutdoor}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="name" 
+                    stroke="#6b7280"
+                    fontSize={11}
+                    tick={{ fill: '#6b7280' }}
+                  />
+                  <YAxis 
+                    domain={[0, 250]}
+                    stroke="#6b7280"
+                    fontSize={11}
+                    tick={{ fill: '#6b7280' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#fff', 
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      color: '#111827'
+                    }}
+                    formatter={(value) => value.toFixed(1)}
+                  />
+                  <Bar dataKey="avgScore" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center py-8 text-gray-500">No comparison data</div>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Performance */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Performance</h3>
+          <div className="space-y-4">
+            {sortedScores.slice(0, 10).map((score) => {
+              const scoreValue = toNumberScore(score);
+              const getXCount = (s) => {
+                if (s?.tiebreakerData?.xCount !== undefined) return s.tiebreakerData.xCount;
+                if (Array.isArray(s?.shots)) return s.shots.filter(sh => sh?.isX === true).length;
+                return 0;
+              };
+              return (
+                <div key={score.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex-1">
+                    <div className="font-semibold text-gray-900">{score.competition?.title || 'Unknown Competition'}</div>
+                    <div className="text-sm text-gray-600">{formatDate(score.createdAt || score.submittedAt)}</div>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-rifle-600">{scoreValue}</div>
+                      <div className="text-xs text-gray-500">X: {getXCount(score)}</div>
                     </div>
+                    <button
+                      onClick={() => setShotsModalScore(score)}
+                      className="px-3 py-1 text-sm bg-white border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+                    >
+                      View Shots
+                    </button>
                   </div>
                 </div>
-              </div>
-            ))}
-        </div>
-      ) : (
-          <div className="text-center py-8">
-            <TrophyIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No scores submitted yet</p>
-            <p className="text-sm text-gray-500">Participate in competitions to see your statistics</p>
+              );
+            })}
           </div>
-        )}
-      </div>
+        </div>
 
       {/* Shots Modal */}
       {shotsModalScore && (
