@@ -21,6 +21,7 @@ import AdminSettings from './pages/AdminSettings';
 import AdminEnterScore from './pages/AdminEnterScore';
 import AdminUserManagement from './pages/AdminUserManagement';
 import XRingClassicRulebook from './pages/XRingClassicRulebook';
+import Ranges from './pages/Ranges';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -46,6 +47,7 @@ function App() {
           <Route path="leaderboard" element={<Leaderboard />} />
           <Route path="leaderboard/:type" element={<Leaderboard />} />
           <Route path="shooting-classes" element={<ShootingClasses />} />
+          <Route path="ranges" element={<Ranges />} />
           <Route path="rulebook" element={<XRingClassicRulebook />} />
           
           {/* Protected routes */}

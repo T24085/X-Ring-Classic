@@ -30,6 +30,7 @@ const Layout = () => {
     { name: 'Home', href: '/', icon: HomeIcon },
     { name: 'Competitions', href: '/competitions', icon: TrophyIcon },
     { name: 'Leaderboard', href: '/leaderboard', icon: TrophyIcon },
+    { name: 'Ranges', href: '/ranges', icon: ShieldCheckIcon },
     { name: 'Rulebook', href: '/rulebook', icon: StarIcon },
     { name: 'Shooting Classes', href: '/shooting-classes', icon: StarIcon },
   ];

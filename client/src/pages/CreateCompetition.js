@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
-import { competitionsAPI, adminAPI } from '../services/api.firebase';
+import { competitionsAPI, adminAPI, rangesAPI } from '../services/api.firebase';
 import { useForm } from 'react-hook-form';
 import { 
   Save, 
@@ -77,6 +77,7 @@ const CreateCompetition = () => {
           registrationDeadline: new Date(data.registrationDeadline).toISOString()
         },
         range: {
+          id: data.rangeId,
           name: data.rangeName,
           address: data.rangeLocation,
           location: data.rangeLocation
@@ -108,13 +109,21 @@ const CreateCompetition = () => {
     }
   }, [user, setValue]);
 
-  // Fetch range admins for admin users to choose a range
+  // Fetch ranges for selection
+  const { data: rangesData } = useQuery(
+    ['ranges-for-competition'],
+    () => rangesAPI.getAll({ active: true }),
+    { staleTime: 5 * 60 * 1000 }
+  );
+  const ranges = rangesData?.data?.ranges || [];
+
+  // Fetch range admins for admin users (legacy support)
   const { data: rangeAdminsData } = useQuery(
     ['range-admins-for-competition'],
     () => adminAPI.getRangeAdmins(),
     { enabled: user?.role === 'admin', staleTime: 5 * 60 * 1000 }
   );
-  const rangeAdmins = rangeAdminsData?.rangeAdmins || [];
+  const rangeAdmins = rangeAdminsData?.data?.rangeAdmins || [];
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -200,39 +209,41 @@ const CreateCompetition = () => {
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {user?.role === 'admin' && (
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select Range</label>
-                <select
-                  onChange={(e) => {
-                    const selected = rangeAdmins.find(r => r.id === e.target.value);
-                    if (selected) {
-                      setValue('rangeName', selected.rangeName || '');
-                      setValue('rangeLocation', selected.rangeLocation || '');
-                    }
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Choose a range admin… (optional)</option>
-                  {rangeAdmins.map((ra) => (
-                    <option key={ra.id} value={ra.id}>
-                      {ra.rangeName} — {ra.rangeLocation} (by {ra.firstName} {ra.lastName})
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-500 mt-1">Selecting a range fills the fields below. You can still edit them.</p>
-              </div>
-            )}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Range *</label>
+              <select
+                {...register('rangeId', { required: 'Please select a range' })}
+                onChange={(e) => {
+                  const selected = ranges.find(r => r.id === e.target.value);
+                  if (selected) {
+                    setValue('rangeId', selected.id);
+                    setValue('rangeName', selected.name);
+                    setValue('rangeLocation', `${selected.address}, ${selected.city}, ${selected.state} ${selected.zipCode}`);
+                  }
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Choose a range...</option>
+                {ranges.map((range) => (
+                  <option key={range.id} value={range.id}>
+                    {range.name} — {range.city}, {range.state}
+                  </option>
+                ))}
+              </select>
+              {errors.rangeId && (<p className="text-red-600 text-sm mt-1">{errors.rangeId.message}</p>)}
+              <p className="text-xs text-gray-500 mt-1">
+                Select a range from the list. If you don't see your range, ask an admin to add it.
+              </p>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Range Name *</label>
               <input
                 type="text"
                 {...register('rangeName', { required: 'Range name is required' })}
-                defaultValue={user?.role === 'range_admin' ? (user?.rangeName || '') : ''}
-                disabled={user?.role === 'range_admin' && !!user?.rangeName}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="e.g., Central Range Complex"
+                readOnly
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Auto-filled from selected range"
               />
               {errors.rangeName && (<p className="text-red-600 text-sm mt-1">{errors.rangeName.message}</p>)}
             </div>
@@ -242,10 +253,9 @@ const CreateCompetition = () => {
               <input
                 type="text"
                 {...register('rangeLocation', { required: 'Range location is required' })}
-                defaultValue={user?.role === 'range_admin' ? (user?.rangeLocation || '') : ''}
-                disabled={user?.role === 'range_admin' && !!user?.rangeLocation}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="City, State or full address"
+                readOnly
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Auto-filled from selected range"
               />
               {errors.rangeLocation && (<p className="text-red-600 text-sm mt-1">{errors.rangeLocation.message}</p>)}
             </div>

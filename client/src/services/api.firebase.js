@@ -662,8 +662,86 @@ export const adminAPI = {
     return { data: { message: 'Score marked deleted' } };
   },
   getReports: async () => ({ data: {} }),
-  getRangeAdmins: async () => ({ data: [] }),
-  createRangeAdmin: async () => ({ data: { message: 'Not implemented in static build' } }),
+  getRangeAdmins: async () => {
+    const snap = await getDocs(query(collection(db, 'users'), where('role', '==', 'range_admin')));
+    const rangeAdmins = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return { data: { rangeAdmins } };
+  },
+  createRangeAdmin: async (data) => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) throw new Error('Not authenticated');
+    
+    // Use Firebase Auth to create user
+    const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+    const newUserId = userCredential.user.uid;
+    
+    // Create user document
+    await setDoc(doc(db, 'users', newUserId), {
+      username: data.username,
+      email: data.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      role: 'range_admin',
+      rangeName: data.rangeName,
+      rangeLocation: data.rangeLocation,
+      phone: data.phone || '',
+      isActive: true,
+      isVerified: true,
+      createdAt: serverTimestamp(),
+    });
+    
+    return { data: { message: 'Range admin created', userId: newUserId } };
+  },
+};
+
+// Ranges API - Manage physical shooting ranges
+export const rangesAPI = {
+  getAll: async (params = {}) => {
+    const col = collection(db, 'ranges');
+    const snap = await getDocs(col);
+    let ranges = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    
+    // Filter by active status if specified
+    if (params?.active !== undefined) {
+      ranges = ranges.filter(r => (r.isActive !== false) === params.active);
+    }
+    
+    // Sort by name
+    ranges.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    
+    return { data: { ranges } };
+  },
+  getById: async (id) => {
+    const snap = await getDoc(doc(db, 'ranges', id));
+    if (!snap.exists()) throw new Error('Range not found');
+    return { data: { range: { id: snap.id, ...snap.data() } } };
+  },
+  create: async (rangeData) => {
+    const ref = await addDoc(collection(db, 'ranges'), {
+      ...rangeData,
+      isActive: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    const snap = await getDoc(ref);
+    return { data: { range: { id: ref.id, ...snap.data() } } };
+  },
+  update: async (id, rangeData) => {
+    await updateDoc(doc(db, 'ranges', id), {
+      ...rangeData,
+      updatedAt: serverTimestamp(),
+    });
+    const snap = await getDoc(doc(db, 'ranges', id));
+    return { data: { range: { id, ...snap.data() } } };
+  },
+  delete: async (id) => {
+    // Soft delete by marking as inactive
+    await updateDoc(doc(db, 'ranges', id), {
+      isActive: false,
+      deletedAt: serverTimestamp(),
+    });
+    return { data: { message: 'Range deactivated' } };
+  },
 };
 
 // Shooting Classes API - placeholder
