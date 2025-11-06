@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuery } from 'react-query';
 import { usersAPI } from '../services/api.firebase';
@@ -37,13 +38,36 @@ import {
 } from '@heroicons/react/24/outline';
 
 const Profile = () => {
-  const { user, updateUser } = useAuth();
+  const { userId } = useParams();
+  const navigate = useNavigate();
+  const { user: currentUser, updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [shotsModalScore, setShotsModalScore] = useState(null);
 
-  // Debug logging
-  console.log('Profile component - user:', user);
+  // Determine which user's profile to display
+  const isAdminViewingOther = userId && currentUser?.role === 'admin' && userId !== currentUser?.id;
+  const targetUserId = userId || currentUser?.id;
+  const isViewingOwnProfile = !userId || userId === currentUser?.id;
+
+  // Fetch the target user's profile if viewing another user
+  const { data: targetUserData, isLoading: profileLoading } = useQuery(
+    ['user-profile', targetUserId],
+    async () => {
+      if (!targetUserId) return null;
+      if (isViewingOwnProfile) return { user: currentUser };
+      // Admin viewing another user - fetch their profile
+      const resp = await usersAPI.getProfile(targetUserId);
+      return resp.data;
+    },
+    { 
+      enabled: !!targetUserId,
+      staleTime: 5 * 60 * 1000,
+    }
+  );
+
+  // Use the target user's data or fall back to current user
+  const user = targetUserData?.user || currentUser;
 
   // Function to get classification badge styles
   const getClassStyles = (classification) => {
@@ -74,29 +98,41 @@ const Profile = () => {
 
   // Fetch user's competition history and statistics
   const { data: userStats, isLoading: statsLoading } = useQuery(
-    ['user-stats', user?.id],
+    ['user-stats', targetUserId],
     async () => {
-      if (!user?.id) return null;
-      const resp = await usersAPI.getScores(user.id);
+      if (!targetUserId) return null;
+      const resp = await usersAPI.getScores(targetUserId);
       return resp.data;
     },
-    { enabled: !!user?.id }
+    { enabled: !!targetUserId && !!user }
   );
 
   const { data: userCompetitions, isLoading: competitionsLoading } = useQuery(
-    ['user-competitions', user?.id],
+    ['user-competitions', targetUserId],
     async () => {
-      if (!user?.id) return null;
-      const resp = await usersAPI.getCompetitions(user.id);
+      if (!targetUserId) return null;
+      const resp = await usersAPI.getCompetitions(targetUserId);
       return resp.data;
     },
-    { enabled: !!user?.id }
+    { enabled: !!targetUserId && !!user }
   );
 
   const handleProfileUpdate = async (data) => {
     try {
-      const result = await usersAPI.updateProfile(data);
-      updateUser(result.user);
+      // Only allow updating own profile or admin updating another user
+      if (!isViewingOwnProfile && currentUser?.role !== 'admin') {
+        toast.error('You can only edit your own profile');
+        return;
+      }
+      
+      if (isViewingOwnProfile) {
+        const result = await usersAPI.updateProfile(data);
+        updateUser(result.user);
+      } else {
+        // Admin updating another user's profile - would need an admin API endpoint
+        toast.error('Admin profile updates not yet implemented');
+        return;
+      }
       setIsEditing(false);
       toast.success('Profile updated successfully!');
     } catch (error) {
@@ -112,8 +148,8 @@ const Profile = () => {
   const tabs = [
     { id: 'overview', name: 'Overview', icon: UserIcon },
     { id: 'statistics', name: 'Statistics', icon: ChartBarIcon },
-    { id: 'history', name: 'Competition History', icon: CalendarIcon },
-    { id: 'settings', name: 'Settings', icon: CogIcon }
+            { id: 'history', name: 'Competition History', icon: CalendarIcon },
+            ...(isViewingOwnProfile ? [{ id: 'settings', name: 'Settings', icon: CogIcon }] : [])
   ];
 
   const renderOverview = () => (
@@ -157,13 +193,25 @@ const Profile = () => {
               </div>
             </div>
           </div>
-          <button
-            onClick={() => setIsEditing(true)}
-            className="btn-secondary flex items-center space-x-2"
-          >
-            <PencilIcon className="w-4 h-4" />
-            <span>Edit Profile</span>
-          </button>
+          <div className="flex items-center space-x-2">
+            {isAdminViewingOther && (
+              <button
+                onClick={() => navigate('/admin/users')}
+                className="btn-secondary flex items-center space-x-2"
+              >
+                <span>← Back to Users</span>
+              </button>
+            )}
+            {isViewingOwnProfile && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="btn-secondary flex items-center space-x-2"
+              >
+                <PencilIcon className="w-4 h-4" />
+                <span>Edit Profile</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Personal Information */}
@@ -241,7 +289,7 @@ const Profile = () => {
       </div>
 
       {/* Edit Profile Form */}
-      {isEditing && (
+      {isEditing && isViewingOwnProfile && (
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Edit Profile</h3>
           <form onSubmit={handleSubmit(handleProfileUpdate)} className="space-y-4">
@@ -1018,7 +1066,7 @@ const Profile = () => {
   };
 
   // Show loading state if user is not loaded yet
-  if (!user) {
+  if (profileLoading || !user) {
     return (
       <div className="space-y-6">
         <div className="text-center">
@@ -1038,8 +1086,12 @@ const Profile = () => {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">Profile</h1>
-        <p className="text-white drop-shadow-md">Manage your account and view your statistics</p>
+        <h1 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">
+          {isAdminViewingOther ? 'User Profile' : 'Profile'}
+        </h1>
+        <p className="text-white drop-shadow-md">
+          {isAdminViewingOther ? `Viewing ${user?.firstName || user?.username}'s profile` : 'Manage your account and view your statistics'}
+        </p>
       </div>
 
       {/* Tab Navigation */}

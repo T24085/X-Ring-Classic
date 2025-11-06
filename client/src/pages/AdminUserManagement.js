@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { adminAPI, usersAPI } from '../services/api.firebase';
-import { Search, Trash2, Shield, UserCheck, UserX, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Trash2, Shield, UserCheck, UserX, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const RoleBadge = ({ role }) => {
@@ -10,6 +11,7 @@ const RoleBadge = ({ role }) => {
 };
 
 const AdminUserManagement = () => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [roleFilter, setRoleFilter] = useState('');
@@ -93,6 +95,12 @@ const AdminUserManagement = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => navigate(`/profile/${u.id}`)} 
+                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-1"
+                  >
+                    <Eye className="w-4 h-4" /> View Profile
+                  </button>
                   {!u.isVerified && (
                     <button onClick={()=>verifyMutation.mutate(u.id)} className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"><UserCheck className="w-4 h-4" /> Verify</button>
                   )}

@@ -54,6 +54,11 @@ function App() {
               <Profile />
             </ProtectedRoute>
           } />
+          <Route path="profile/:userId" element={
+            <ProtectedRoute requiredRole="admin">
+              <Profile />
+            </ProtectedRoute>
+          } />
           
           <Route path="submit-score/:competitionId" element={
             <ProtectedRoute>
