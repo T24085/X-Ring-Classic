@@ -587,6 +587,23 @@ export const adminAPI = {
 
     const pendingScores = scores.filter(s => (s.verificationStatus || 'approved') === 'pending').length;
 
+    // Calculate revenue: $10 per approved score
+    // Each score represents a paid entry fee, confirmed when approved
+    const ENTRY_FEE_PER_SCORE = 10;
+    
+    // Total revenue: all approved scores
+    // Only count scores that are explicitly approved (verificationStatus === 'approved')
+    const approvedScores = scores.filter(s => s.verificationStatus === 'approved');
+    const totalRevenue = approvedScores.length * ENTRY_FEE_PER_SCORE;
+    
+    // Revenue this period: approved scores verified (or submitted) within the period
+    const revenueThisPeriodScores = approvedScores.filter(s => {
+      // Prefer verifiedAt date (when it was approved), fallback to createdAt (when submitted)
+      const dateToCheck = toDate(s.verifiedAt) || toDate(s.createdAt) || toDate(s.submittedAt);
+      return dateToCheck && dateToCheck >= startDate;
+    });
+    const revenueThisPeriod = revenueThisPeriodScores.length * ENTRY_FEE_PER_SCORE;
+
     const totals = await publicAPI.getStats();
     
     return {
@@ -601,8 +618,8 @@ export const adminAPI = {
         cancelledCompetitions: statusCounts.cancelled || 0,
         totalScores: totals.totalScores || 0,
         pendingScores,
-        totalRevenue: 0, // TODO: Calculate from competition prize pools
-        revenueThisPeriod: 0,
+        totalRevenue,
+        revenueThisPeriod,
         activeSessions: 0,
         failedLogins: 0,
         suspiciousActivity: 0,
