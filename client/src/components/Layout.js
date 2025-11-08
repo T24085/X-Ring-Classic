@@ -35,7 +35,7 @@ const Layout = () => {
     { name: 'Shooting Classes', href: '/shooting-classes', icon: StarIcon },
   ];
 
-  // Admin dropdown menu items
+  // Admin dropdown menu items (for full admins)
   const adminMenuItems = [
     { name: 'Dashboard', href: '/admin', icon: ChartBarIcon },
     { name: 'Range Management', href: '/admin/range-management', icon: ShieldCheckIcon },
@@ -45,8 +45,16 @@ const Layout = () => {
     { name: 'Score Verification', href: '/admin/score-verification', icon: CheckCircleIcon },
   ];
 
+  // Range Admin menu items
+  const rangeAdminMenuItems = [
+    { name: 'Range Dashboard', href: '/range-admin', icon: ChartBarIcon },
+    { name: 'Create Competition', href: '/admin/create-competition', icon: TrophyIcon },
+    { name: 'Score Verification', href: '/admin/score-verification', icon: CheckCircleIcon },
+  ];
+
   // Check if user has admin access
   const hasAdminAccess = user?.role === 'admin' || user?.role === 'range_admin';
+  const isRangeAdmin = user?.role === 'range_admin' && user?.role !== 'admin';
   const isAdminRoute = location.pathname.startsWith('/admin');
 
   // Close dropdown when clicking outside
@@ -143,7 +151,7 @@ const Layout = () => {
                   {adminDropdownOpen && (
                     <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white border-2 border-red-800 z-[9999]">
                       <div className="py-1" role="menu">
-                        {adminMenuItems
+                        {(isRangeAdmin ? rangeAdminMenuItems : adminMenuItems)
                           .filter(item => {
                             // Filter based on role
                             if (item.href === '/admin/range-management' || item.href === '/admin/users') {
@@ -330,9 +338,9 @@ const Layout = () => {
               {hasAdminAccess && (
                 <div className="pt-2 border-t border-red-900">
                   <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    Admin
+                    {isRangeAdmin ? 'Range Admin' : 'Admin'}
                   </div>
-                  {adminMenuItems
+                  {(isRangeAdmin ? rangeAdminMenuItems : adminMenuItems)
                     .filter(item => {
                       if (item.href === '/admin/range-management' || item.href === '/admin/users') {
                         return user?.role === 'admin';

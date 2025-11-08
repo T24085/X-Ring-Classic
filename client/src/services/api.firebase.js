@@ -129,6 +129,30 @@ export const competitionsAPI = {
     const sliced = lim > 0 ? competitions.slice(0, lim) : competitions;
     return { data: { competitions: sliced, pagination: { current: 1, total: 1, hasNext: false, hasPrev: false } } };
   },
+  getByRange: async (rangeId) => {
+    if (!rangeId) return { data: { competitions: [] } };
+    
+    const col = collection(db, 'competitions');
+    const snap = await getDocs(col);
+    let competitions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    
+    // Filter by range - check range.id, range.name, or rangeId field
+    competitions = competitions.filter(c => 
+      c.range?.id === rangeId || 
+      c.range?.name === rangeId || 
+      c.rangeId === rangeId ||
+      (typeof rangeId === 'string' && c.range?.name?.toLowerCase() === rangeId.toLowerCase())
+    );
+    
+    // Sort by date
+    competitions.sort((a, b) => {
+      const dateA = new Date(a?.schedule?.competitionDate || a?.competitionDate || 0);
+      const dateB = new Date(b?.schedule?.competitionDate || b?.competitionDate || 0);
+      return dateB - dateA; // Newest first
+    });
+    
+    return { data: { competitions } };
+  },
   getById: async (id) => {
     const compSnap = await getDoc(doc(db, 'competitions', id));
     if (!compSnap.exists()) throw new Error('Competition not found');
@@ -688,19 +712,34 @@ export const adminAPI = {
     const uid = auth.currentUser?.uid;
     if (!uid) throw new Error('Not authenticated');
     
+    // Find the range by name or ID to get the rangeId
+    let rangeId = data.rangeId;
+    if (!rangeId && data.rangeName) {
+      const rangesSnap = await getDocs(collection(db, 'ranges'));
+      const ranges = rangesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const matchingRange = ranges.find(r => 
+        r.name === data.rangeName || 
+        r.name?.toLowerCase() === data.rangeName?.toLowerCase()
+      );
+      if (matchingRange) {
+        rangeId = matchingRange.id;
+      }
+    }
+    
     // Use Firebase Auth to create user
     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
     const newUserId = userCredential.user.uid;
     
-    // Create user document
+    // Create user document with rangeId
     await setDoc(doc(db, 'users', newUserId), {
       username: data.username,
       email: data.email,
       firstName: data.firstName,
       lastName: data.lastName,
       role: 'range_admin',
-      rangeName: data.rangeName,
-      rangeLocation: data.rangeLocation,
+      rangeId: rangeId || null,
+      rangeName: data.rangeName || '',
+      rangeLocation: data.rangeLocation || '',
       phone: data.phone || '',
       isActive: true,
       isVerified: true,
@@ -733,6 +772,36 @@ export const rangesAPI = {
     if (!snap.exists()) throw new Error('Range not found');
     return { data: { range: { id: snap.id, ...snap.data() } } };
   },
+  getByAdminId: async (adminId) => {
+    // Find range by admin user ID - check if admin has rangeId or rangeName
+    const userSnap = await getDoc(doc(db, 'users', adminId));
+    if (!userSnap.exists()) throw new Error('User not found');
+    const userData = userSnap.data();
+    
+    // Try to find range by rangeId first, then by rangeName
+    if (userData.rangeId) {
+      const rangeSnap = await getDoc(doc(db, 'ranges', userData.rangeId));
+      if (rangeSnap.exists()) {
+        return { data: { range: { id: rangeSnap.id, ...rangeSnap.data() } } };
+      }
+    }
+    
+    // If no rangeId, try to find by name
+    if (userData.rangeName) {
+      const rangesSnap = await getDocs(collection(db, 'ranges'));
+      const ranges = rangesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const matchingRange = ranges.find(r => 
+        r.name === userData.rangeName || 
+        r.name?.toLowerCase() === userData.rangeName?.toLowerCase()
+      );
+      if (matchingRange) {
+        return { data: { range: matchingRange } };
+      }
+    }
+    
+    // Return null if no range found
+    return { data: { range: null } };
+  },
   create: async (rangeData) => {
     const ref = await addDoc(collection(db, 'ranges'), {
       ...rangeData,
@@ -758,6 +827,132 @@ export const rangesAPI = {
       deletedAt: serverTimestamp(),
     });
     return { data: { message: 'Range deactivated' } };
+  },
+};
+
+// Range Admin API - for range admins to manage their range
+export const rangeAdminAPI = {
+  getDashboard: async (params = {}) => {
+    const { rangeId, period = '30-days' } = params;
+    if (!rangeId) throw new Error('Range ID required');
+
+    // Calculate date range
+    const now = new Date();
+    let startDate = new Date();
+    switch (period) {
+      case '7-days':
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case '30-days':
+        startDate.setDate(now.getDate() - 30);
+        break;
+      case '90-days':
+        startDate.setDate(now.getDate() - 90);
+        break;
+      case '1-year':
+        startDate.setFullYear(now.getFullYear() - 1);
+        break;
+      default:
+        startDate.setDate(now.getDate() - 30);
+    }
+
+    // Get competitions for this range
+    const competitionsSnap = await getDocs(collection(db, 'competitions'));
+    const allCompetitions = competitionsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const rangeCompetitions = allCompetitions.filter(c => 
+      c.range?.id === rangeId || c.range?.name === rangeId || c.rangeId === rangeId
+    );
+
+    // Get scores for these competitions
+    const scoresSnap = await getDocs(collection(db, 'scores'));
+    const allScores = scoresSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const competitionIds = rangeCompetitions.map(c => c.id);
+    const rangeScores = allScores.filter(s => competitionIds.includes(s.competitionId));
+
+    // Get registrations for these competitions
+    const regsSnap = await getDocs(collection(db, 'registrations'));
+    const allRegs = regsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const rangeRegs = allRegs.filter(r => competitionIds.includes(r.competitionId));
+
+    // Helper to convert Firestore timestamp to Date
+    const toDate = (ts) => {
+      if (!ts) return null;
+      if (ts.toMillis) return new Date(ts.toMillis());
+      if (ts.toDate) return ts.toDate();
+      if (typeof ts === 'string') return new Date(ts);
+      if (typeof ts === 'number') return new Date(ts);
+      return null;
+    };
+
+    // Calculate stats
+    const activeCompetitions = rangeCompetitions.filter(c => c.status === 'published').length;
+    const pendingScores = rangeScores.filter(s => (s.verificationStatus || 'pending') === 'pending').length;
+    const totalRegistrations = rangeRegs.length;
+    const newRegistrationsThisPeriod = rangeRegs.filter(r => {
+      const created = toDate(r.createdAt || r.registeredAt);
+      return created && created >= startDate;
+    }).length;
+
+    // Calculate revenue: $10 per approved score for this range
+    const ENTRY_FEE_PER_SCORE = 10;
+    const approvedScores = rangeScores.filter(s => s.verificationStatus === 'approved');
+    const totalRevenue = approvedScores.length * ENTRY_FEE_PER_SCORE;
+    const revenueThisPeriodScores = approvedScores.filter(s => {
+      const dateToCheck = toDate(s.verifiedAt) || toDate(s.createdAt);
+      return dateToCheck && dateToCheck >= startDate;
+    });
+    const revenueThisPeriod = revenueThisPeriodScores.length * ENTRY_FEE_PER_SCORE;
+
+    return {
+      stats: {
+        totalCompetitions: rangeCompetitions.length,
+        activeCompetitions,
+        pendingScores,
+        totalRegistrations,
+        newRegistrationsThisPeriod,
+        totalRevenue,
+        revenueThisPeriod,
+      },
+    };
+  },
+
+  getPendingScores: async (params = {}) => {
+    const { rangeId } = params;
+    if (!rangeId) throw new Error('Range ID required');
+
+    // Get competitions for this range
+    const competitionsSnap = await getDocs(collection(db, 'competitions'));
+    const allCompetitions = competitionsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const rangeCompetitions = allCompetitions.filter(c => 
+      c.range?.id === rangeId || c.range?.name === rangeId || c.rangeId === rangeId
+    );
+    const competitionIds = rangeCompetitions.map(c => c.id);
+
+    // Get pending scores for these competitions
+    const scoresSnap = await getDocs(collection(db, 'scores'));
+    const allScores = scoresSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const pendingScores = allScores.filter(s => 
+      competitionIds.includes(s.competitionId) && 
+      (s.verificationStatus || 'pending') === 'pending'
+    );
+
+    // Hydrate competitor and competition info
+    const userIds = Array.from(new Set(pendingScores.map(s => s.competitorId || s.competitor?.id).filter(Boolean)));
+    const userSnaps = await Promise.all(userIds.map(uid => getDoc(doc(db, 'users', uid))));
+    const userMap = new Map();
+    userSnaps.forEach((snap, i) => {
+      if (snap.exists()) {
+        userMap.set(userIds[i], { id: userIds[i], ...snap.data() });
+      }
+    });
+
+    const scoresWithDetails = pendingScores.map(score => ({
+      ...score,
+      competitor: userMap.get(score.competitorId || score.competitor?.id) || null,
+      competition: rangeCompetitions.find(c => c.id === score.competitionId) || null,
+    }));
+
+    return { data: { scores: scoresWithDetails } };
   },
 };
 

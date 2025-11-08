@@ -14,6 +14,40 @@ const EditCompetition = () => {
 
   const { register, handleSubmit, formState: { errors }, reset, watch } = useForm();
 
+  // Helper function to convert Firestore timestamp or date string to date input format
+  // Uses local date to avoid timezone issues
+  const toDateInputValue = (dateValue) => {
+    if (!dateValue) return '';
+    try {
+      let date;
+      
+      // Handle Firestore Timestamp
+      if (dateValue.toMillis) {
+        date = new Date(dateValue.toMillis());
+      }
+      // Handle Firestore Timestamp (toDate method)
+      else if (dateValue.toDate) {
+        date = dateValue.toDate();
+      }
+      // Handle ISO string or date string
+      else {
+        date = new Date(dateValue);
+      }
+      
+      if (isNaN(date.getTime())) return '';
+      
+      // Use local date components to avoid timezone shifts
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
+    } catch (e) {
+      console.error('Error parsing date:', e);
+      return '';
+    }
+  };
+
   // Load existing competition
   const { data, isLoading, error } = useQuery(['competition', id], () => competitionsAPI.getById(id), {
     onSuccess: (resp) => {
@@ -25,11 +59,11 @@ const EditCompetition = () => {
         type: c.competitionType || c.type || 'indoor',
         status: c.status || 'draft',
         location: c.range?.name || c.location || '',
-        startDate: c.schedule?.competitionDate ? new Date(c.schedule.competitionDate).toISOString().slice(0,10) : '',
-        endDate: c.schedule?.competitionDate ? new Date(c.schedule.competitionDate).toISOString().slice(0,10) : '',
+        startDate: toDateInputValue(c.schedule?.competitionDate),
+        endDate: toDateInputValue(c.schedule?.competitionDate),
         startTime: c.schedule?.startTime || '09:00',
         endTime: c.schedule?.endTime || '17:00',
-        registrationDeadline: c.schedule?.registrationDeadline ? new Date(c.schedule.registrationDeadline).toISOString().slice(0,10) : '',
+        registrationDeadline: toDateInputValue(c.schedule?.registrationDeadline),
         distance: c.distance || (c.maxDistance ? `${c.maxDistance} yards` : ''),
         shotsPerTarget: c.shotsPerTarget || 10,
         duration: c.duration || '4 hours',
@@ -60,6 +94,40 @@ const EditCompetition = () => {
 
   const onSubmit = async (form) => {
     setIsSubmitting(true);
+    
+    // Get the current competition data to preserve existing schedule fields
+    const currentCompetition = data?.data?.competition || {};
+    const existingSchedule = currentCompetition.schedule || {};
+    
+    // Build schedule object - always include registrationDeadline if provided
+    const schedule = {
+      ...existingSchedule, // Preserve existing schedule fields
+      startTime: form.startTime || existingSchedule.startTime || '09:00',
+      endTime: form.endTime || existingSchedule.endTime || '17:00',
+    };
+    
+    // Add competitionDate if provided
+    // Use local midnight to avoid timezone shifts
+    if (form.startDate) {
+      // Parse the date string (YYYY-MM-DD) and create a date at local midnight
+      const [year, month, day] = form.startDate.split('-').map(Number);
+      const localDate = new Date(year, month - 1, day);
+      schedule.competitionDate = localDate.toISOString();
+    } else if (existingSchedule.competitionDate) {
+      schedule.competitionDate = existingSchedule.competitionDate;
+    }
+    
+    // Always set registrationDeadline if form has a value, otherwise preserve existing
+    // Use local midnight to avoid timezone shifts
+    if (form.registrationDeadline) {
+      // Parse the date string (YYYY-MM-DD) and create a date at local midnight
+      const [year, month, day] = form.registrationDeadline.split('-').map(Number);
+      const localDate = new Date(year, month - 1, day);
+      schedule.registrationDeadline = localDate.toISOString();
+    } else if (existingSchedule.registrationDeadline) {
+      schedule.registrationDeadline = existingSchedule.registrationDeadline;
+    }
+    
     const payload = {
       title: form.title,
       description: form.description,
@@ -67,12 +135,7 @@ const EditCompetition = () => {
       format: form.format,
       status: form.status,
       range: { name: form.location, address: form.location, location: form.location },
-      schedule: {
-        competitionDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
-        startTime: form.startTime || '09:00',
-        endTime: form.endTime || '17:00',
-        registrationDeadline: form.registrationDeadline ? new Date(form.registrationDeadline).toISOString() : undefined
-      },
+      schedule: schedule,
       distance: form.distance,
       shotsPerTarget: parseInt(form.shotsPerTarget) || 10,
       maxParticipants: parseInt(form.maxParticipants) || 50,
@@ -80,9 +143,6 @@ const EditCompetition = () => {
       rules: form.rules,
       equipment: form.equipment
     };
-    // Remove undefined subfields
-    if (!payload.schedule.competitionDate) delete payload.schedule.competitionDate;
-    if (!payload.schedule.registrationDeadline) delete payload.schedule.registrationDeadline;
 
     await updateMutation.mutateAsync(payload);
   };

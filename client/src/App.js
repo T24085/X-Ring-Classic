@@ -17,6 +17,7 @@ import TestPage from './pages/TestPage';
 import ShootingClasses from './pages/ShootingClasses';
 import ScoreVerification from './pages/ScoreVerification';
 import RangeAdminManagement from './pages/RangeAdminManagement';
+import RangeAdminDashboard from './pages/RangeAdminDashboard';
 import AdminSettings from './pages/AdminSettings';
 import AdminEnterScore from './pages/AdminEnterScore';
 import AdminUserManagement from './pages/AdminUserManagement';
@@ -65,6 +66,13 @@ function App() {
           <Route path="submit-score/:competitionId" element={
             <ProtectedRoute>
               <ScoreSubmission />
+            </ProtectedRoute>
+          } />
+          
+          {/* Range Admin routes */}
+          <Route path="range-admin" element={
+            <ProtectedRoute requiredRole="range_admin">
+              <RangeAdminDashboard />
             </ProtectedRoute>
           } />
           
