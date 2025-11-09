@@ -34,7 +34,7 @@ const Layout = () => {
     { name: 'Ranges', href: '/ranges', icon: ShieldCheckIcon },
     { name: 'Rulebook', href: '/rulebook', icon: StarIcon },
     { name: 'Shooting Classes', href: '/shooting-classes', icon: StarIcon },
-    { name: 'Sponsorships', href: '/sponsorship', icon: ChartBarIcon },
+    { name: 'Range Admin Pitch Deck', href: '/pitch-deck', icon: MegaphoneIcon },
 
   ];
 

@@ -23,8 +23,9 @@ import AdminUserManagement from './pages/AdminUserManagement';
 import XRingClassicRulebook from './pages/XRingClassicRulebook';
 import Ranges from './pages/Ranges';
 
-import Sponsorship from './pages/Sponsorship';
-import SponsorDashboard from './pages/dashboard/SponsorDashboard';
+import PitchDeckLanding from './pages/PitchDeckLanding';
+
+
 
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -52,7 +53,8 @@ function App() {
           <Route path="shooting-classes" element={<ShootingClasses />} />
           <Route path="ranges" element={<Ranges />} />
           <Route path="rulebook" element={<XRingClassicRulebook />} />
-          <Route path="sponsorship" element={<Sponsorship />} />
+
+          <Route path="pitch-deck" element={<PitchDeckLanding />} />
 
           
           {/* Protected routes */}
