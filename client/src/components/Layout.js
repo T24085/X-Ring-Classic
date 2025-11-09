@@ -34,7 +34,8 @@ const Layout = () => {
     { name: 'Ranges', href: '/ranges', icon: ShieldCheckIcon },
     { name: 'Rulebook', href: '/rulebook', icon: StarIcon },
     { name: 'Shooting Classes', href: '/shooting-classes', icon: StarIcon },
-    { name: 'Range Admin Pitch Deck', href: '/pitch-deck', icon: MegaphoneIcon },
+    { name: 'Sponsorships', href: '/sponsorship', icon: ChartBarIcon },
+
   ];
 
   // Admin dropdown menu items (for full admins)
@@ -58,6 +59,7 @@ const Layout = () => {
   const hasAdminAccess = user?.role === 'admin' || user?.role === 'range_admin';
   const isRangeAdmin = user?.role === 'range_admin' && user?.role !== 'admin';
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const showSponsorDashboard = user?.role === 'sponsor' || user?.role === 'admin';
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -117,6 +119,20 @@ const Layout = () => {
                   </Link>
                 );
               })}
+
+              {showSponsorDashboard && (
+                <Link
+                  to="/dashboard/sponsor"
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname === '/dashboard/sponsor'
+                      ? 'text-gray-200 bg-gray-800/50'
+                      : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                  }`}
+                >
+                  <ChartBarIcon className="w-4 h-4" />
+                  <span>Sponsor Dashboard</span>
+                </Link>
+              )}
 
               {/* Profile link (if authenticated) */}
               {isAuthenticated && (
@@ -321,6 +337,21 @@ const Layout = () => {
                 >
                   <UserIcon className="w-4 h-4" />
                   <span>Profile</span>
+                </Link>
+              )}
+
+              {showSponsorDashboard && (
+                <Link
+                  to="/dashboard/sponsor"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname === '/dashboard/sponsor'
+                      ? 'text-gray-200 bg-gray-800/50'
+                      : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                  }`}
+                >
+                  <ChartBarIcon className="w-4 h-4" />
+                  <span>Sponsor Dashboard</span>
                 </Link>
               )}
 
