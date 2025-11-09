@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const ProtectedRoute = ({ children, requiredRole }) => {
+const ProtectedRoute = ({ children, requiredRole, requireActiveSubscription = false }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
@@ -21,13 +21,29 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 
   if (requiredRole) {
     // Handle both single role and array of roles
-    const hasRequiredRole = Array.isArray(requiredRole) 
+    const hasRequiredRole = Array.isArray(requiredRole)
       ? requiredRole.includes(user?.role)
       : user?.role === requiredRole;
-    
+
     if (!hasRequiredRole) {
       // Redirect to home page if user doesn't have required role
       return <Navigate to="/" replace />;
+    }
+
+    const requiresRangeAdmin = Array.isArray(requiredRole)
+      ? requiredRole.includes('range_admin')
+      : requiredRole === 'range_admin';
+
+    if (requiresRangeAdmin && requireActiveSubscription && user?.role === 'range_admin') {
+      const subscriptionStatus =
+        user?.subscriptionStatus ||
+        user?.rangeSubscription?.status ||
+        user?.subscription?.status ||
+        'inactive';
+
+      if (!['active', 'trialing'].includes(subscriptionStatus)) {
+        return <Navigate to="/range-admin/subscription" state={{ from: location }} replace />;
+      }
     }
   }
 

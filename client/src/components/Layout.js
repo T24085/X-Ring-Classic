@@ -15,7 +15,9 @@ import {
   ChevronDownIcon,
   ChartBarIcon,
   UserGroupIcon,
-  MegaphoneIcon
+
+  CurrencyDollarIcon
+
 } from '@heroicons/react/24/outline';
 import { useState, useRef, useEffect } from 'react';
 
@@ -53,6 +55,7 @@ const Layout = () => {
     { name: 'Range Dashboard', href: '/range-admin', icon: ChartBarIcon },
     { name: 'Create Competition', href: '/admin/create-competition', icon: TrophyIcon },
     { name: 'Score Verification', href: '/admin/score-verification', icon: CheckCircleIcon },
+    { name: 'Subscription', href: '/range-admin/subscription', icon: CurrencyDollarIcon },
   ];
 
   // Check if user has admin access

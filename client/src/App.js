@@ -17,6 +17,8 @@ import ShootingClasses from './pages/ShootingClasses';
 import ScoreVerification from './pages/ScoreVerification';
 import RangeAdminManagement from './pages/RangeAdminManagement';
 import RangeAdminDashboard from './pages/RangeAdminDashboard';
+import RangeAdminSignup from './pages/auth/RangeAdminSignup';
+import RangeAdminSubscription from './pages/RangeAdminSubscription';
 import AdminSettings from './pages/AdminSettings';
 import AdminEnterScore from './pages/AdminEnterScore';
 import AdminUserManagement from './pages/AdminUserManagement';
@@ -37,7 +39,8 @@ function App() {
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        
+        <Route path="/range-admin/signup" element={<RangeAdminSignup />} />
+
         {/* Protected routes with layout */}
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
@@ -82,11 +85,16 @@ function App() {
           
           {/* Range Admin routes */}
           <Route path="range-admin" element={
-            <ProtectedRoute requiredRole="range_admin">
+            <ProtectedRoute requiredRole="range_admin" requireActiveSubscription>
               <RangeAdminDashboard />
             </ProtectedRoute>
           } />
-          
+          <Route path="range-admin/subscription" element={
+            <ProtectedRoute requiredRole="range_admin">
+              <RangeAdminSubscription />
+            </ProtectedRoute>
+          } />
+
           {/* Admin routes */}
           <Route path="admin" element={
             <ProtectedRoute requiredRole="admin">
@@ -94,17 +102,17 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="admin/create-competition" element={
-            <ProtectedRoute requiredRole={["admin", "range_admin"]}>
+            <ProtectedRoute requiredRole={["admin", "range_admin"]} requireActiveSubscription>
               <CreateCompetition />
             </ProtectedRoute>
           } />
           <Route path="admin/score-verification" element={
-            <ProtectedRoute requiredRole={['admin', 'range_admin']}>
+            <ProtectedRoute requiredRole={['admin', 'range_admin']} requireActiveSubscription>
               <ScoreVerification />
             </ProtectedRoute>
           } />
           <Route path="admin/enter-score" element={
-            <ProtectedRoute requiredRole={["admin", "range_admin"]}>
+            <ProtectedRoute requiredRole={["admin", "range_admin"]} requireActiveSubscription>
               <AdminEnterScore />
             </ProtectedRoute>
           } />

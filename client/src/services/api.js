@@ -41,9 +41,10 @@ export const authAPI = {
   login: (email, password) => api.post('/auth/login', { email, password }),
   register: (userData) => api.post('/auth/register', userData),
   getCurrentUser: () => api.get('/auth/me'),
-  changePassword: (currentPassword, newPassword) => 
+  changePassword: (currentPassword, newPassword) =>
     api.post('/auth/change-password', { currentPassword, newPassword }),
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  rangeAdminSignup: (payload) => api.post('/auth/range-admin/signup', payload).then(r => r.data),
   setAuthToken: (token) => {
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   },
@@ -119,13 +120,11 @@ export const adminAPI = {
 };
 
 
-// Sponsorship API
-export const sponsorshipAPI = {
-  getSponsorships: (params) => api.get('/sponsorships', { params }).then(r => r.data),
-  getAnalytics: (params) => api.get('/sponsorships/analytics', { params }).then(r => r.data),
-  getPayments: (params) => api.get('/sponsorships/payments', { params }).then(r => r.data),
-  getDashboard: (params) => api.get('/sponsorships/dashboard', { params }).then(r => r.data),
+export const paymentsAPI = {
+  confirmRangeAdminPayment: (payload) => api.post('/payments/range-admin/confirm', payload).then(r => r.data),
 };
+
+
 // Shooting Classes API - Temporarily disabled during Firebase migration
 export const shootingClassesAPI = {
   getAll: () => Promise.resolve({ shootingClasses: [] }),

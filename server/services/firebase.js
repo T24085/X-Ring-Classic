@@ -52,6 +52,25 @@ class FirebaseService {
     }
   }
 
+  async setDocument(collection, id, data, { merge = false } = {}) {
+    try {
+      await this.db.collection(collection).doc(id).set({
+        ...data,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        ...(merge ? {} : { createdAt: admin.firestore.FieldValue.serverTimestamp() })
+      }, { merge });
+
+      const doc = await this.db.collection(collection).doc(id).get();
+      return { id: doc.id, ...doc.data() };
+    } catch (error) {
+      throw new Error(`Error setting document in ${collection}: ${error.message}`);
+    }
+  }
+
+  async mergeDocument(collection, id, data) {
+    return this.setDocument(collection, id, data, { merge: true });
+  }
+
   async find(collection, query = {}) {
     try {
       let ref = this.db.collection(collection);
@@ -213,6 +232,44 @@ class FirebaseService {
       console.error('Error getting pending verification scores:', error);
       return []; // Return empty array instead of throwing
     }
+  }
+
+  async recordRangeRevenue({
+    rangeId,
+    rangeName,
+    scoreId,
+    competitionId,
+    amount,
+    currency = 'USD',
+    approvedBy,
+    approvedAt = new Date(),
+  }) {
+    if (!rangeId || !amount) {
+      return null;
+    }
+
+    const revenueEntry = {
+      rangeId,
+      rangeName: rangeName || null,
+      scoreId: scoreId || null,
+      competitionId: competitionId || null,
+      amount,
+      currency,
+      approvedBy: approvedBy || null,
+      approvedAt,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    const docRef = await this.db.collection('rangeRevenues').add(revenueEntry);
+
+    await this.db.collection('ranges').doc(rangeId).set({
+      'revenue.total': admin.firestore.FieldValue.increment(amount),
+      'revenue.entryCount': admin.firestore.FieldValue.increment(1),
+      'revenue.lastRecordedAt': admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    return { id: docRef.id, ...revenueEntry };
   }
 
   // Leaderboard operations
