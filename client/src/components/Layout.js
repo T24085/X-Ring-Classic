@@ -35,8 +35,6 @@ const Layout = () => {
     { name: 'Ranges', href: '/ranges', icon: ShieldCheckIcon },
     { name: 'Rulebook', href: '/rulebook', icon: StarIcon },
     { name: 'Shooting Classes', href: '/shooting-classes', icon: StarIcon },
-    { name: 'Range Admin Pitch Deck', href: '/pitch-deck', icon: MegaphoneIcon },
-
   ];
 
   // Admin dropdown menu items (for full admins)
@@ -47,6 +45,8 @@ const Layout = () => {
     { name: 'Create Competition', href: '/admin/create-competition', icon: TrophyIcon },
     { name: 'Enter Score', href: '/admin/enter-score', icon: CheckCircleIcon },
     { name: 'Score Verification', href: '/admin/score-verification', icon: CheckCircleIcon },
+    { name: 'Pitch Deck', href: '/pitch-deck', icon: MegaphoneIcon },
+    { name: 'Sponsor Dashboard', href: '/dashboard/sponsor', icon: ChartBarIcon },
   ];
 
   // Range Admin menu items
@@ -122,20 +122,6 @@ const Layout = () => {
                 );
               })}
 
-              {showSponsorDashboard && (
-                <Link
-                  to="/dashboard/sponsor"
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    location.pathname === '/dashboard/sponsor'
-                      ? 'text-gray-200 bg-gray-800/50'
-                      : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                  }`}
-                >
-                  <ChartBarIcon className="w-4 h-4" />
-                  <span>Sponsor Dashboard</span>
-                </Link>
-              )}
-
               {/* Profile link (if authenticated) */}
               {isAuthenticated && (
                 <Link
@@ -176,6 +162,10 @@ const Layout = () => {
                             // Filter based on role
                             if (item.href === '/admin/range-management' || item.href === '/admin/users') {
                               return user?.role === 'admin';
+                            }
+                            // Show Sponsor Dashboard only to sponsors and admins
+                            if (item.href === '/dashboard/sponsor') {
+                              return showSponsorDashboard;
                             }
                             return true;
                           })
@@ -342,21 +332,6 @@ const Layout = () => {
                 </Link>
               )}
 
-              {showSponsorDashboard && (
-                <Link
-                  to="/dashboard/sponsor"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    location.pathname === '/dashboard/sponsor'
-                      ? 'text-gray-200 bg-gray-800/50'
-                      : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                  }`}
-                >
-                  <ChartBarIcon className="w-4 h-4" />
-                  <span>Sponsor Dashboard</span>
-                </Link>
-              )}
-
               {/* Shop Now Button (Mobile) */}
               <a
                 href="https://shop.thegunguys.net/"
@@ -379,6 +354,10 @@ const Layout = () => {
                     .filter(item => {
                       if (item.href === '/admin/range-management' || item.href === '/admin/users') {
                         return user?.role === 'admin';
+                      }
+                      // Show Sponsor Dashboard only to sponsors and admins
+                      if (item.href === '/dashboard/sponsor') {
+                        return showSponsorDashboard;
                       }
                       return true;
                     })
