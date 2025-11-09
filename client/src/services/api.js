@@ -119,9 +119,11 @@ export const adminAPI = {
   createRangeAdmin: (data) => api.post('/auth/create-range-admin', data).then(r => r.data),
 };
 
+
 export const paymentsAPI = {
   confirmRangeAdminPayment: (payload) => api.post('/payments/range-admin/confirm', payload).then(r => r.data),
 };
+
 
 // Shooting Classes API - Temporarily disabled during Firebase migration
 export const shootingClassesAPI = {
