@@ -14,7 +14,8 @@ import {
   ShieldCheckIcon,
   ChevronDownIcon,
   ChartBarIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  MegaphoneIcon
 } from '@heroicons/react/24/outline';
 import { useState, useRef, useEffect } from 'react';
 
@@ -34,6 +35,7 @@ const Layout = () => {
     { name: 'Rulebook', href: '/rulebook', icon: StarIcon },
     { name: 'Shooting Classes', href: '/shooting-classes', icon: StarIcon },
     { name: 'Sponsorships', href: '/sponsorship', icon: ChartBarIcon },
+
   ];
 
   // Admin dropdown menu items (for full admins)

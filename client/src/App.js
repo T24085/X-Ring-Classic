@@ -22,8 +22,10 @@ import AdminEnterScore from './pages/AdminEnterScore';
 import AdminUserManagement from './pages/AdminUserManagement';
 import XRingClassicRulebook from './pages/XRingClassicRulebook';
 import Ranges from './pages/Ranges';
+
 import Sponsorship from './pages/Sponsorship';
 import SponsorDashboard from './pages/dashboard/SponsorDashboard';
+
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -51,6 +53,7 @@ function App() {
           <Route path="ranges" element={<Ranges />} />
           <Route path="rulebook" element={<XRingClassicRulebook />} />
           <Route path="sponsorship" element={<Sponsorship />} />
+
           
           {/* Protected routes */}
           <Route path="dashboard/sponsor" element={
