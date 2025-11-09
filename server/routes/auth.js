@@ -2,8 +2,10 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
+const admin = require('firebase-admin');
 const { authenticateToken, requireRole } = require('../middleware/auth');
 const firebaseService = require('../services/firebase');
+const paypalService = require('../services/paypal');
 
 const router = express.Router();
 
@@ -377,6 +379,217 @@ router.post('/seed-admin', async (req, res) => {
   }
 });
 
+// @route   POST /api/auth/range-admin/signup
+// @desc    Public range admin sign-up with PayPal payment confirmation
+// @access  Public
+router.post('/range-admin/signup', [
+  body('username')
+    .isLength({ min: 3, max: 30 })
+    .withMessage('Username must be between 3 and 30 characters')
+    .matches(/^[a-zA-Z0-9_]+$/)
+    .withMessage('Username can only contain letters, numbers, and underscores'),
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid email'),
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters long'),
+  body('firstName')
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('First name is required and must be less than 50 characters'),
+  body('lastName')
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Last name is required and must be less than 50 characters'),
+  body('phone')
+    .optional()
+    .trim()
+    .isLength({ max: 20 })
+    .withMessage('Phone number must be less than 20 characters'),
+  body('rangeName')
+    .trim()
+    .isLength({ min: 1, max: 120 })
+    .withMessage('Range name is required and must be less than 120 characters'),
+  body('rangeAddressLine1')
+    .trim()
+    .isLength({ min: 1, max: 200 })
+    .withMessage('Primary address is required'),
+  body('rangeCity')
+    .trim()
+    .isLength({ min: 1, max: 120 })
+    .withMessage('City is required'),
+  body('rangeState')
+    .trim()
+    .isLength({ min: 1, max: 120 })
+    .withMessage('State or province is required'),
+  body('rangePostalCode')
+    .trim()
+    .isLength({ min: 3, max: 20 })
+    .withMessage('Postal code is required'),
+  body('rangeCountry')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 60 })
+    .withMessage('Country must be between 2 and 60 characters'),
+  body('rangeWebsite')
+    .optional()
+    .trim()
+    .isLength({ max: 200 })
+    .withMessage('Website must be less than 200 characters'),
+  body('paypalOrderId')
+    .trim()
+    .notEmpty()
+    .withMessage('PayPal order confirmation is required'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const {
+      username,
+      email,
+      password,
+      firstName,
+      lastName,
+      phone,
+      rangeName,
+      rangeAddressLine1,
+      rangeAddressLine2,
+      rangeCity,
+      rangeState,
+      rangePostalCode,
+      rangeCountry = 'US',
+      rangeWebsite,
+      paypalOrderId,
+    } = req.body;
+
+    const normalizedCountry = rangeCountry || 'US';
+
+    const existingUserByEmail = await firebaseService.findUserByEmail(email);
+    if (existingUserByEmail) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    const existingUserByUsername = await firebaseService.findUserByUsername(username);
+    if (existingUserByUsername) {
+      return res.status(400).json({ error: 'Username already taken' });
+    }
+
+    try {
+      await admin.auth().getUserByEmail(email);
+      return res.status(400).json({ error: 'Email already registered' });
+    } catch (authError) {
+      if (authError.code && authError.code !== 'auth/user-not-found') {
+        throw authError;
+      }
+    }
+
+    const paymentDetails = await paypalService.verifyHostedButtonOrder({
+      orderId: paypalOrderId,
+      expectedAmount: 20,
+      expectedCurrency: 'USD',
+    });
+
+    const firebaseUser = await admin.auth().createUser({
+      email,
+      password,
+      displayName: `${firstName} ${lastName}`.trim(),
+      phoneNumber: phone && phone.trim().length >= 10 ? phone.trim() : undefined,
+    });
+
+    const now = new Date();
+    const renewalDate = new Date(now);
+    renewalDate.setMonth(renewalDate.getMonth() + 1);
+
+    const rangeLocation = [rangeCity, rangeState].filter(Boolean).join(', ');
+
+    const rangeData = {
+      name: rangeName,
+      address: {
+        line1: rangeAddressLine1,
+        line2: rangeAddressLine2 || null,
+        city: rangeCity,
+        state: rangeState,
+        postalCode: rangePostalCode,
+        country: normalizedCountry,
+      },
+      location: rangeLocation,
+      phone: phone || null,
+      website: rangeWebsite || null,
+      adminId: firebaseUser.uid,
+      adminEmail: email,
+      subscriptionStatus: 'active',
+      subscriptionPlan: 'range_admin_monthly',
+      subscriptionAmount: paymentDetails.amount,
+      subscriptionCurrency: paymentDetails.currency,
+      subscriptionRenewalDate: renewalDate,
+      subscriptionLastPaymentDate: now,
+      paymentProvider: 'paypal',
+      lastPaymentOrderId: paymentDetails.id,
+      revenue: {
+        total: 0,
+        entryCount: 0,
+        lastRecordedAt: null,
+      },
+    };
+
+    const range = await firebaseService.create('ranges', rangeData);
+
+    const userProfile = {
+      username,
+      email,
+      firstName,
+      lastName,
+      role: 'range_admin',
+      phone: phone || null,
+      rangeName,
+      rangeId: range.id,
+      rangeLocation,
+      rangeAddress: rangeData.address,
+      subscriptionStatus: 'active',
+      subscriptionPlan: 'range_admin_monthly',
+      subscriptionAmount: paymentDetails.amount,
+      subscriptionCurrency: paymentDetails.currency,
+      subscriptionRenewalDate: renewalDate,
+      subscriptionLastPaymentDate: now,
+      subscriptionProvider: 'paypal',
+      subscriptionOrderId: paymentDetails.id,
+      isVerified: true,
+      isActive: true,
+      verificationStatus: 'verified',
+    };
+
+    await firebaseService.setDocument('users', firebaseUser.uid, userProfile);
+
+    res.status(201).json({
+      message: 'Range admin account created successfully',
+      userId: firebaseUser.uid,
+      rangeId: range.id,
+      subscriptionStatus: 'active',
+      renewalDate: renewalDate.toISOString(),
+      paypalOrderId: paymentDetails.id,
+    });
+  } catch (error) {
+    console.error('Range admin signup error:', error);
+    const status = error.status || 500;
+    const response = { error: error.message || 'Failed to create range admin account' };
+    if (error.paypalStatus) {
+      response.paypalStatus = error.paypalStatus;
+    }
+    if (typeof error.amount !== 'undefined') {
+      response.amount = error.amount;
+    }
+    if (error.currency) {
+      response.currency = error.currency;
+    }
+    res.status(status).json(response);
+  }
+});
+
 // @route   POST /api/auth/create-range-admin
 // @desc    Create a range admin account (Admin only)
 // @access  Private (Admin only)
@@ -472,7 +685,14 @@ router.post('/create-range-admin', [
       isActive: true,
       verificationStatus: 'verified',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      subscriptionStatus: 'active',
+      subscriptionPlan: 'admin_grant',
+      subscriptionAmount: 0,
+      subscriptionCurrency: 'USD',
+      subscriptionRenewalDate: null,
+      subscriptionLastPaymentDate: new Date(),
+      subscriptionProvider: 'manual'
     };
 
     // Create user in Firebase

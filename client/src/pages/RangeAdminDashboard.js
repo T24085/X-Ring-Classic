@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { rangeAdminAPI, competitionsAPI, rangesAPI } from '../services/api.firebase';
-import { 
+import {
   Trophy, 
   Target, 
   Users, 
@@ -18,6 +18,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { format, formatDistanceToNow, differenceInCalendarDays } from 'date-fns';
 
 const RangeAdminDashboard = () => {
   const navigate = useNavigate();
@@ -35,9 +36,21 @@ const RangeAdminDashboard = () => {
     }
   );
 
-  const range = rangeData?.data?.range;
-  const rangeId = range?.id;
-  const rangeName = range?.name || user?.rangeName;
+  const parseDate = (value) => {
+    if (!value) return null;
+    if (value.toDate) return value.toDate();
+    if (value.seconds) return new Date(value.seconds * 1000);
+    if (typeof value === 'string') {
+      const parsed = Date.parse(value);
+      return Number.isNaN(parsed) ? null : new Date(parsed);
+    }
+    if (value instanceof Date) return value;
+    return null;
+  };
+
+  const rangeRecord = dashboardData?.range || rangeData?.data?.range;
+  const rangeId = rangeRecord?.id;
+  const rangeName = rangeRecord?.name || user?.rangeName;
 
   // Get dashboard stats for this range
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery(
@@ -72,6 +85,49 @@ const RangeAdminDashboard = () => {
   const stats = dashboardData?.stats || {};
   const competitions = competitionsData?.data?.competitions || [];
   const pendingScores = pendingScoresData?.data?.scores || [];
+  const revenue = dashboardData?.revenue || {};
+  const paymentInfo = dashboardData?.payment || {};
+  const revenueEntries = revenue.entries || [];
+  const revenueEntryPreview = revenueEntries.slice(0, 5);
+
+  const competitionsById = useMemo(() => {
+    const map = new Map();
+    competitions.forEach((competition) => {
+      if (competition?.id) {
+        map.set(competition.id, competition.title || competition.name || competition.rangeName || 'Competition');
+      }
+    });
+    return map;
+  }, [competitions]);
+
+  const subscriptionStatus = (paymentInfo.subscriptionStatus || rangeRecord?.subscriptionStatus || user?.subscriptionStatus || 'inactive').toLowerCase();
+  const renewalDate = parseDate(paymentInfo.renewalDate || rangeRecord?.subscriptionRenewalDate || user?.subscriptionRenewalDate);
+  const lastPaymentDate = parseDate(paymentInfo.lastPaymentDate || rangeRecord?.subscriptionLastPaymentDate || user?.subscriptionLastPaymentDate);
+  const paymentCurrency = paymentInfo.currency || rangeRecord?.subscriptionCurrency || 'USD';
+  const paymentAmount = paymentInfo.amount || rangeRecord?.subscriptionAmount || 20;
+
+  const currencyFormatter = useMemo(
+    () => new Intl.NumberFormat('en-US', { style: 'currency', currency: paymentCurrency }),
+    [paymentCurrency]
+  );
+  const formatCurrency = (value) => currencyFormatter.format(value || 0);
+
+  const revenueTotal = stats.totalRevenue || 0;
+  const revenueThisPeriod = stats.revenueThisPeriod || 0;
+  const revenueEntryCount = stats.revenueEntryCount || revenueEntries.length || 0;
+
+  const daysUntilRenewal = renewalDate ? differenceInCalendarDays(renewalDate, new Date()) : null;
+  const renewalRelative = renewalDate ? formatDistanceToNow(renewalDate, { addSuffix: true }) : null;
+  const formattedRenewal = renewalDate ? format(renewalDate, 'PPP') : 'Not scheduled';
+  const formattedLastPayment = lastPaymentDate ? format(lastPaymentDate, 'PPP') : 'No payments yet';
+
+  const showPastDue = subscriptionStatus !== 'active';
+  const showRenewalWarning = !showPastDue && renewalDate && daysUntilRenewal !== null && daysUntilRenewal >= 0 && daysUntilRenewal <= 7;
+  const subscriptionBadgeClasses = subscriptionStatus === 'active'
+    ? 'bg-green-100 text-green-700'
+    : 'bg-red-100 text-red-700';
+
+  const manageSubscription = () => navigate('/range-admin/subscription');
 
   if (rangeLoading || dashboardLoading) {
     return (
@@ -81,12 +137,12 @@ const RangeAdminDashboard = () => {
     );
   }
 
-  if (!range && !rangeName) {
+  if (!rangeRecord && !rangeName) {
     return (
       <div className="text-center py-8">
         <div className="text-red-600 mb-4">No range associated with your account</div>
         <p className="text-gray-600 mb-4">Please contact an administrator to link your account to a range.</p>
-        <button 
+        <button
           onClick={() => navigate('/')} 
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
@@ -116,7 +172,12 @@ const RangeAdminDashboard = () => {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => navigate('/admin/create-competition')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+            disabled={showPastDue}
+            className={`px-4 py-2 rounded-lg transition-colors flex items-center ${
+              showPastDue
+                ? 'bg-blue-300 text-white cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
           >
             <Plus className="w-4 h-4 mr-2" />
             Create Competition
@@ -133,6 +194,32 @@ const RangeAdminDashboard = () => {
           </select>
         </div>
       </div>
+
+      {showPastDue && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3 text-red-700">
+          <AlertTriangle className="h-5 w-5 mt-0.5" />
+          <div>
+            <p className="font-semibold">Subscription inactive</p>
+            <p className="text-sm">Renew your subscription to regain full access to range admin tools.</p>
+            <button
+              onClick={manageSubscription}
+              className="mt-2 inline-flex text-sm font-medium text-red-700 hover:text-red-800"
+            >
+              Manage subscription
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showRenewalWarning && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start space-x-3 text-amber-800">
+          <Clock className="h-5 w-5 mt-0.5" />
+          <div>
+            <p className="font-semibold">Renewal approaching</p>
+            <p className="text-sm">Your subscription renews {renewalRelative}. Ensure your payment method is current.</p>
+          </div>
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -152,11 +239,11 @@ const RangeAdminDashboard = () => {
             <span className="ml-2 text-sm text-blue-600">
               {stats.totalCompetitions || 0} total
             </span>
-          </div>
         </div>
+      </div>
 
-        {/* Pending Scores */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+      {/* Pending Scores */}
+      <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-center">
             <div className="p-2 bg-yellow-100 rounded-lg">
               <Clock className="h-6 w-6 text-yellow-600" />
@@ -201,15 +288,54 @@ const RangeAdminDashboard = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Range Revenue</p>
-              <p className="text-2xl font-bold text-gray-900">${stats.totalRevenue || 0}</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCurrency(revenueTotal)}</p>
             </div>
           </div>
-          <div className="mt-4 flex items-center">
-            <TrendingUp className="h-4 w-4 text-green-500" />
-            <span className="ml-2 text-sm text-green-600">
-              +${stats.revenueThisPeriod || 0} this period
-            </span>
+          <div className="mt-4 flex items-center justify-between">
+            <div className="flex items-center">
+              <TrendingUp className="h-4 w-4 text-green-500" />
+              <span className="ml-2 text-sm text-green-600">
+                +{formatCurrency(revenueThisPeriod)} this period
+              </span>
+            </div>
+            <span className="text-xs text-gray-500">{revenueEntryCount} revenue events</span>
           </div>
+        </div>
+      </div>
+
+      {/* Subscription Overview */}
+      <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-500">Subscription Status</p>
+            <p className="text-2xl font-bold text-gray-900 capitalize">{subscriptionStatus.replace(/_/g, ' ')}</p>
+          </div>
+          <span className={`px-3 py-1 text-sm font-medium rounded-full ${subscriptionBadgeClasses}`}>
+            {subscriptionStatus}
+          </span>
+        </div>
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-gray-400">Next Renewal</p>
+            <p className="font-medium">{formattedRenewal}</p>
+            {renewalRelative && <p className="text-xs text-gray-500">{renewalRelative}</p>}
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide text-gray-400">Last Payment</p>
+            <p className="font-medium">{formattedLastPayment}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide text-gray-400">Monthly Fee</p>
+            <p className="font-medium">{formatCurrency(paymentAmount)}</p>
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={manageSubscription}
+            className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 text-sm font-medium"
+          >
+            Manage Subscription
+          </button>
         </div>
       </div>
 
@@ -325,6 +451,52 @@ const RangeAdminDashboard = () => {
             </button>
           )}
         </div>
+
+        {/* Revenue Activity */}
+        <div className="bg-white rounded-lg shadow-sm border p-6 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Recent Revenue</h3>
+            <BarChart3 className="h-5 w-5 text-gray-400" />
+          </div>
+          {revenueEntryPreview.length === 0 ? (
+            <p className="text-sm text-gray-500">No revenue recorded yet. Approved score fees will appear here.</p>
+          ) : (
+            <div className="overflow-x-auto -mx-4 sm:-mx-6 md:mx-0">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-4 py-2 text-left font-semibold text-gray-600">Date</th>
+                    <th scope="col" className="px-4 py-2 text-left font-semibold text-gray-600">Competition</th>
+                    <th scope="col" className="px-4 py-2 text-left font-semibold text-gray-600">Amount</th>
+                    <th scope="col" className="px-4 py-2 text-left font-semibold text-gray-600">Recorded By</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {revenueEntryPreview.map((entry) => (
+                    <tr key={entry.id} className="odd:bg-gray-50">
+                      <td className="px-4 py-2 text-gray-700">{entry.approvedAt ? format(entry.approvedAt, 'PP') : '—'}</td>
+                      <td className="px-4 py-2 text-gray-700">
+                        {competitionsById.get(entry.competitionId) || entry.competitionId || 'Competition'}
+                      </td>
+                      <td className="px-4 py-2 font-semibold text-gray-900">{formatCurrency(entry.amount || 0)}</td>
+                      <td className="px-4 py-2 text-gray-500">
+                        {entry.approvedBy ? `#${String(entry.approvedBy).slice(0, 6)}` : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={manageSubscription}
+              className="text-sm font-medium text-blue-600 hover:text-blue-700"
+            >
+              View billing & payment history
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Quick Actions */}
@@ -333,14 +505,24 @@ const RangeAdminDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button
             onClick={() => navigate('/admin/create-competition')}
-            className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+            disabled={showPastDue}
+            className={`px-4 py-3 rounded-lg transition-colors flex items-center justify-center ${
+              showPastDue
+                ? 'bg-blue-300 text-white cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            }`}
           >
             <Plus className="w-5 h-5 mr-2" />
             Create Competition
           </button>
           <button
             onClick={() => navigate('/admin/score-verification')}
-            className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+            disabled={showPastDue}
+            className={`px-4 py-3 rounded-lg transition-colors flex items-center justify-center ${
+              showPastDue
+                ? 'bg-green-300 text-white cursor-not-allowed'
+                : 'bg-green-600 text-white hover:bg-green-700'
+            }`}
           >
             <CheckCircle className="w-5 h-5 mr-2" />
             Verify Scores

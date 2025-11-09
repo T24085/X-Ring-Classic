@@ -16,8 +16,6 @@ import {
   getDocs,
   query,
   where,
-  orderBy,
-  limit,
   addDoc,
   setDoc,
   updateDoc,
@@ -856,10 +854,13 @@ export const rangeAdminAPI = {
         startDate.setDate(now.getDate() - 30);
     }
 
+    const rangeDoc = await getDoc(doc(db, 'ranges', rangeId));
+    const rangeRecord = rangeDoc.exists() ? { id: rangeDoc.id, ...rangeDoc.data() } : null;
+
     // Get competitions for this range
     const competitionsSnap = await getDocs(collection(db, 'competitions'));
     const allCompetitions = competitionsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const rangeCompetitions = allCompetitions.filter(c => 
+    const rangeCompetitions = allCompetitions.filter(c =>
       c.range?.id === rangeId || c.range?.name === rangeId || c.rangeId === rangeId
     );
 
@@ -893,15 +894,44 @@ export const rangeAdminAPI = {
       return created && created >= startDate;
     }).length;
 
-    // Calculate revenue: $10 per approved score for this range
-    const ENTRY_FEE_PER_SCORE = 10;
-    const approvedScores = rangeScores.filter(s => s.verificationStatus === 'approved');
-    const totalRevenue = approvedScores.length * ENTRY_FEE_PER_SCORE;
-    const revenueThisPeriodScores = approvedScores.filter(s => {
-      const dateToCheck = toDate(s.verifiedAt) || toDate(s.createdAt);
-      return dateToCheck && dateToCheck >= startDate;
-    });
-    const revenueThisPeriod = revenueThisPeriodScores.length * ENTRY_FEE_PER_SCORE;
+    // Load revenue entries for this range
+    let revenueEntries = [];
+    try {
+      const revenueQuery = query(
+        collection(db, 'rangeRevenues'),
+        where('rangeId', '==', rangeId)
+      );
+      const revenueSnap = await getDocs(revenueQuery);
+      revenueEntries = revenueSnap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          ...data,
+          approvedAt: toDate(data.approvedAt),
+          createdAt: toDate(data.createdAt),
+        };
+      }).sort((a, b) => {
+        const aTime = a.approvedAt ? a.approvedAt.getTime() : 0;
+        const bTime = b.approvedAt ? b.approvedAt.getTime() : 0;
+        return bTime - aTime;
+      }).slice(0, 25);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Error loading range revenue entries', err);
+    }
+
+    const revenueTotalsFromEntries = revenueEntries.reduce((sum, entry) => sum + (entry.amount || 0), 0);
+    const revenueThisPeriod = revenueEntries.reduce((sum, entry) => {
+      if (!entry.approvedAt) return sum;
+      return entry.approvedAt >= startDate ? sum + (entry.amount || 0) : sum;
+    }, 0);
+
+    const totalRevenue = rangeRecord?.revenue?.total != null
+      ? rangeRecord.revenue.total
+      : revenueTotalsFromEntries;
+    const revenueEntryCount = rangeRecord?.revenue?.entryCount != null
+      ? rangeRecord.revenue.entryCount
+      : revenueEntries.length;
 
     return {
       stats: {
@@ -912,6 +942,20 @@ export const rangeAdminAPI = {
         newRegistrationsThisPeriod,
         totalRevenue,
         revenueThisPeriod,
+        revenueEntryCount,
+      },
+      range: rangeRecord,
+      revenue: {
+        entries: revenueEntries,
+        totalRevenue,
+        revenueThisPeriod,
+      },
+      payment: {
+        subscriptionStatus: rangeRecord?.subscriptionStatus || null,
+        renewalDate: rangeRecord?.subscriptionRenewalDate || null,
+        lastPaymentDate: rangeRecord?.subscriptionLastPaymentDate || null,
+        amount: rangeRecord?.subscriptionAmount || null,
+        currency: rangeRecord?.subscriptionCurrency || 'USD',
       },
     };
   },

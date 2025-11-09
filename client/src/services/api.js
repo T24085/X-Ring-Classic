@@ -41,9 +41,10 @@ export const authAPI = {
   login: (email, password) => api.post('/auth/login', { email, password }),
   register: (userData) => api.post('/auth/register', userData),
   getCurrentUser: () => api.get('/auth/me'),
-  changePassword: (currentPassword, newPassword) => 
+  changePassword: (currentPassword, newPassword) =>
     api.post('/auth/change-password', { currentPassword, newPassword }),
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  rangeAdminSignup: (payload) => api.post('/auth/range-admin/signup', payload).then(r => r.data),
   setAuthToken: (token) => {
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   },
@@ -116,6 +117,10 @@ export const adminAPI = {
   getReports: (params) => api.get('/admin/reports', { params }).then(r => r.data),
   getRangeAdmins: (params) => api.get('/admin/range-admins', { params }).then(r => r.data),
   createRangeAdmin: (data) => api.post('/auth/create-range-admin', data).then(r => r.data),
+};
+
+export const paymentsAPI = {
+  confirmRangeAdminPayment: (payload) => api.post('/payments/range-admin/confirm', payload).then(r => r.data),
 };
 
 // Shooting Classes API - Temporarily disabled during Firebase migration

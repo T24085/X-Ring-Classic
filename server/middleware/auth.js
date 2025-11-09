@@ -49,11 +49,25 @@ const requireRole = (roles) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ 
+    const requiredRoles = Array.isArray(roles) ? roles : [roles];
+    if (!requiredRoles.includes(req.user.role)) {
+      return res.status(403).json({
         error: 'Insufficient permissions',
-        requiredRoles: roles,
+        requiredRoles,
         userRole: req.user.role
+      });
+    }
+
+    const needsActiveSubscription = requiredRoles.includes('range_admin');
+    if (
+      needsActiveSubscription &&
+      req.user.role === 'range_admin' &&
+      !req.allowInactiveSubscription &&
+      !['active', 'trialing'].includes(req.user.subscriptionStatus || '')
+    ) {
+      return res.status(402).json({
+        error: 'Active range admin subscription required',
+        subscriptionStatus: req.user.subscriptionStatus || 'inactive'
       });
     }
 
@@ -118,10 +132,21 @@ const requireRangeAdmin = (req, res, next) => {
   }
 
   if (req.user.role !== 'admin' && req.user.role !== 'range_admin') {
-    return res.status(403).json({ 
+    return res.status(403).json({
       error: 'Range admin access required',
       requiredRoles: ['admin', 'range_admin'],
       userRole: req.user.role
+    });
+  }
+
+  if (
+    req.user.role === 'range_admin' &&
+    !req.allowInactiveSubscription &&
+    !['active', 'trialing'].includes(req.user.subscriptionStatus || '')
+  ) {
+    return res.status(402).json({
+      error: 'Active range admin subscription required',
+      subscriptionStatus: req.user.subscriptionStatus || 'inactive'
     });
   }
 

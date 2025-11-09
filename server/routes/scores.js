@@ -241,6 +241,52 @@ router.put('/:id/verify', [
 
     const updatedScore = await firebaseService.update('scores', req.params.id, updateData);
 
+    if (status === 'approved' && score.verificationStatus !== 'approved') {
+      try {
+        const competition = await firebaseService.getById('competitions', score.competitionId);
+
+        const resolvedRangeId =
+          competition?.range?.id ||
+          competition?.rangeId ||
+          competition?.range?.rangeId ||
+          score.rangeId ||
+          null;
+
+        if (resolvedRangeId) {
+          const resolvedRangeName =
+            competition?.range?.name ||
+            competition?.rangeName ||
+            score.rangeName ||
+            null;
+
+          const rawEntryFee =
+            (score.entryFee && (score.entryFee.amount || score.entryFee)) ||
+            (competition?.entryFee && (competition.entryFee.amount || competition.entryFee)) ||
+            0;
+
+          const parsedAmount = parseFloat(rawEntryFee);
+          const revenueAmount = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : 10;
+          const currency =
+            (score.entryFee && score.entryFee.currency) ||
+            (competition?.entryFee && competition.entryFee.currency) ||
+            'USD';
+
+          await firebaseService.recordRangeRevenue({
+            rangeId: resolvedRangeId,
+            rangeName: resolvedRangeName,
+            scoreId: req.params.id,
+            competitionId: competition?.id || score.competitionId,
+            amount: revenueAmount,
+            currency,
+            approvedBy: req.user.userId,
+            approvedAt: new Date(),
+          });
+        }
+      } catch (revenueError) {
+        console.error('Range revenue recording error:', revenueError);
+      }
+    }
+
     res.json({
       message: `Score ${status} successfully`,
       score: updatedScore
