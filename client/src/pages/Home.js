@@ -8,7 +8,9 @@ import {
   MapPinIcon, 
   UsersIcon,
   ArrowRightIcon,
-  ViewfinderCircleIcon
+  ViewfinderCircleIcon,
+  MegaphoneIcon,
+  CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 
 const Home = () => {
@@ -425,6 +427,89 @@ const Home = () => {
           >
             Browse Competitions
           </Link>
+        </div>
+      </section>
+
+      {/* Sponsorship Hero Section */}
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}></div>
+        </div>
+        
+        <div className="relative px-6 py-16 sm:px-12 sm:py-20 lg:px-16">
+          <div className="max-w-4xl mx-auto text-center space-y-8">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 rounded-full bg-red-600/20 text-red-300 px-6 py-2 text-sm font-semibold tracking-wide uppercase border border-red-600/30">
+              <MegaphoneIcon className="w-5 h-5" />
+              <span>Partnership Opportunities</span>
+            </div>
+
+            {/* Heading */}
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
+              Reach Precision Shooters with
+              <span className="block text-red-400 mt-2">Strategic Sponsorship</span>
+            </h2>
+
+            {/* Description */}
+            <p className="text-xl sm:text-2xl text-gray-200 max-w-3xl mx-auto leading-relaxed">
+              Connect with a high-intent community of competitive marksmen, ranges, and gear enthusiasts. 
+              Reserve banner placements and elevate your brand with transparent reporting and dedicated support.
+            </p>
+
+            {/* Features */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-12">
+              <div className="flex flex-col items-center space-y-3 p-6 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+                <div className="w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center">
+                  <CurrencyDollarIcon className="w-6 h-6 text-red-400" />
+                </div>
+                <h3 className="font-semibold text-lg">Affordable Rates</h3>
+                <p className="text-sm text-gray-300 text-center">Starting at $50 for 30-day placements</p>
+              </div>
+              
+              <div className="flex flex-col items-center space-y-3 p-6 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+                <div className="w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center">
+                  <ViewfinderCircleIcon className="w-6 h-6 text-red-400" />
+                </div>
+                <h3 className="font-semibold text-lg">Transparent Analytics</h3>
+                <p className="text-sm text-gray-300 text-center">Real-time impressions, clicks, and CTR tracking</p>
+              </div>
+              
+              <div className="flex flex-col items-center space-y-3 p-6 bg-white/5 rounded-xl border border-white/10 backdrop-blur-sm">
+                <div className="w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center">
+                  <TrophyIcon className="w-6 h-6 text-red-400" />
+                </div>
+                <h3 className="font-semibold text-lg">Dedicated Support</h3>
+                <p className="text-sm text-gray-300 text-center">Account manager and creative QA included</p>
+              </div>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12">
+              <Link
+                to="/sponsorship"
+                className="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors shadow-lg hover:shadow-xl"
+              >
+                <span>Explore Sponsorship Options</span>
+                <ArrowRightIcon className="w-5 h-5" />
+              </Link>
+              <a
+                href="mailto:sponsorships@thexringclassic.com"
+                className="inline-flex items-center justify-center gap-2 border-2 border-white/30 hover:border-white/50 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors backdrop-blur-sm bg-white/5 hover:bg-white/10"
+              >
+                <span>Contact Partnerships</span>
+              </a>
+            </div>
+
+            {/* Trust Indicators */}
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <p className="text-sm text-gray-400">
+                Trusted by leading firearms brands, range operators, and equipment manufacturers
+              </p>
+            </div>
+          </div>
         </div>
       </section>
     </div>

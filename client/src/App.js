@@ -27,6 +27,7 @@ import Ranges from './pages/Ranges';
 
 import PitchDeckLanding from './pages/PitchDeckLanding';
 import SponsorDashboard from './pages/dashboard/SponsorDashboard';
+import Sponsorship from './pages/Sponsorship';
 
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -57,6 +58,7 @@ function App() {
           <Route path="rulebook" element={<XRingClassicRulebook />} />
 
           <Route path="pitch-deck" element={<PitchDeckLanding />} />
+          <Route path="sponsorship" element={<Sponsorship />} />
 
           
           {/* Protected routes */}
