@@ -26,8 +26,7 @@ import XRingClassicRulebook from './pages/XRingClassicRulebook';
 import Ranges from './pages/Ranges';
 
 import PitchDeckLanding from './pages/PitchDeckLanding';
-
-
+import SponsorDashboard from './pages/dashboard/SponsorDashboard';
 
 import ProtectedRoute from './components/ProtectedRoute';
 

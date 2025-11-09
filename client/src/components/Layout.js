@@ -15,9 +15,8 @@ import {
   ChevronDownIcon,
   ChartBarIcon,
   UserGroupIcon,
-
-  CurrencyDollarIcon
-
+  CurrencyDollarIcon,
+  MegaphoneIcon
 } from '@heroicons/react/24/outline';
 import { useState, useRef, useEffect } from 'react';
 

@@ -124,6 +124,14 @@ export const paymentsAPI = {
   confirmRangeAdminPayment: (payload) => api.post('/payments/range-admin/confirm', payload).then(r => r.data),
 };
 
+// Sponsorship API
+export const sponsorshipAPI = {
+  getSponsorships: () => api.get('/sponsorships').then(r => r.data),
+  getAnalytics: () => api.get('/sponsorships/analytics').then(r => r.data),
+  getPayments: () => api.get('/sponsorships/payments').then(r => r.data),
+  getDashboard: () => api.get('/sponsorships/dashboard').then(r => r.data),
+};
+
 
 // Shooting Classes API - Temporarily disabled during Firebase migration
 export const shootingClassesAPI = {
