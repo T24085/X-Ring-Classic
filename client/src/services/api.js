@@ -118,6 +118,14 @@ export const adminAPI = {
   createRangeAdmin: (data) => api.post('/auth/create-range-admin', data).then(r => r.data),
 };
 
+
+// Sponsorship API
+export const sponsorshipAPI = {
+  getSponsorships: (params) => api.get('/sponsorships', { params }).then(r => r.data),
+  getAnalytics: (params) => api.get('/sponsorships/analytics', { params }).then(r => r.data),
+  getPayments: (params) => api.get('/sponsorships/payments', { params }).then(r => r.data),
+  getDashboard: (params) => api.get('/sponsorships/dashboard', { params }).then(r => r.data),
+};
 // Shooting Classes API - Temporarily disabled during Firebase migration
 export const shootingClassesAPI = {
   getAll: () => Promise.resolve({ shootingClasses: [] }),

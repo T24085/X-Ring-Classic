@@ -1,6 +1,5 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Competitions from './pages/Competitions';
@@ -23,11 +22,14 @@ import AdminEnterScore from './pages/AdminEnterScore';
 import AdminUserManagement from './pages/AdminUserManagement';
 import XRingClassicRulebook from './pages/XRingClassicRulebook';
 import Ranges from './pages/Ranges';
+
 import PitchDeckLanding from './pages/PitchDeckLanding';
+
+
+
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
-  const { user } = useAuth();
 
   return (
     <div className="App">
@@ -51,9 +53,16 @@ function App() {
           <Route path="shooting-classes" element={<ShootingClasses />} />
           <Route path="ranges" element={<Ranges />} />
           <Route path="rulebook" element={<XRingClassicRulebook />} />
+
           <Route path="pitch-deck" element={<PitchDeckLanding />} />
+
           
           {/* Protected routes */}
+          <Route path="dashboard/sponsor" element={
+            <ProtectedRoute requiredRole={["sponsor", "admin"]}>
+              <SponsorDashboard />
+            </ProtectedRoute>
+          } />
           <Route path="profile" element={
             <ProtectedRoute>
               <Profile />

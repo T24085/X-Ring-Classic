@@ -62,6 +62,7 @@ const scoreRoutes = require('./routes/scores');
 const leaderboardRoutes = require('./routes/leaderboards');
 const adminRoutes = require('./routes/admin');
 const publicRoutes = require('./routes/public');
+const sponsorshipRoutes = require('./routes/sponsorships');
 
 
 // API routes
@@ -72,6 +73,7 @@ app.use('/api/scores', scoreRoutes);
 app.use('/api/leaderboards', leaderboardRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/sponsorships', sponsorshipRoutes);
 
 
 // Health check endpoint
