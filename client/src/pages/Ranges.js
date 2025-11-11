@@ -167,3 +167,8 @@ const Ranges = () => {
 
 export default Ranges;
 
+
+
+
+
+

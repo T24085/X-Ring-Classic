@@ -74,7 +74,13 @@ export const competitionsAPI = {
   getAll: async (params = {}) => {
     const col = collection(db, 'competitions');
     const filters = [];
-    if (params?.status && params.status !== 'all') filters.push(where('status', '==', params.status));
+    // Firestore rules require reads of competitions to match status == 'published' for public
+    // If no explicit filter is provided (or 'all' is requested), default to published
+    if (params?.status && params.status !== 'all') {
+      filters.push(where('status', '==', params.status));
+    } else {
+      filters.push(where('status', '==', 'published'));
+    }
     if (params?.format && params.format !== 'all') filters.push(where('format', '==', params.format));
     if (params?.type && params.type !== 'all') filters.push(where('type', '==', params.type));
     const q = filters.length ? query(col, ...filters) : col;
@@ -270,7 +276,11 @@ export const scoresAPI = {
     return { data: { score: { id: ref.id, ...snap.data() } } };
   },
   getByCompetition: async (competitionId) => {
-    const snap = await getDocs(query(collection(db, 'scores'), where('competitionId', '==', competitionId)));
+    const snap = await getDocs(query(
+      collection(db, 'scores'),
+      where('competitionId', '==', competitionId),
+      where('verificationStatus', '==', 'approved')
+    ));
     const raw = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     const ids = Array.from(new Set(raw.map(s => s.competitorId).filter(Boolean)));
     const userSnaps = await Promise.all(ids.map(uid => getDoc(doc(db, 'users', uid))));
@@ -319,7 +329,12 @@ export const leaderboardsAPI = {
   getOverall: async (params = {}) => {
     // Firestore requires composite indexes for complex order/filters; keep simple
     const lim = Number(params?.limit || 10);
-    const snap = await getDocs(query(collection(db, 'scores')));
+    // Public read allowed only for approved scores per rules; query must include that predicate
+    const q = query(
+      collection(db, 'scores'),
+      where('verificationStatus', '==', 'approved')
+    );
+    const snap = await getDocs(q);
     let scores = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .filter(s => s.verificationStatus === 'approved' || !s.verificationStatus)
       .sort((a, b) => (b.score || 0) - (a.score || 0))
@@ -354,7 +369,12 @@ export const leaderboardsAPI = {
   getIndoor: async (params = {}) => leaderboardsAPI.getOverall(params),
   getOutdoor: async (params = {}) => leaderboardsAPI.getOverall(params),
   getByCompetition: async (competitionId) => {
-    const snap = await getDocs(query(collection(db, 'scores'), where('competitionId', '==', competitionId)));
+    // Match rules by requiring approved scores for public leaderboards
+    const snap = await getDocs(query(
+      collection(db, 'scores'),
+      where('competitionId', '==', competitionId),
+      where('verificationStatus', '==', 'approved')
+    ));
     let scores = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .filter(s => s.verificationStatus === 'approved' || !s.verificationStatus)
       .sort((a, b) => (b.score || 0) - (a.score || 0));
@@ -387,16 +407,15 @@ export const leaderboardsAPI = {
 // Public API
 export const publicAPI = {
   getStats: async () => {
-    const [comps, scores, users] = await Promise.all([
-      getDocs(collection(db, 'competitions')),
-      getDocs(collection(db, 'scores')),
-      getDocs(collection(db, 'users')),
+    const [comps, scores] = await Promise.all([
+      getDocs(query(collection(db, 'competitions'), where('status', '==', 'published'))),
+      getDocs(query(collection(db, 'scores'), where('verificationStatus', '==', 'approved'))),
     ]);
     // Map to keys expected by Home page
     const activeCompetitions = comps.docs.filter(d => (d.data()?.status || '') === 'published').length;
     return {
       activeCompetitions,
-      totalUsers: users.size,
+      totalUsers: 0,
       totalScores: scores.size,
       rangesPartnered: 0,
     };

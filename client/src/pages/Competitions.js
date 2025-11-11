@@ -12,7 +12,8 @@ const Competitions = () => {
   const [filters, setFilters] = useState({
     search: '',
     type: 'all',
-    status: 'all',
+    // Default to published to comply with Firestore rules for public reads
+    status: 'published',
     location: 'all'
   });
 

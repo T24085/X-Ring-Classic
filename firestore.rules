@@ -30,14 +30,11 @@ service cloud.firestore {
     
     // Helper function to check if competition belongs to range admin's range
     function isMyRangeCompetition() {
-      if (!isRangeAdmin()) return false;
-      let userData = getUserRange();
-      if (!userData) return false;
-      
-      // Check if competition's range matches user's range
-      return resource.data.range?.id == userData.rangeId ||
-             resource.data.range?.name == userData.rangeName ||
-             resource.data.rangeId == userData.rangeId;
+      return isRangeAdmin() && 
+             getUserRange() != null && 
+             ((resource.data.range != null && resource.data.range.id == getUserRange().rangeId) ||
+              (resource.data.range != null && resource.data.range.name == getUserRange().rangeName) ||
+              resource.data.rangeId == getUserRange().rangeId);
     }
     
     // Allow read access to published competitions (public for published, authenticated for others)
@@ -63,18 +60,17 @@ service cloud.firestore {
     
     // Helper function to check if score belongs to range admin's competitions
     function isMyRangeScore() {
-      if (!isRangeAdmin()) return false;
       let userData = getUserRange();
-      if (!userData) return false;
-      
-      // Get competition for this score
-      let compDoc = get(/databases/$(database)/documents/competitions/$(resource.data.competitionId));
-      if (!compDoc || !compDoc.data) return false;
-      
-      // Check if competition's range matches user's range
-      return compDoc.data.range?.id == userData.rangeId ||
-             compDoc.data.range?.name == userData.rangeName ||
-             compDoc.data.rangeId == userData.rangeId;
+      let compId = resource.data.competitionId;
+      let compExists = compId != null && exists(/databases/$(database)/documents/competitions/$(compId));
+      let compData = compExists ? get(/databases/$(database)/documents/competitions/$(compId)).data : null;
+      return isRangeAdmin() && 
+             userData != null &&
+             compExists &&
+             compData != null &&
+             ((compData.range != null && compData.range.id == userData.rangeId) ||
+              (compData.range != null && compData.range.name == userData.rangeName) ||
+              compData.rangeId == userData.rangeId);
     }
     
     // Allow authenticated users to create scores
