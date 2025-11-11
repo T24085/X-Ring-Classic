@@ -214,7 +214,7 @@ export const competitionsAPI = {
     const regsSnap = await getDocs(query(collection(db, 'registrations'), where('userId', '==', uid), where('competitionId', '==', id)));
     if (!regsSnap.empty) throw new Error('Already registered');
 
-    // Create registration and bump counts in competition
+    // Create registration (counts are calculated dynamically from registrations collection)
     await addDoc(collection(db, 'registrations'), {
       competitionId: id,
       userId: uid,
@@ -222,11 +222,6 @@ export const competitionsAPI = {
       registeredAt: new Date().toISOString(),
     });
 
-    const currentCount = competition.participantCount || competition.registeredCount || (Array.isArray(competition.participants) ? competition.participants.length : 0) || 0;
-    await updateDoc(doc(db, 'competitions', id), {
-      participantCount: currentCount + 1,
-      registeredCount: (competition.registeredCount || currentCount) + 1,
-    });
     return { data: { message: 'Successfully registered for competition' } };
   },
 };
