@@ -283,8 +283,17 @@ export const scoresAPI = {
     ));
     const raw = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     const ids = Array.from(new Set(raw.map(s => s.competitorId).filter(Boolean)));
-    const userSnaps = await Promise.all(ids.map(uid => getDoc(doc(db, 'users', uid))));
-    const userMap = new Map(userSnaps.map((s, i) => [ids[i], s.exists() ? { id: ids[i], ...s.data() } : null]));
+    const userResults = await Promise.allSettled(ids.map(uid => getDoc(doc(db, 'users', uid))));
+    const userMap = new Map();
+    userResults.forEach((res, i) => {
+      const uid = ids[i];
+      if (res.status === 'fulfilled') {
+        const snap = res.value;
+        userMap.set(uid, snap.exists() ? { id: uid, ...snap.data() } : null);
+      } else {
+        userMap.set(uid, null);
+      }
+    });
     const scores = raw.map(s => ({
       ...s,
       competitor: userMap.get(s.competitorId) || null,
@@ -342,8 +351,18 @@ export const leaderboardsAPI = {
 
     // Populate competitor profiles
     const ids = Array.from(new Set(scores.map(s => s.competitorId).filter(Boolean)));
-    const userSnaps = await Promise.all(ids.map(uid => getDoc(doc(db, 'users', uid))));
-    const userMap = new Map(userSnaps.map((s, i) => [ids[i], s.exists() ? { id: ids[i], ...s.data() } : null]));
+    // Tolerate permission-denied on admin/range_admin user docs; fall back to basic info
+    const userResults = await Promise.allSettled(ids.map(uid => getDoc(doc(db, 'users', uid))));
+    const userMap = new Map();
+    userResults.forEach((res, i) => {
+      const uid = ids[i];
+      if (res.status === 'fulfilled') {
+        const snap = res.value;
+        userMap.set(uid, snap.exists() ? { id: uid, ...snap.data() } : null);
+      } else {
+        userMap.set(uid, null);
+      }
+    });
 
     const leaderboard = scores.map((s, idx) => {
       const u = userMap.get(s.competitorId);
@@ -380,8 +399,17 @@ export const leaderboardsAPI = {
       .sort((a, b) => (b.score || 0) - (a.score || 0));
 
     const ids = Array.from(new Set(scores.map(s => s.competitorId).filter(Boolean)));
-    const userSnaps = await Promise.all(ids.map(uid => getDoc(doc(db, 'users', uid))));
-    const userMap = new Map(userSnaps.map((s, i) => [ids[i], s.exists() ? { id: ids[i], ...s.data() } : null]));
+    const userResults = await Promise.allSettled(ids.map(uid => getDoc(doc(db, 'users', uid))));
+    const userMap = new Map();
+    userResults.forEach((res, i) => {
+      const uid = ids[i];
+      if (res.status === 'fulfilled') {
+        const snap = res.value;
+        userMap.set(uid, snap.exists() ? { id: uid, ...snap.data() } : null);
+      } else {
+        userMap.set(uid, null);
+      }
+    });
 
     const leaderboard = scores.map((s, idx) => {
       const u = userMap.get(s.competitorId);
