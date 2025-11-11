@@ -165,8 +165,19 @@ export const competitionsAPI = {
     const regsSnap = await getDocs(query(collection(db, 'registrations'), where('competitionId', '==', id)));
     const regs = regsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     const userIds = Array.from(new Set(regs.map(r => r.userId).filter(Boolean)));
-    const userSnaps = await Promise.all(userIds.map(uid => getDoc(doc(db, 'users', uid))));
-    const userMap = new Map(userSnaps.map((s, i) => [userIds[i], s.exists() ? { id: userIds[i], ...s.data() } : null]));
+    // Use Promise.allSettled to handle permission errors gracefully (admin/range_admin users may not be readable)
+    const userResults = await Promise.allSettled(userIds.map(uid => getDoc(doc(db, 'users', uid))));
+    const userMap = new Map();
+    userResults.forEach((res, i) => {
+      const uid = userIds[i];
+      if (res.status === 'fulfilled') {
+        const snap = res.value;
+        userMap.set(uid, snap.exists() ? { id: uid, ...snap.data() } : null);
+      } else {
+        // Permission denied or other error - set to null, will use fallback name
+        userMap.set(uid, null);
+      }
+    });
     const participants = regs.map(r => {
       const u = userMap.get(r.userId);
       const name = u ? (u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : (u.username || u.email || 'User')) : 'User';
