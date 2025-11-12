@@ -350,11 +350,23 @@ export const leaderboardsAPI = {
     try {
       // Firestore requires composite indexes for complex order/filters; keep simple
       const lim = Number(params?.limit || 10);
-      // Public read allowed only for approved scores per rules; query must include that predicate
-      const q = query(
-        collection(db, 'scores'),
-        where('verificationStatus', '==', 'approved')
-      );
+      const category = params?.category; // Filter by category if provided (22LR or Airgun 22cal)
+      
+      // Build query with category filter if provided
+      let q;
+      if (category) {
+        q = query(
+          collection(db, 'scores'),
+          where('verificationStatus', '==', 'approved'),
+          where('category', '==', category)
+        );
+      } else {
+        q = query(
+          collection(db, 'scores'),
+          where('verificationStatus', '==', 'approved')
+        );
+      }
+      
       const snap = await getDocs(q);
       let scores = snap.docs.map(d => ({ id: d.id, ...d.data() }))
         .filter(s => s.verificationStatus === 'approved' || !s.verificationStatus)

@@ -8,6 +8,7 @@ const AdminEnterScore = () => {
   const queryClient = useQueryClient();
   const [competitionId, setCompetitionId] = useState('');
   const [competitorId, setCompetitorId] = useState('');
+  const [category, setCategory] = useState(''); // 22LR or Airgun 22cal
   const [shotScores, setShotScores] = useState(Array(10).fill({ value: '', isX: false }));
   const [photoUrl, setPhotoUrl] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
@@ -83,10 +84,15 @@ const AdminEnterScore = () => {
       return toast.error(`This competition requires ${required} shots. You entered ${filled.length}.`);
     }
 
+    if (!category) {
+      return toast.error('Please select a weapon category (22LR or Airgun 22cal)');
+    }
+
     const shots = shotScores.map(s => ({ value: parseInt((s?.value ?? '0'), 10) || 0, isX: s?.isX === true })).slice(0, required);
     const payload = {
       competitionId,
       competitorId,
+      category, // 22LR or Airgun 22cal
       score: Math.round(totalScore),
       shots,
       evidence: {
@@ -149,6 +155,20 @@ const AdminEnterScore = () => {
               {competitionId && participants.length === 0 && (
                 <p className="text-xs text-gray-500 mt-1">No registered participants found for this competition.</p>
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Weapon Category *</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Select category...</option>
+                <option value="22LR">22LR</option>
+                <option value="Airgun 22cal">Airgun 22cal</option>
+              </select>
             </div>
           </div>
         </div>

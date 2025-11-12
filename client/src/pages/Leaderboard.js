@@ -6,25 +6,31 @@ import RankLogo from '../components/RankLogo';
 
 const Leaderboard = () => {
   const [selectedCategory, setSelectedCategory] = useState('overall');
+  const [selectedWeaponCategory, setSelectedWeaponCategory] = useState(''); // 22LR or Airgun 22cal
   const [timeFrame, setTimeFrame] = useState('all-time');
 
   const { data: leaderboard, isLoading, error } = useQuery(
-    ['leaderboard', selectedCategory, timeFrame],
+    ['leaderboard', selectedCategory, selectedWeaponCategory, timeFrame],
     async () => {
       try {
         let response;
+        const params = { 
+          timeFrame,
+          ...(selectedWeaponCategory ? { category: selectedWeaponCategory } : {})
+        };
+        
         switch (selectedCategory) {
           case 'indoor':
-            response = await leaderboardsAPI.getIndoor({ timeFrame });
+            response = await leaderboardsAPI.getIndoor(params);
             break;
           case 'outdoor':
-            response = await leaderboardsAPI.getOutdoor({ timeFrame });
+            response = await leaderboardsAPI.getOutdoor(params);
             break;
           case 'overall':
-            response = await leaderboardsAPI.getOverall({ timeFrame });
+            response = await leaderboardsAPI.getOverall(params);
             break;
           default:
-            response = await leaderboardsAPI.getOverall({ timeFrame });
+            response = await leaderboardsAPI.getOverall(params);
         }
         return response.data;
       } catch (err) {
@@ -139,11 +145,11 @@ const Leaderboard = () => {
 
       {/* Category and Time Filters */}
       <div className="bg-white rounded-lg shadow-sm border p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Category Selection */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Competition Type Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Category
+              Competition Type
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
@@ -167,6 +173,22 @@ const Leaderboard = () => {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Weapon Category Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Weapon Category
+            </label>
+            <select
+              value={selectedWeaponCategory}
+              onChange={(e) => setSelectedWeaponCategory(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">All Categories</option>
+              <option value="22LR">22LR</option>
+              <option value="Airgun 22cal">Airgun 22cal</option>
+            </select>
           </div>
 
           {/* Time Frame Selection */}

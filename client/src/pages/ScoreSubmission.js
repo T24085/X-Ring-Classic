@@ -186,8 +186,14 @@ const ScoreSubmission = () => {
 
     // Evidence URLs are optional; range officers will verify
 
+    if (!data.category) {
+      toast.error('Please select a category (22LR or Airgun 22cal)');
+      return;
+    }
+
     const payload = {
       competitionId: selectedCompetition,
+      category: data.category, // 22LR or Airgun 22cal
       score: Math.round(totalScore),
       shots: shotScores
         .map((s) => ({ value: parseInt((s?.value ?? '0'), 10) || 0, isX: s?.isX === true }))
@@ -265,6 +271,24 @@ const ScoreSubmission = () => {
                 {...register('competitionDate')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Weapon Category *
+              </label>
+              <select
+                {...register('category', { required: 'Please select a weapon category' })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              >
+                <option value="">Select category...</option>
+                <option value="22LR">22LR</option>
+                <option value="Airgun 22cal">Airgun 22cal</option>
+              </select>
+              {errors.category && (
+                <p className="text-red-600 text-sm mt-1">{errors.category.message}</p>
+              )}
             </div>
           </div>
         </div>
