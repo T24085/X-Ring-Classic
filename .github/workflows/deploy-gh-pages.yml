@@ -32,22 +32,10 @@ jobs:
         working-directory: client
         run: npm run build
 
-      - name: Checkout gh-pages
-        uses: actions/checkout@v4
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          ref: gh-pages
-          path: gh-pages
-
-      - name: Copy build files
-        run: |
-          cp -r client/build/* gh-pages/
-
-      - name: Commit and push to gh-pages
-        run: |
-          cd gh-pages
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "Deploy: ${{ github.sha }}" || exit 0
-          git push origin gh-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./client/build
+          cname: false
 
