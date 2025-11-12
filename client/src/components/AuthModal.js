@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { XMarkIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
 const AuthModal = () => {
