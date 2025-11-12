@@ -347,34 +347,38 @@ export const scoresAPI = {
 // Leaderboards API (basic overall)
 export const leaderboardsAPI = {
   getOverall: async (params = {}) => {
-    // Firestore requires composite indexes for complex order/filters; keep simple
-    const lim = Number(params?.limit || 10);
-    // Public read allowed only for approved scores per rules; query must include that predicate
-    const q = query(
-      collection(db, 'scores'),
-      where('verificationStatus', '==', 'approved')
-    );
-    const snap = await getDocs(q);
-    let scores = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      .filter(s => s.verificationStatus === 'approved' || !s.verificationStatus)
-      .sort((a, b) => (b.score || 0) - (a.score || 0))
-      .slice(0, lim);
+    try {
+      // Firestore requires composite indexes for complex order/filters; keep simple
+      const lim = Number(params?.limit || 10);
+      // Public read allowed only for approved scores per rules; query must include that predicate
+      const q = query(
+        collection(db, 'scores'),
+        where('verificationStatus', '==', 'approved')
+      );
+      const snap = await getDocs(q);
+      let scores = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .filter(s => s.verificationStatus === 'approved' || !s.verificationStatus)
+        .sort((a, b) => (b.score || 0) - (a.score || 0))
+        .slice(0, lim);
 
-    // Check if current user is admin - admins should see all scores including admin scores
-    let isCurrentUserAdmin = false;
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-      try {
-        const currentUserSnap = await getDoc(doc(db, 'users', currentUser.uid));
-        if (currentUserSnap.exists()) {
-          const currentUserData = currentUserSnap.data();
-          isCurrentUserAdmin = currentUserData.role === 'admin' || currentUserData.role === 'range_admin';
+      console.log(`[Leaderboard] Found ${scores.length} approved scores`);
+
+      // Check if current user is admin - admins should see all scores including admin scores
+      let isCurrentUserAdmin = false;
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        try {
+          const currentUserSnap = await getDoc(doc(db, 'users', currentUser.uid));
+          if (currentUserSnap.exists()) {
+            const currentUserData = currentUserSnap.data();
+            isCurrentUserAdmin = currentUserData.role === 'admin' || currentUserData.role === 'range_admin';
+            console.log(`[Leaderboard] Current user is ${isCurrentUserAdmin ? 'admin' : 'not admin'}`);
+          }
+        } catch (err) {
+          // If we can't check, assume not admin
+          console.warn('[Leaderboard] Could not check current user role:', err);
         }
-      } catch (err) {
-        // If we can't check, assume not admin
-        console.warn('Could not check current user role:', err);
       }
-    }
 
     // Populate competitor profiles
     const ids = Array.from(new Set(scores.map(s => s.competitorId).filter(Boolean)));
