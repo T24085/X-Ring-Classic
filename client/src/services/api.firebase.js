@@ -479,11 +479,11 @@ export const leaderboardsAPI = {
           userMap.set(uid, null);
         }
       } else {
-        // Permission denied likely means admin/range_admin user
+        // Permission denied - don't filter out, just use fallback data
+        // This allows competitor scores to show even if we can't read their profile
         const error = res.reason;
         if (error?.code === 'permission-denied') {
-          console.warn(`Permission denied for user ${uid} (likely admin/range_admin) - excluding from leaderboard`);
-          adminUserIds.add(uid);
+          console.warn(`Permission denied for user ${uid} - using fallback data`);
         } else {
           console.error(`Failed to fetch user ${uid}:`, error);
         }
@@ -491,7 +491,7 @@ export const leaderboardsAPI = {
       }
     });
 
-    // Filter out scores from admin/range_admin users
+    // Only filter out scores from confirmed admin/range_admin users
     const competitorScores = scores.filter(s => !adminUserIds.has(s.competitorId));
     
     const leaderboard = competitorScores.map((s, idx) => {
