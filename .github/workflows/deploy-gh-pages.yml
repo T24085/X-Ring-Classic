@@ -1,22 +1,21 @@
-name: deploy-gh-pages
+name: Build and push to gh-pages
 
 on:
   push:
-    branches: [ gh-pages ]
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          submodules: false
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -33,12 +32,22 @@ jobs:
         working-directory: client
         run: npm run build
 
-      - name: Deploy to gh-pages branch
-        uses: JamesIves/github-pages-deploy-action@v4
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
         with:
-          branch: gh-pages
-          folder: client/build
-          clean: true
-          single-commit: true
-          commit-message: "deploy: ${{ github.sha }}"
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Copy build files
+        run: |
+          cp -r client/build/* gh-pages/
+
+      - name: Commit and push to gh-pages
+        run: |
+          cd gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Deploy: ${{ github.sha }}" || exit 0
+          git push origin gh-pages
 
