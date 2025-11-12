@@ -8,8 +8,9 @@ service cloud.firestore {
     
     // Helper function to get user role from Firestore user document
     function getUserRole() {
-      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      return userDoc != null && userDoc.data != null ? userDoc.data.role : null;
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) ? 
+               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role : null;
     }
     
     // Helper function to check if user is admin
@@ -24,8 +25,9 @@ service cloud.firestore {
     
     // Helper function to get user's range info
     function getUserRange() {
-      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      return userDoc != null && userDoc.data != null ? userDoc.data : null;
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) ? 
+               get(/databases/$(database)/documents/users/$(request.auth.uid)).data : null;
     }
     
     // Helper function to check if competition belongs to range admin's range
@@ -37,25 +39,20 @@ service cloud.firestore {
               resource.data.rangeId == getUserRange().rangeId);
     }
     
-    // Allow read access to published competitions (public for published, authenticated for others)
+    // Competitions - Public can read published, authenticated can read all
     match /competitions/{competitionId} {
-      allow read: if resource.data.status == 'published' || isAdmin() || isRangeAdmin() || 
-                     (isAuthenticated() && resource.data.status != null);
-      allow create: if isAdmin() || isRangeAdmin();
-      allow update: if isAdmin() || (isRangeAdmin() && isMyRangeCompetition());
-      allow delete: if isAdmin() || (isRangeAdmin() && isMyRangeCompetition());
+      allow read: if resource.data.status == 'published' || isAuthenticated();
+      allow create: if isAuthenticated() && (getUserRole() == 'admin' || getUserRole() == 'range_admin');
+      allow update: if isAuthenticated() && (getUserRole() == 'admin' || (getUserRole() == 'range_admin' && isMyRangeCompetition()));
+      allow delete: if isAuthenticated() && (getUserRole() == 'admin' || (getUserRole() == 'range_admin' && isMyRangeCompetition()));
     }
     
-    // Allow users to read their own data and update their profile
-    // Also allow limited public read for leaderboard display (basic profile info only)
+    // Users - Public can read non-admin users, authenticated can read their own or admins can read all
     match /users/{userId} {
-      // Allow public read for non-admin users (for leaderboards)
-      // Allow authenticated users to read their own profile or admins to read any profile
-      allow read: if (resource.data.role != 'admin' && resource.data.role != 'range_admin') ||
-                     (isAuthenticated() && (request.auth.uid == userId || isAdmin()));
-      // Write access
-      allow write: if isAuthenticated() && 
-                      (request.auth.uid == userId || isAdmin());
+      allow read: if (resource.data.role == null || 
+                     (resource.data.role != 'admin' && resource.data.role != 'range_admin')) ||
+                     (isAuthenticated() && (request.auth.uid == userId || getUserRole() == 'admin'));
+      allow write: if isAuthenticated() && (request.auth.uid == userId || getUserRole() == 'admin');
     }
     
     // Helper function to check if score belongs to range admin's competitions
@@ -73,34 +70,30 @@ service cloud.firestore {
               compData.rangeId == userData.rangeId);
     }
     
-    // Allow authenticated users to create scores
-    // Allow public read of approved scores for leaderboards
+    // Scores - Public can read approved/null, authenticated can read all
     match /scores/{scoreId} {
       allow read: if resource.data.verificationStatus == 'approved' || 
-                     !resource.data.verificationStatus ||
+                     resource.data.verificationStatus == null ||
                      isAuthenticated();
       allow create: if isAuthenticated();
-      allow update: if isAdmin() || (isRangeAdmin() && isMyRangeScore());
-      allow delete: if isAdmin() || (isRangeAdmin() && isMyRangeScore());
+      allow update: if isAuthenticated() && (getUserRole() == 'admin' || (getUserRole() == 'range_admin' && isMyRangeScore()));
+      allow delete: if isAuthenticated() && (getUserRole() == 'admin' || (getUserRole() == 'range_admin' && isMyRangeScore()));
     }
     
-    // Ranges collection - allow admins to manage, public read
+    // Ranges - Public read, admin write
     match /ranges/{rangeId} {
-      allow read: if true; // Public read access
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow read: if true;
+      allow create: if isAuthenticated() && getUserRole() == 'admin';
+      allow update: if isAuthenticated() && getUserRole() == 'admin';
+      allow delete: if isAuthenticated() && getUserRole() == 'admin';
     }
     
-    // Registrations collection
+    // Registrations - Public read, authenticated create/update own
     match /registrations/{registrationId} {
-      // Allow public read of registrations (for participant lists on competition pages)
       allow read: if true;
       allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && 
-        (request.auth.uid == resource.data.userId || isAdmin());
-      allow delete: if isAdmin() || 
-                      (isAuthenticated() && request.auth.uid == resource.data.userId);
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.userId || getUserRole() == 'admin');
+      allow delete: if isAuthenticated() && (getUserRole() == 'admin' || request.auth.uid == resource.data.userId);
     }
   }
 }

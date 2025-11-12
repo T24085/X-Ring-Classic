@@ -514,7 +514,7 @@ export const usersAPI = {
     });
     return { data: { message: 'User deactivated' } };
   },
-  updateRole: async (userId, role) => {
+  updateRole: async (userId, role, rangeId = null) => {
     const actor = auth.currentUser;
     if (!actor) throw new Error('Not authenticated');
     const actorSnap = await getDoc(doc(db, 'users', actor.uid));
@@ -522,8 +522,52 @@ export const usersAPI = {
     if (actorRole !== 'admin') throw new Error('Admin only');
     const allowed = ['competitor', 'range_officer', 'range_admin', 'admin'];
     if (!allowed.includes(role)) throw new Error('Invalid role');
-    await updateDoc(doc(db, 'users', userId), { role, updatedAt: serverTimestamp() });
+    
+    const updateData = { role, updatedAt: serverTimestamp() };
+    
+    // If setting as range_admin and rangeId provided, update range assignment
+    if (role === 'range_admin' && rangeId) {
+      const rangeSnap = await getDoc(doc(db, 'ranges', rangeId));
+      if (rangeSnap.exists()) {
+        const rangeData = rangeSnap.data();
+        updateData.rangeId = rangeId;
+        updateData.rangeName = rangeData.name || '';
+        updateData.rangeLocation = rangeData.location || '';
+      }
+    }
+    
+    await updateDoc(doc(db, 'users', userId), updateData);
     return { data: { message: 'Role updated' } };
+  },
+  updateUserRange: async (userId, rangeId) => {
+    const actor = auth.currentUser;
+    if (!actor) throw new Error('Not authenticated');
+    const actorSnap = await getDoc(doc(db, 'users', actor.uid));
+    const actorRole = actorSnap.exists() ? actorSnap.data()?.role : undefined;
+    if (actorRole !== 'admin') throw new Error('Admin only');
+    
+    if (!rangeId) {
+      // Remove range assignment
+      await updateDoc(doc(db, 'users', userId), {
+        rangeId: null,
+        rangeName: null,
+        rangeLocation: null,
+        updatedAt: serverTimestamp(),
+      });
+      return { data: { message: 'Range assignment removed' } };
+    }
+    
+    const rangeSnap = await getDoc(doc(db, 'ranges', rangeId));
+    if (!rangeSnap.exists()) throw new Error('Range not found');
+    const rangeData = rangeSnap.data();
+    
+    await updateDoc(doc(db, 'users', userId), {
+      rangeId,
+      rangeName: rangeData.name || '',
+      rangeLocation: rangeData.location || '',
+      updatedAt: serverTimestamp(),
+    });
+    return { data: { message: 'Range assignment updated' } };
   },
   delete: async (userId) => {
     const actor = auth.currentUser;
@@ -759,6 +803,10 @@ export const adminAPI = {
     const rangeAdmins = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     return { data: { rangeAdmins } };
   },
+  getRangeDashboard: async (rangeId, period = '30-days') => {
+    // Admin can view any range dashboard
+    return rangeAdminAPI.getDashboard({ rangeId, period });
+  },
   createRangeAdmin: async (data) => {
     const uid = auth.currentUser?.uid;
     if (!uid) throw new Error('Not authenticated');
@@ -866,6 +914,20 @@ export const rangesAPI = {
   update: async (id, rangeData) => {
     await updateDoc(doc(db, 'ranges', id), {
       ...rangeData,
+      updatedAt: serverTimestamp(),
+    });
+    const snap = await getDoc(doc(db, 'ranges', id));
+    return { data: { range: { id, ...snap.data() } } };
+  },
+  markAsPaid: async (id) => {
+    const now = new Date();
+    const renewalDate = new Date(now);
+    renewalDate.setMonth(renewalDate.getMonth() + 1);
+    
+    await updateDoc(doc(db, 'ranges', id), {
+      subscriptionStatus: 'active',
+      subscriptionLastPaymentDate: now.toISOString(),
+      subscriptionRenewalDate: renewalDate.toISOString(),
       updatedAt: serverTimestamp(),
     });
     const snap = await getDoc(doc(db, 'ranges', id));
