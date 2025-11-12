@@ -14,29 +14,30 @@ function to250(avgPoints, perCardMaxPoints = 250) {
 }
 
 // Preferred: classify using average card score (normalized to 250) and avg X count
-// Score is primary; X-count enhances classification but doesn't downgrade
+// BOTH score AND X count requirements must be met for each tier
 export function classificationFromAvg(avgCardPoints250, avgXCount = 0) {
   if (avgCardPoints250 == null || isNaN(avgCardPoints250)) return 'Bronze';
   const score = avgCardPoints250;
   const xAvg = Number.isFinite(avgXCount) ? avgXCount : 0;
 
-  // Score-based classification (primary)
-  let baseClassification = 'Bronze';
-  if (score >= 249.0) baseClassification = 'Grand Master';
-  else if (score >= 247.0) baseClassification = 'Master';
-  else if (score >= 245.0) baseClassification = 'Diamond';
-  else if (score >= 242.0) baseClassification = 'Platinum';
-  else if (score >= 238.0) baseClassification = 'Gold';
+  // Check each tier from highest to lowest, requiring BOTH score AND X count thresholds
+  // Grand Master: 249.0 – 250.0 AND 15+ X average
+  if (score >= 249.0 && xAvg >= 15) return 'Grand Master';
   
-  // X-count can enhance classification but not downgrade
-  // If they meet the X requirement for a higher tier, they can be upgraded
-  if (baseClassification === 'Master' && score >= 249.0 && xAvg >= 15) return 'Grand Master';
-  if (baseClassification === 'Diamond' && score >= 247.0 && xAvg >= 10) return 'Master';
-  if (baseClassification === 'Platinum' && score >= 245.0 && xAvg >= 8) return 'Diamond';
-  if (baseClassification === 'Gold' && score >= 242.0 && xAvg >= 6) return 'Platinum';
-  if (baseClassification === 'Bronze' && score >= 238.0 && xAvg >= 4) return 'Gold';
+  // Master: 247.0 – 248.9 AND 10+ X average
+  if (score >= 247.0 && xAvg >= 10) return 'Master';
   
-  return baseClassification;
+  // Diamond: 245.0 – 246.9 AND 8+ X average
+  if (score >= 245.0 && xAvg >= 8) return 'Diamond';
+  
+  // Platinum: 242.0 – 244.9 AND 6+ X average
+  if (score >= 242.0 && xAvg >= 6) return 'Platinum';
+  
+  // Gold: 238.0 – 241.9 AND 4+ X average
+  if (score >= 238.0 && xAvg >= 4) return 'Gold';
+  
+  // Bronze: below 238.0 (no X requirement)
+  return 'Bronze';
 }
 
 // Backward-compat: classification from percent [0..100]

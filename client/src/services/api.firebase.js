@@ -447,18 +447,14 @@ export const leaderboardsAPI = {
         const uniqueCompetitions = new Set(userScores.map(s => s.competitionId).filter(Boolean));
         const competitionsCount = uniqueCompetitions.size || 1;
         
-        // Calculate total/average X count
+        // Calculate total/average X count (include all scores, even with 0 X count)
         let totalXCount = 0;
-        let xCountValid = 0;
         userScores.forEach(s => {
           const computedX = (Array.isArray(s.shots) ? s.shots.filter(sh => (Number(sh?.value) === 10 && (sh?.isX === true))).length : 0);
           const xCount = (typeof s.tiebreakerData?.xCount === 'number') ? s.tiebreakerData.xCount : computedX;
-          if (xCount > 0) {
-            totalXCount += xCount;
-            xCountValid++;
-          }
+          totalXCount += xCount; // Include all scores, even if X count is 0
         });
-        const avgXCount = xCountValid > 0 ? totalXCount / xCountValid : 0;
+        const avgXCount = userScores.length > 0 ? totalXCount / userScores.length : 0;
         
         // Calculate classification
         const cls = competitor.classification || classificationFromAvg(averageScore, avgXCount) || undefined;
