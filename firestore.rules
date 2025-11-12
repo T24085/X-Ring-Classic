@@ -49,11 +49,15 @@ service cloud.firestore {
     
     // Users - Public can read non-admin users, authenticated can read their own or any non-admin user, admins can read all
     match /users/{userId} {
-      allow read: if (resource.data.role == null || 
-                     (resource.data.role != 'admin' && resource.data.role != 'range_admin')) ||
-                     (isAuthenticated() && (request.auth.uid == userId || 
-                      getUserRole() == 'admin' || 
-                      (resource.data.role != 'admin' && resource.data.role != 'range_admin')));
+      allow read: if 
+        // Public can read non-admin/range_admin users
+        (resource.data.role == null || (resource.data.role != 'admin' && resource.data.role != 'range_admin')) ||
+        // Authenticated users can read their own profile
+        (isAuthenticated() && request.auth.uid == userId) ||
+        // Admins can read all profiles
+        (isAuthenticated() && getUserRole() == 'admin') ||
+        // Authenticated users can read any non-admin/range_admin user profile (for leaderboards)
+        (isAuthenticated() && resource.data.role != 'admin' && resource.data.role != 'range_admin');
       allow write: if isAuthenticated() && (request.auth.uid == userId || getUserRole() == 'admin');
     }
     

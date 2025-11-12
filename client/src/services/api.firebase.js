@@ -369,15 +369,36 @@ export const leaderboardsAPI = {
       const uid = ids[i];
       if (res.status === 'fulfilled') {
         const snap = res.value;
-        userMap.set(uid, snap.exists() ? { id: uid, ...snap.data() } : null);
+        if (snap.exists()) {
+          const userData = snap.data();
+          userMap.set(uid, { 
+            id: uid, 
+            ...userData,
+            // Ensure we have username, firstName, lastName even if empty
+            username: userData.username || userData.email?.split('@')[0] || 'user',
+            firstName: userData.firstName || '',
+            lastName: userData.lastName || '',
+          });
+        } else {
+          console.warn(`User document ${uid} does not exist`);
+          userMap.set(uid, null);
+        }
       } else {
+        console.error(`Failed to fetch user ${uid}:`, res.reason);
         userMap.set(uid, null);
       }
     });
 
     const leaderboard = scores.map((s, idx) => {
       const u = userMap.get(s.competitorId);
-      const competitor = u ? u : { id: s.competitorId, username: s.username || 'user', firstName: 'Shooter', lastName: '' };
+      // If user data exists, use it; otherwise fall back to score data or defaults
+      const competitor = u ? u : { 
+        id: s.competitorId, 
+        username: s.username || s.competitor?.username || 'user', 
+        firstName: s.competitor?.firstName || s.firstName || 'Shooter', 
+        lastName: s.competitor?.lastName || s.lastName || '',
+        email: s.competitor?.email || s.email || '',
+      };
       const avg = s.averageScore || s.score || 0;
       const computedX = (Array.isArray(s.shots) ? s.shots.filter(sh => (Number(sh?.value) === 10 && (sh?.isX === true))).length : 0);
       const xCount = (typeof s.tiebreakerData?.xCount === 'number') ? s.tiebreakerData.xCount : computedX;
@@ -416,15 +437,36 @@ export const leaderboardsAPI = {
       const uid = ids[i];
       if (res.status === 'fulfilled') {
         const snap = res.value;
-        userMap.set(uid, snap.exists() ? { id: uid, ...snap.data() } : null);
+        if (snap.exists()) {
+          const userData = snap.data();
+          userMap.set(uid, { 
+            id: uid, 
+            ...userData,
+            // Ensure we have username, firstName, lastName even if empty
+            username: userData.username || userData.email?.split('@')[0] || 'user',
+            firstName: userData.firstName || '',
+            lastName: userData.lastName || '',
+          });
+        } else {
+          console.warn(`User document ${uid} does not exist`);
+          userMap.set(uid, null);
+        }
       } else {
+        console.error(`Failed to fetch user ${uid}:`, res.reason);
         userMap.set(uid, null);
       }
     });
 
     const leaderboard = scores.map((s, idx) => {
       const u = userMap.get(s.competitorId);
-      const competitor = u ? u : { id: s.competitorId, username: s.username || 'user', firstName: 'Shooter', lastName: '' };
+      // If user data exists, use it; otherwise fall back to score data or defaults
+      const competitor = u ? u : { 
+        id: s.competitorId, 
+        username: s.username || s.competitor?.username || 'user', 
+        firstName: s.competitor?.firstName || s.firstName || 'Shooter', 
+        lastName: s.competitor?.lastName || s.lastName || '',
+        email: s.competitor?.email || s.email || '',
+      };
       const avg = s.averageScore || s.score || 0;
       const xAvg = s.tiebreakerData?.xCount || 0;
       const cls = competitor.classification || classificationFromAvg(avg, xAvg) || undefined;
