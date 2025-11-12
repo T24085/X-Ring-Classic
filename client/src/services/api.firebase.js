@@ -365,12 +365,20 @@ export const leaderboardsAPI = {
     // Tolerate permission-denied on admin/range_admin user docs; fall back to basic info
     const userResults = await Promise.allSettled(ids.map(uid => getDoc(doc(db, 'users', uid))));
     const userMap = new Map();
+    const adminUserIds = new Set(); // Track admin users to filter them out
+    
     userResults.forEach((res, i) => {
       const uid = ids[i];
       if (res.status === 'fulfilled') {
         const snap = res.value;
         if (snap.exists()) {
           const userData = snap.data();
+          // Skip admin and range_admin users from public leaderboards
+          if (userData.role === 'admin' || userData.role === 'range_admin') {
+            adminUserIds.add(uid);
+            userMap.set(uid, null);
+            return;
+          }
           userMap.set(uid, { 
             id: uid, 
             ...userData,
@@ -384,12 +392,22 @@ export const leaderboardsAPI = {
           userMap.set(uid, null);
         }
       } else {
-        console.error(`Failed to fetch user ${uid}:`, res.reason);
+        // Permission denied likely means admin/range_admin user
+        const error = res.reason;
+        if (error?.code === 'permission-denied') {
+          console.warn(`Permission denied for user ${uid} (likely admin/range_admin) - excluding from leaderboard`);
+          adminUserIds.add(uid);
+        } else {
+          console.error(`Failed to fetch user ${uid}:`, error);
+        }
         userMap.set(uid, null);
       }
     });
 
-    const leaderboard = scores.map((s, idx) => {
+    // Filter out scores from admin/range_admin users
+    const competitorScores = scores.filter(s => !adminUserIds.has(s.competitorId));
+    
+    const leaderboard = competitorScores.map((s, idx) => {
       const u = userMap.get(s.competitorId);
       // If user data exists, use it; otherwise fall back to score data or defaults
       const competitor = u ? u : { 
