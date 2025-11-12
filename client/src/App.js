@@ -8,6 +8,7 @@ import Leaderboard from './pages/Leaderboard';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
 import AdminDashboard from './pages/AdminDashboard';
 import CreateCompetition from './pages/CreateCompetition';
 import EditCompetition from './pages/EditCompetition';
@@ -39,6 +40,7 @@ function App() {
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/range-admin/signup" element={<RangeAdminSignup />} />
 
         {/* Protected routes with layout */}
