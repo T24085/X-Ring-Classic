@@ -1,24 +1,20 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useQuery } from 'react-query';
 import { useNavigate } from 'react-router-dom';
-import { adminAPI, rangesAPI } from '../services/api.firebase';
+import { adminAPI } from '../services/api.firebase';
 import { 
   Users, 
   Trophy, 
   Target, 
   TrendingUp, 
   AlertTriangle, 
-  CheckCircle, 
   Clock, 
   DollarSign,
   BarChart3,
   Activity,
   Shield,
   Settings,
-  Plus,
-  Building2,
-  Eye,
-  X
+  Plus
 } from 'lucide-react';
 import {
   LineChart,
@@ -32,13 +28,10 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [selectedPeriod, setSelectedPeriod] = useState('30-days');
-  const [viewingRangeDashboard, setViewingRangeDashboard] = useState(null);
 
   const { data: dashboardData, isLoading, error } = useQuery(
     ['admin-dashboard', selectedPeriod],
@@ -60,31 +53,6 @@ const AdminDashboard = () => {
     'pending-scores',
     () => adminAPI.getScores({ verificationStatus: 'pending', limit: 5 }),
     {
-      staleTime: 2 * 60 * 1000,
-    }
-  );
-
-  const { data: rangesData } = useQuery('admin-ranges', () => rangesAPI.getAll(), {
-    staleTime: 5 * 60 * 1000,
-  });
-  const ranges = rangesData?.data?.ranges || [];
-
-  const markAsPaidMutation = useMutation((rangeId) => rangesAPI.markAsPaid(rangeId), {
-    onSuccess: () => {
-      toast.success('Range marked as paid - subscription activated for range admin');
-      queryClient.invalidateQueries('admin-ranges');
-      // Also invalidate range admin queries so their dashboard refreshes
-      queryClient.invalidateQueries('range-admin-range');
-      queryClient.invalidateQueries('range-admin-dashboard');
-    },
-    onError: (e) => toast.error(e.response?.data?.error || 'Failed to mark range as paid')
-  });
-
-  const { data: rangeDashboardData, isLoading: rangeDashboardLoading } = useQuery(
-    ['range-dashboard', viewingRangeDashboard],
-    () => adminAPI.getRangeDashboard(viewingRangeDashboard),
-    {
-      enabled: !!viewingRangeDashboard,
       staleTime: 2 * 60 * 1000,
     }
   );
@@ -467,70 +435,7 @@ const AdminDashboard = () => {
             >
               System Settings
             </button>
-            <button
-              onClick={() => navigate('/admin/range-management')}
-              className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              Manage Ranges
-            </button>
           </div>
-        </div>
-      </div>
-
-      {/* Range Management Section */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Range Management</h3>
-          <Building2 className="h-5 w-5 text-gray-400" />
-        </div>
-        <div className="space-y-3">
-          {ranges.length === 0 ? (
-            <p className="text-gray-500 text-sm">No ranges found</p>
-          ) : (
-            ranges.map((range) => {
-              const subscriptionStatus = range.subscriptionStatus || 'inactive';
-              const isPaid = subscriptionStatus === 'active';
-              return (
-                <div key={range.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{range.name}</p>
-                    <p className="text-xs text-gray-500">{range.location || 'No location'}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`px-2 py-0.5 text-xs rounded-full ${
-                        isPaid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {isPaid ? 'Paid' : 'Unpaid'}
-                      </span>
-                      {range.adminEmail && (
-                        <span className="text-xs text-gray-500">Admin: {range.adminEmail}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setViewingRangeDashboard(range.id)}
-                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-1"
-                    >
-                      <Eye className="w-4 h-4" /> View Dashboard
-                    </button>
-                    {!isPaid && (
-                      <button
-                        onClick={() => {
-                          if (window.confirm(`Mark ${range.name} as paid? This will activate their subscription.`)) {
-                            markAsPaidMutation.mutate(range.id);
-                          }
-                        }}
-                        disabled={markAsPaidMutation.isLoading}
-                        className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1 disabled:opacity-50"
-                      >
-                        <DollarSign className="w-4 h-4" /> Mark as Paid
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          )}
         </div>
       </div>
 
@@ -645,63 +550,6 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Range Dashboard Modal */}
-      {viewingRangeDashboard && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold">
-                Range Dashboard: {ranges.find(r => r.id === viewingRangeDashboard)?.name || 'Loading...'}
-              </h3>
-              <button
-                onClick={() => setViewingRangeDashboard(null)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            {rangeDashboardLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : rangeDashboardData?.data ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-gray-600">Active Competitions</p>
-                    <p className="text-2xl font-bold text-gray-900">{rangeDashboardData.data.stats?.activeCompetitions || 0}</p>
-                  </div>
-                  <div className="p-4 bg-yellow-50 rounded-lg">
-                    <p className="text-sm text-gray-600">Pending Scores</p>
-                    <p className="text-2xl font-bold text-gray-900">{rangeDashboardData.data.stats?.pendingScores || 0}</p>
-                  </div>
-                  <div className="p-4 bg-green-50 rounded-lg">
-                    <p className="text-sm text-gray-600">Total Registrations</p>
-                    <p className="text-2xl font-bold text-gray-900">{rangeDashboardData.data.stats?.totalRegistrations || 0}</p>
-                  </div>
-                  <div className="p-4 bg-purple-50 rounded-lg">
-                    <p className="text-sm text-gray-600">Revenue</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      ${rangeDashboardData.data.revenue?.total || 0}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <button
-                    onClick={() => navigate(`/admin/range-management`)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    Go to Range Management
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <p className="text-gray-500">No dashboard data available</p>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

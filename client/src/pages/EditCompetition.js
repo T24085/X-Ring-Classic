@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { competitionsAPI } from '../services/api.firebase';
-import { Target, MapPin, AlertCircle, CheckCircle, Save } from 'lucide-react';
+import { Target, MapPin, AlertCircle, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const EditCompetition = () => {
