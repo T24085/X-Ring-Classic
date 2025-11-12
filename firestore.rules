@@ -47,19 +47,13 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && (getUserRole() == 'admin' || (getUserRole() == 'range_admin' && isMyRangeCompetition()));
     }
     
-    // Users - Public can read non-admin users, authenticated users can read all user profiles (for leaderboards)
+    // Users - Public can read non-admin users, authenticated users can read all profiles (for leaderboards)
     match /users/{userId} {
       allow read: if 
         // Public can read non-admin/range_admin users
         (resource.data.role == null || (resource.data.role != 'admin' && resource.data.role != 'range_admin')) ||
-        // Authenticated users can read their own profile
-        (isAuthenticated() && request.auth.uid == userId) ||
-        // Admins can read all profiles
-        (isAuthenticated() && getUserRole() == 'admin') ||
-        // Authenticated users can read any user profile (for leaderboards - everyone should see names)
-        (isAuthenticated() && resource.data.role != 'admin' && resource.data.role != 'range_admin') ||
-        // Authenticated users can also read admin/range_admin profiles if they're authenticated (for leaderboards)
-        (isAuthenticated());
+        // Authenticated users can read any profile (for leaderboards - everyone should see names)
+        isAuthenticated();
       allow write: if isAuthenticated() && (request.auth.uid == userId || getUserRole() == 'admin');
     }
     
