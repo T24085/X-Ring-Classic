@@ -48,7 +48,8 @@ const RangeAdminDashboard = () => {
     return null;
   };
 
-  const rangeRecord = dashboardData?.range || rangeData?.data?.range;
+  // Get range admin's range info first
+  const rangeRecord = rangeData?.data?.range;
   const rangeId = rangeRecord?.id;
   const rangeName = rangeRecord?.name || user?.rangeName;
 
@@ -61,6 +62,9 @@ const RangeAdminDashboard = () => {
       staleTime: 5 * 60 * 1000,
     }
   );
+
+  // Use dashboard range if available, otherwise fall back to rangeData
+  const finalRangeRecord = dashboardData?.range || rangeRecord;
 
   // Get competitions for this range
   const { data: competitionsData, isLoading: competitionsLoading } = useQuery(
@@ -100,11 +104,11 @@ const RangeAdminDashboard = () => {
     return map;
   }, [competitions]);
 
-  const subscriptionStatus = (paymentInfo.subscriptionStatus || rangeRecord?.subscriptionStatus || user?.subscriptionStatus || 'inactive').toLowerCase();
-  const renewalDate = parseDate(paymentInfo.renewalDate || rangeRecord?.subscriptionRenewalDate || user?.subscriptionRenewalDate);
-  const lastPaymentDate = parseDate(paymentInfo.lastPaymentDate || rangeRecord?.subscriptionLastPaymentDate || user?.subscriptionLastPaymentDate);
-  const paymentCurrency = paymentInfo.currency || rangeRecord?.subscriptionCurrency || 'USD';
-  const paymentAmount = paymentInfo.amount || rangeRecord?.subscriptionAmount || 20;
+  const subscriptionStatus = (paymentInfo.subscriptionStatus || finalRangeRecord?.subscriptionStatus || user?.subscriptionStatus || 'inactive').toLowerCase();
+  const renewalDate = parseDate(paymentInfo.renewalDate || finalRangeRecord?.subscriptionRenewalDate || user?.subscriptionRenewalDate);
+  const lastPaymentDate = parseDate(paymentInfo.lastPaymentDate || finalRangeRecord?.subscriptionLastPaymentDate || user?.subscriptionLastPaymentDate);
+  const paymentCurrency = paymentInfo.currency || finalRangeRecord?.subscriptionCurrency || 'USD';
+  const paymentAmount = paymentInfo.amount || finalRangeRecord?.subscriptionAmount || 20;
 
   const currencyFormatter = useMemo(
     () => new Intl.NumberFormat('en-US', { style: 'currency', currency: paymentCurrency }),
@@ -137,7 +141,7 @@ const RangeAdminDashboard = () => {
     );
   }
 
-  if (!rangeRecord && !rangeName) {
+  if (!finalRangeRecord && !rangeName) {
     return (
       <div className="text-center py-8">
         <div className="text-red-600 mb-4">No range associated with your account</div>
