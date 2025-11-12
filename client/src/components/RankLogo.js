@@ -10,6 +10,7 @@ const filenameForClass = (classification) => {
   if (c.includes('platinum')) return 'Platinum.png';
   if (c.includes('gold')) return 'Gold.png';
   if (c.includes('bronze')) return 'Bronze.png';
+  if (c.includes('rookie')) return null; // No Rookie.png image exists, return null to skip
   return null;
 };
 

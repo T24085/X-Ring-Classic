@@ -47,11 +47,13 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && (getUserRole() == 'admin' || (getUserRole() == 'range_admin' && isMyRangeCompetition()));
     }
     
-    // Users - Public can read non-admin users, authenticated can read their own or admins can read all
+    // Users - Public can read non-admin users, authenticated can read their own or any non-admin user, admins can read all
     match /users/{userId} {
       allow read: if (resource.data.role == null || 
                      (resource.data.role != 'admin' && resource.data.role != 'range_admin')) ||
-                     (isAuthenticated() && (request.auth.uid == userId || getUserRole() == 'admin'));
+                     (isAuthenticated() && (request.auth.uid == userId || 
+                      getUserRole() == 'admin' || 
+                      (resource.data.role != 'admin' && resource.data.role != 'range_admin')));
       allow write: if isAuthenticated() && (request.auth.uid == userId || getUserRole() == 'admin');
     }
     
