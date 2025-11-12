@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/X-Ring-Classic/static/css/main.656345d1.css",
-    "main.js": "/X-Ring-Classic/static/js/main.4a6422ea.js",
+    "main.js": "/X-Ring-Classic/static/js/main.40002c66.js",
     "index.html": "/X-Ring-Classic/index.html",
     "main.656345d1.css.map": "/X-Ring-Classic/static/css/main.656345d1.css.map",
-    "main.4a6422ea.js.map": "/X-Ring-Classic/static/js/main.4a6422ea.js.map"
+    "main.40002c66.js.map": "/X-Ring-Classic/static/js/main.40002c66.js.map"
   },
   "entrypoints": [
     "static/css/main.656345d1.css",
-    "static/js/main.4a6422ea.js"
+    "static/js/main.40002c66.js"
   ]
 }
