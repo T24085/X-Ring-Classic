@@ -448,13 +448,27 @@ export const leaderboardsAPI = {
   },
   getIndoor: async (params = {}) => leaderboardsAPI.getOverall(params),
   getOutdoor: async (params = {}) => leaderboardsAPI.getOverall(params),
-  getByCompetition: async (competitionId) => {
+  getByCompetition: async (competitionId, params = {}) => {
     // Match rules by requiring approved scores for public leaderboards
-    const snap = await getDocs(query(
-      collection(db, 'scores'),
-      where('competitionId', '==', competitionId),
-      where('verificationStatus', '==', 'approved')
-    ));
+    const category = params?.category; // Filter by category if provided
+    
+    let q;
+    if (category) {
+      q = query(
+        collection(db, 'scores'),
+        where('competitionId', '==', competitionId),
+        where('verificationStatus', '==', 'approved'),
+        where('category', '==', category)
+      );
+    } else {
+      q = query(
+        collection(db, 'scores'),
+        where('competitionId', '==', competitionId),
+        where('verificationStatus', '==', 'approved')
+      );
+    }
+    
+    const snap = await getDocs(q);
     let scores = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .filter(s => s.verificationStatus === 'approved' || !s.verificationStatus)
       .sort((a, b) => (b.score || 0) - (a.score || 0));
