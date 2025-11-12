@@ -368,16 +368,27 @@ export const leaderboardsAPI = {
       }
       
       const snap = await getDocs(q);
-      let scores = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-        .filter(s => s.verificationStatus === 'approved' || !s.verificationStatus)
-        .sort((a, b) => (b.score || 0) - (a.score || 0))
-        .slice(0, lim);
+      let allScores = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .filter(s => s.verificationStatus === 'approved' || !s.verificationStatus);
 
-      console.log(`[Leaderboard] Found ${scores.length} approved scores`);
+      console.log(`[Leaderboard] Found ${allScores.length} approved scores`);
 
-      // Populate competitor profiles - show all scores for all authenticated users
-      const ids = Array.from(new Set(scores.map(s => s.competitorId).filter(Boolean)));
-      // Tolerate permission-denied on user docs; fall back to basic info
+      // Group scores by competitorId
+      const scoresByUser = new Map();
+      allScores.forEach(score => {
+        const competitorId = score.competitorId;
+        if (!competitorId) return;
+        
+        if (!scoresByUser.has(competitorId)) {
+          scoresByUser.set(competitorId, []);
+        }
+        scoresByUser.get(competitorId).push(score);
+      });
+
+      // Get all unique competitor IDs
+      const ids = Array.from(scoresByUser.keys());
+      
+      // Populate competitor profiles
       const userResults = await Promise.allSettled(ids.map(uid => getDoc(doc(db, 'users', uid))));
       const userMap = new Map();
       
@@ -411,36 +422,67 @@ export const leaderboardsAPI = {
         }
       });
 
-      // Show all scores - no filtering for authenticated users
-      const leaderboard = scores.map((s, idx) => {
-      const u = userMap.get(s.competitorId);
-      // If user data exists, use it; otherwise fall back to score data or defaults
-      const competitor = u ? u : { 
-        id: s.competitorId, 
-        username: s.username || s.competitor?.username || 'user', 
-        firstName: s.competitor?.firstName || s.firstName || 'Shooter', 
-        lastName: s.competitor?.lastName || s.lastName || '',
-        email: s.competitor?.email || s.email || '',
-      };
-      const avg = s.averageScore || s.score || 0;
-      const computedX = (Array.isArray(s.shots) ? s.shots.filter(sh => (Number(sh?.value) === 10 && (sh?.isX === true))).length : 0);
-      const xCount = (typeof s.tiebreakerData?.xCount === 'number') ? s.tiebreakerData.xCount : computedX;
-      const xAvg = xCount; // for single-score rows; multi-score averaging not implemented here
-      const cls = competitor.classification || classificationFromAvg(avg, xAvg) || undefined;
-      if (cls) competitor.classification = cls;
-      return {
-        rank: idx + 1,
-        competitor,
-        score: s.score || 0,
-        bestScore: s.bestScore || s.score || 0,
-        averageScore: s.averageScore || s.score || 0,
-        competitionsCount: s.competitionsCount || 1,
-        tiebreakerData: { xCount },
-      };
+      // Aggregate scores per user and create leaderboard entries
+      const leaderboard = [];
+      
+      scoresByUser.forEach((userScores, competitorId) => {
+        const u = userMap.get(competitorId);
+        // If user data exists, use it; otherwise fall back to score data or defaults
+        const competitor = u ? u : { 
+          id: competitorId, 
+          username: userScores[0]?.username || userScores[0]?.competitor?.username || 'user', 
+          firstName: userScores[0]?.competitor?.firstName || userScores[0]?.firstName || 'Shooter', 
+          lastName: userScores[0]?.competitor?.lastName || userScores[0]?.lastName || '',
+          email: userScores[0]?.competitor?.email || userScores[0]?.email || '',
+        };
+
+        // Calculate aggregated stats
+        const validScores = userScores.map(s => s.score || 0).filter(s => s > 0);
+        const averageScore = validScores.length > 0 
+          ? validScores.reduce((a, b) => a + b, 0) / validScores.length 
+          : 0;
+        const bestScore = validScores.length > 0 ? Math.max(...validScores) : 0;
+        
+        // Count unique competitions
+        const uniqueCompetitions = new Set(userScores.map(s => s.competitionId).filter(Boolean));
+        const competitionsCount = uniqueCompetitions.size || 1;
+        
+        // Calculate total/average X count
+        let totalXCount = 0;
+        let xCountValid = 0;
+        userScores.forEach(s => {
+          const computedX = (Array.isArray(s.shots) ? s.shots.filter(sh => (Number(sh?.value) === 10 && (sh?.isX === true))).length : 0);
+          const xCount = (typeof s.tiebreakerData?.xCount === 'number') ? s.tiebreakerData.xCount : computedX;
+          if (xCount > 0) {
+            totalXCount += xCount;
+            xCountValid++;
+          }
+        });
+        const avgXCount = xCountValid > 0 ? totalXCount / xCountValid : 0;
+        
+        // Calculate classification
+        const cls = competitor.classification || classificationFromAvg(averageScore, avgXCount) || undefined;
+        if (cls) competitor.classification = cls;
+        
+        leaderboard.push({
+          competitor,
+          score: averageScore, // For display compatibility
+          bestScore,
+          averageScore,
+          competitionsCount,
+          tiebreakerData: { xCount: Math.round(avgXCount) },
+        });
       });
       
-      console.log(`[Leaderboard] Returning ${leaderboard.length} leaderboard entries`);
-      return { data: { leaderboard } };
+      // Sort by average score descending and apply limit
+      leaderboard.sort((a, b) => (b.averageScore || 0) - (a.averageScore || 0));
+      const limitedLeaderboard = leaderboard.slice(0, lim).map((entry, idx) => ({
+        ...entry,
+        rank: idx + 1,
+      }));
+      
+      console.log(`[Leaderboard] Returning ${limitedLeaderboard.length} leaderboard entries (${leaderboard.length} unique users)`);
+      return { data: { leaderboard: limitedLeaderboard } };
     } catch (error) {
       console.error('[Leaderboard] Error in getOverall:', error);
       throw error;
