@@ -71,8 +71,11 @@ const AdminDashboard = () => {
 
   const markAsPaidMutation = useMutation((rangeId) => rangesAPI.markAsPaid(rangeId), {
     onSuccess: () => {
-      toast.success('Range marked as paid');
+      toast.success('Range marked as paid - subscription activated for range admin');
       queryClient.invalidateQueries('admin-ranges');
+      // Also invalidate range admin queries so their dashboard refreshes
+      queryClient.invalidateQueries('range-admin-range');
+      queryClient.invalidateQueries('range-admin-dashboard');
     },
     onError: (e) => toast.error(e.response?.data?.error || 'Failed to mark range as paid')
   });

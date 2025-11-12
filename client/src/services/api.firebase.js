@@ -924,12 +924,54 @@ export const rangesAPI = {
     const renewalDate = new Date(now);
     renewalDate.setMonth(renewalDate.getMonth() + 1);
     
+    // Get range document to find adminId
+    const rangeSnap = await getDoc(doc(db, 'ranges', id));
+    if (!rangeSnap.exists()) throw new Error('Range not found');
+    const rangeData = rangeSnap.data();
+    const adminId = rangeData.adminId;
+    
+    // Update range document
     await updateDoc(doc(db, 'ranges', id), {
       subscriptionStatus: 'active',
       subscriptionLastPaymentDate: now.toISOString(),
       subscriptionRenewalDate: renewalDate.toISOString(),
       updatedAt: serverTimestamp(),
     });
+    
+    // Also update the range admin's user document if adminId exists
+    if (adminId) {
+      try {
+        const userSnap = await getDoc(doc(db, 'users', adminId));
+        if (userSnap.exists()) {
+          await updateDoc(doc(db, 'users', adminId), {
+            subscriptionStatus: 'active',
+            subscriptionLastPaymentDate: now.toISOString(),
+            subscriptionRenewalDate: renewalDate.toISOString(),
+            updatedAt: serverTimestamp(),
+          });
+        }
+      } catch (err) {
+        // Log but don't fail if user update fails
+        console.error('Failed to update user subscription status:', err);
+      }
+    }
+    
+    // Also update any users with this rangeId
+    try {
+      const usersSnap = await getDocs(query(collection(db, 'users'), where('rangeId', '==', id)));
+      const updatePromises = usersSnap.docs.map(userDoc => 
+        updateDoc(userDoc.ref, {
+          subscriptionStatus: 'active',
+          subscriptionLastPaymentDate: now.toISOString(),
+          subscriptionRenewalDate: renewalDate.toISOString(),
+          updatedAt: serverTimestamp(),
+        })
+      );
+      await Promise.all(updatePromises);
+    } catch (err) {
+      console.error('Failed to update range admin users:', err);
+    }
+    
     const snap = await getDoc(doc(db, 'ranges', id));
     return { data: { range: { id, ...snap.data() } } };
   },
