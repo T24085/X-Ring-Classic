@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
+import { useAuth } from '../contexts/AuthContext';
 import { competitionsAPI, leaderboardsAPI, publicAPI } from '../services/api.firebase';
 import { 
   TrophyIcon, 
@@ -14,6 +15,8 @@ import {
 } from '@heroicons/react/24/outline';
 
 const Home = () => {
+  const { isAuthenticated } = useAuth();
+  
   const getClassStyles = (classification) => {
     switch ((classification || '').toLowerCase()) {
       case 'grand master':
@@ -90,7 +93,7 @@ const Home = () => {
         return 'Classification pending';
     }
   };
-  const { data: competitions, isLoading: competitionsLoading } = useQuery(
+  const { data: competitions, isLoading: competitionsLoading, error: competitionsError } = useQuery(
     ['featured-competitions'],
     async () => {
       try {
@@ -101,10 +104,14 @@ const Home = () => {
         throw err;
       }
     },
-    { staleTime: 5 * 60 * 1000 } // 5 minutes
+    { 
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      enabled: true, // Always enabled - data should be visible to all authenticated users
+      retry: 2,
+    }
   );
 
-  const { data: topShooters, isLoading: shootersLoading } = useQuery(
+  const { data: topShooters, isLoading: shootersLoading, error: shootersError } = useQuery(
     ['top-shooters'],
     async () => {
       try {
@@ -115,14 +122,22 @@ const Home = () => {
         throw err;
       }
     },
-    { staleTime: 10 * 60 * 1000 } // 10 minutes
+    { 
+      staleTime: 10 * 60 * 1000, // 10 minutes
+      enabled: true, // Always enabled - data should be visible to all authenticated users
+      retry: 2,
+    }
   );
 
   // Landing stats
-  const { data: landingStats } = useQuery(
+  const { data: landingStats, error: statsError } = useQuery(
     ['landing-stats'],
     () => publicAPI.getStats(),
-    { staleTime: 2 * 60 * 1000 }
+    { 
+      staleTime: 2 * 60 * 1000,
+      enabled: true,
+      retry: 2,
+    }
   );
 
   // Small-screen quick auth CTA
@@ -151,8 +166,29 @@ const Home = () => {
 
 
 
+  // Debug logging
+  if (isAuthenticated) {
+    console.log('Home page - Authenticated user, data:', {
+      competitions: competitions?.competitions?.length,
+      topShooters: topShooters?.leaderboard?.length,
+      landingStats,
+      competitionsError,
+      shootersError,
+      statsError,
+    });
+  }
+
   return (
     <div className="space-y-12">
+      {/* Show error messages if queries fail */}
+      {(competitionsError || shootersError || statsError) && (
+        <div className="bg-red-900/50 border border-red-700 rounded-lg p-4 text-white">
+          <p className="font-semibold mb-2">Error loading data:</p>
+          {competitionsError && <p className="text-sm">Competitions: {competitionsError.message}</p>}
+          {shootersError && <p className="text-sm">Leaderboard: {shootersError.message}</p>}
+          {statsError && <p className="text-sm">Stats: {statsError.message}</p>}
+        </div>
+      )}
       <MobileAuthCta />
       {/* Hero Section with Banner */}
       <section className="relative overflow-hidden rounded-2xl">

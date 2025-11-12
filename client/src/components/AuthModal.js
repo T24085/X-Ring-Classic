@@ -14,9 +14,14 @@ const AuthModal = () => {
 
   const { login, register } = useAuth();
 
-  // Don't show modal if authenticated or still loading
-  if (isAuthenticated || isLoading) {
-    return null;
+  // Don't show modal if authenticated or still loading auth state
+  // Return null immediately to avoid any rendering that could block content
+  if (isLoading) {
+    return null; // Don't show anything while checking auth
+  }
+  
+  if (isAuthenticated) {
+    return null; // Don't show modal for authenticated users
   }
 
   const handleSubmit = async (e) => {
