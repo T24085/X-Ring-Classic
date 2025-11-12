@@ -380,14 +380,14 @@ export const leaderboardsAPI = {
         }
       }
 
-    // Populate competitor profiles
-    const ids = Array.from(new Set(scores.map(s => s.competitorId).filter(Boolean)));
-    // Tolerate permission-denied on admin/range_admin user docs; fall back to basic info
-    const userResults = await Promise.allSettled(ids.map(uid => getDoc(doc(db, 'users', uid))));
-    const userMap = new Map();
-    const adminUserIds = new Set(); // Track confirmed admin users to filter them out (only if current user is not admin)
-    
-    userResults.forEach((res, i) => {
+      // Populate competitor profiles
+      const ids = Array.from(new Set(scores.map(s => s.competitorId).filter(Boolean)));
+      // Tolerate permission-denied on admin/range_admin user docs; fall back to basic info
+      const userResults = await Promise.allSettled(ids.map(uid => getDoc(doc(db, 'users', uid))));
+      const userMap = new Map();
+      const adminUserIds = new Set(); // Track confirmed admin users to filter them out (only if current user is not admin)
+      
+      userResults.forEach((res, i) => {
       const uid = ids[i];
       if (res.status === 'fulfilled') {
         const snap = res.value;
@@ -453,8 +453,14 @@ export const leaderboardsAPI = {
         competitionsCount: s.competitionsCount || 1,
         tiebreakerData: { xCount },
       };
-    });
-    return { data: { leaderboard } };
+      });
+      
+      console.log(`[Leaderboard] Returning ${leaderboard.length} leaderboard entries`);
+      return { data: { leaderboard } };
+    } catch (error) {
+      console.error('[Leaderboard] Error in getOverall:', error);
+      throw error;
+    }
   },
   getIndoor: async (params = {}) => leaderboardsAPI.getOverall(params),
   getOutdoor: async (params = {}) => leaderboardsAPI.getOverall(params),
