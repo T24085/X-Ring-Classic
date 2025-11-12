@@ -360,12 +360,28 @@ export const leaderboardsAPI = {
       .sort((a, b) => (b.score || 0) - (a.score || 0))
       .slice(0, lim);
 
+    // Check if current user is admin - admins should see all scores including admin scores
+    let isCurrentUserAdmin = false;
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      try {
+        const currentUserSnap = await getDoc(doc(db, 'users', currentUser.uid));
+        if (currentUserSnap.exists()) {
+          const currentUserData = currentUserSnap.data();
+          isCurrentUserAdmin = currentUserData.role === 'admin' || currentUserData.role === 'range_admin';
+        }
+      } catch (err) {
+        // If we can't check, assume not admin
+        console.warn('Could not check current user role:', err);
+      }
+    }
+
     // Populate competitor profiles
     const ids = Array.from(new Set(scores.map(s => s.competitorId).filter(Boolean)));
     // Tolerate permission-denied on admin/range_admin user docs; fall back to basic info
     const userResults = await Promise.allSettled(ids.map(uid => getDoc(doc(db, 'users', uid))));
     const userMap = new Map();
-    const adminUserIds = new Set(); // Track confirmed admin users to filter them out
+    const adminUserIds = new Set(); // Track confirmed admin users to filter them out (only if current user is not admin)
     
     userResults.forEach((res, i) => {
       const uid = ids[i];
@@ -373,8 +389,8 @@ export const leaderboardsAPI = {
         const snap = res.value;
         if (snap.exists()) {
           const userData = snap.data();
-          // Only filter out if we can confirm they're admin/range_admin
-          if (userData.role === 'admin' || userData.role === 'range_admin') {
+          // Only filter out admin/range_admin users if current user is NOT an admin
+          if (!isCurrentUserAdmin && (userData.role === 'admin' || userData.role === 'range_admin')) {
             adminUserIds.add(uid);
             userMap.set(uid, null);
             return;
@@ -405,8 +421,8 @@ export const leaderboardsAPI = {
       }
     });
 
-    // Only filter out scores from confirmed admin/range_admin users
-    const competitorScores = scores.filter(s => !adminUserIds.has(s.competitorId));
+    // Only filter out scores from confirmed admin/range_admin users if current user is not admin
+    const competitorScores = isCurrentUserAdmin ? scores : scores.filter(s => !adminUserIds.has(s.competitorId));
     
     const leaderboard = competitorScores.map((s, idx) => {
       const u = userMap.get(s.competitorId);
