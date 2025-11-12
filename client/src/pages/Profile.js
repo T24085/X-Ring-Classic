@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuery } from 'react-query';
-import { usersAPI } from '../services/api.firebase';
+import { usersAPI, authAPI } from '../services/api.firebase';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import RankLogo from '../components/RankLogo';
@@ -44,6 +44,7 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [shotsModalScore, setShotsModalScore] = useState(null);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
 
   // Determine which user's profile to display
   const isAdminViewingOther = userId && currentUser?.role === 'admin' && userId !== currentUser?.id;
@@ -93,7 +94,8 @@ const Profile = () => {
     register,
     handleSubmit,
     formState: { errors },
-    reset
+    reset,
+    watch
   } = useForm();
 
   // Fetch user's competition history and statistics
@@ -143,6 +145,17 @@ const Profile = () => {
   const handleCancelEdit = () => {
     setIsEditing(false);
     reset();
+  };
+
+  const handleChangePassword = async (data) => {
+    try {
+      await authAPI.changePassword(data.currentPassword, data.newPassword);
+      toast.success('Password changed successfully!');
+      setShowChangePasswordModal(false);
+    } catch (error) {
+      console.error('Change password error:', error);
+      toast.error(error.message || 'Failed to change password. Please try again.');
+    }
   };
 
   const tabs = [
@@ -1027,7 +1040,10 @@ const Profile = () => {
           
           <div className="border-t pt-4">
             <h4 className="font-medium text-gray-900 mb-2">Security</h4>
-            <button className="btn-secondary">
+            <button 
+              onClick={() => setShowChangePasswordModal(true)}
+              className="btn-secondary"
+            >
               Change Password
             </button>
           </div>
@@ -1121,6 +1137,96 @@ const Profile = () => {
           {renderTabContent()}
         </div>
       </div>
+
+      {/* Change Password Modal */}
+      {showChangePasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold text-gray-900">Change Password</h3>
+                <button
+                  onClick={() => setShowChangePasswordModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XMarkIcon className="w-6 h-6" />
+                </button>
+              </div>
+              <form onSubmit={handleSubmit(handleChangePassword)} className="space-y-4">
+                <div>
+                  <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">
+                    Current Password
+                  </label>
+                  <input
+                    id="currentPassword"
+                    type="password"
+                    {...register('currentPassword', {
+                      required: 'Current password is required',
+                    })}
+                    className="input-field mt-1"
+                    placeholder="Enter your current password"
+                  />
+                  {errors.currentPassword && (
+                    <p className="mt-1 text-sm text-red-600">{errors.currentPassword.message}</p>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
+                    New Password
+                  </label>
+                  <input
+                    id="newPassword"
+                    type="password"
+                    {...register('newPassword', {
+                      required: 'New password is required',
+                      minLength: {
+                        value: 6,
+                        message: 'Password must be at least 6 characters',
+                      },
+                    })}
+                    className="input-field mt-1"
+                    placeholder="Enter your new password"
+                  />
+                  {errors.newPassword && (
+                    <p className="mt-1 text-sm text-red-600">{errors.newPassword.message}</p>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                    Confirm New Password
+                  </label>
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    {...register('confirmPassword', {
+                      required: 'Please confirm your new password',
+                      validate: (value) =>
+                        value === watch('newPassword') || 'Passwords do not match',
+                    })}
+                    className="input-field mt-1"
+                    placeholder="Confirm your new password"
+                  />
+                  {errors.confirmPassword && (
+                    <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+                  )}
+                </div>
+                <div className="flex space-x-3 pt-4">
+                  <button type="submit" className="btn-primary flex-1">
+                    Change Password
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowChangePasswordModal(false)}
+                    className="btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
