@@ -456,8 +456,9 @@ export const leaderboardsAPI = {
         });
         const avgXCount = userScores.length > 0 ? totalXCount / userScores.length : 0;
         
-        // Calculate classification
-        const cls = competitor.classification || classificationFromAvg(averageScore, avgXCount) || undefined;
+        // Calculate classification based on current average score and X count
+        // Always recalculate to ensure accuracy based on current performance
+        const cls = classificationFromAvg(averageScore, avgXCount);
         if (cls) competitor.classification = cls;
         
         leaderboard.push({

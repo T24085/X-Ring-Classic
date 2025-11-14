@@ -18,7 +18,9 @@ const Home = () => {
   const { isAuthenticated } = useAuth();
   
   const getClassStyles = (classification) => {
-    switch ((classification || '').toLowerCase()) {
+    // Normalize classification - remove "Provisional" prefix and handle "Rookie"
+    const normalized = (classification || '').toLowerCase().replace(/^provisional\s+/, '');
+    switch (normalized) {
       case 'grand master':
         return 'bg-purple-600 text-white border-2 border-purple-700';
       case 'master':
@@ -31,6 +33,8 @@ const Home = () => {
         return 'bg-yellow-500 text-yellow-900 border-2 border-yellow-600';
       case 'bronze':
         return 'bg-orange-600 text-white border-2 border-orange-700';
+      case 'rookie':
+        return 'bg-gray-800/50 text-gray-300 border border-gray-700';
       default:
         return 'bg-gray-800/50 text-gray-300 border border-gray-700';
     }
@@ -56,7 +60,9 @@ const Home = () => {
   };
 
   const getClassRowBg = (classification) => {
-    switch ((classification || '').toLowerCase()) {
+    // Normalize classification - remove "Provisional" prefix and handle "Rookie"
+    const normalized = (classification || '').toLowerCase().replace(/^provisional\s+/, '');
+    switch (normalized) {
       case 'grand master':
         return 'bg-purple-600/15';
       case 'master':
@@ -69,6 +75,8 @@ const Home = () => {
         return 'bg-yellow-500/15';
       case 'bronze':
         return 'bg-orange-600/15';
+      case 'rookie':
+        return 'bg-gray-50';
       default:
         return 'bg-gray-50';
     }
