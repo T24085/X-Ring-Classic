@@ -86,7 +86,12 @@ export function classificationFromScores(scores, opts = {}) {
 
   const all = (Array.isArray(scores) ? scores : []).map(normalize);
   if (all.length === 0) {
-    return { tier: 'Rookie', classificationLabel: 'Rookie', provisional: true, sampleCount: 0 };
+    return {
+      tier: 'Bronze',
+      classificationLabel: 'Provisional Bronze',
+      provisional: true,
+      sampleCount: 0
+    };
   }
 
   // Filter by time window and take most recent N
@@ -115,4 +120,3 @@ export function classificationFromScores(scores, opts = {}) {
     avgX
   };
 }
-

@@ -81,8 +81,11 @@ const Leaderboard = () => {
   };
 
   // Classification styling (badge + row tint)
+  const normalizeClass = (classification) =>
+    (classification || '').toLowerCase().replace(/^provisional\s+/, '').trim();
+
   const getClassBadgeStyles = (classification) => {
-    const cls = (classification || '').toLowerCase();
+    const cls = normalizeClass(classification);
     if (cls === 'grand master') return 'bg-purple-50 text-purple-700 border border-purple-200';
     if (cls === 'master') return 'bg-blue-50 text-blue-700 border border-blue-200';
     if (cls === 'diamond') return 'bg-cyan-50 text-cyan-700 border border-cyan-200';
@@ -93,7 +96,7 @@ const Leaderboard = () => {
   };
 
   const getClassRowBg = (classification) => {
-    const cls = (classification || '').toLowerCase();
+    const cls = normalizeClass(classification);
     if (cls === 'grand master') return 'bg-purple-50';
     if (cls === 'master') return 'bg-blue-50';
     if (cls === 'diamond') return 'bg-cyan-50';

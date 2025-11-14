@@ -71,8 +71,11 @@ const Profile = () => {
   const user = targetUserData?.user || currentUser;
 
   // Function to get classification badge styles
+  const normalizeClass = (classification) =>
+    (classification || '').toLowerCase().replace(/^provisional\s+/, '').trim();
+
   const getClassStyles = (classification) => {
-    switch ((classification || '').toLowerCase()) {
+    switch (normalizeClass(classification)) {
       case 'grand master':
         return 'bg-purple-50 text-purple-700 border border-purple-200';
       case 'master':
