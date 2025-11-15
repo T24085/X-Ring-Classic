@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { competitionsAPI, scoresAPI } from '../services/api.firebase';
@@ -19,6 +19,7 @@ import {
   Download
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import RankLogo from '../components/RankLogo';
 
 const CompetitionDetail = () => {
   const { id } = useParams();
@@ -27,6 +28,43 @@ const CompetitionDetail = () => {
   const queryClient = useQueryClient();
   const [justRegistered, setJustRegistered] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [sortConfig, setSortConfig] = useState({ column: 'score', direction: 'desc' });
+
+  const normalizeClass = (classification) =>
+    (classification || '').toLowerCase().replace(/^provisional\s+/, '').trim();
+
+  const getClassStyles = (classification) => {
+    switch (normalizeClass(classification)) {
+      case 'grand master':
+        return 'bg-purple-50 text-purple-700 border border-purple-200';
+      case 'master':
+        return 'bg-blue-50 text-blue-700 border border-blue-200';
+      case 'diamond':
+        return 'bg-cyan-50 text-cyan-700 border border-cyan-200';
+      case 'platinum':
+        return 'bg-gray-50 text-gray-700 border border-gray-200';
+      case 'gold':
+        return 'bg-yellow-50 text-yellow-800 border border-yellow-200';
+      case 'bronze':
+        return 'bg-orange-50 text-orange-700 border border-orange-200';
+      default:
+        return 'bg-gray-50 text-gray-600 border border-gray-200';
+    }
+  };
+
+  const handleSort = (column) => {
+    setSortConfig((prev) => {
+      if (prev.column === column) {
+        return { column, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { column, direction: column === 'submitted' ? 'asc' : 'desc' };
+    });
+  };
+
+  const sortIndicator = (column) => {
+    if (sortConfig.column !== column) return '';
+    return sortConfig.direction === 'asc' ? '↑' : '↓';
+  };
 
   // Fetch competition details
   const { data: competition, isLoading, error } = useQuery(
@@ -53,17 +91,72 @@ const CompetitionDetail = () => {
   );
 
   // Normalize scores to handle legacy/new API field names
-  const scores = (rawScores || []).map((s) => ({
-    id: s.id,
-    userName: s.userName || (s.competitor ? (
-      s.competitor.firstName && s.competitor.lastName
-        ? `${s.competitor.firstName} ${s.competitor.lastName}`
-        : s.competitor.username
-    ) : 'Unknown'),
-    totalScore: s.totalScore ?? s.score,
-    status: s.status ?? (s.verificationStatus === 'approved' ? 'verified' : (s.verificationStatus || 'pending')),
-    submittedAt: s.submittedAt || s.createdAt || s.updatedAt || new Date().toISOString(),
-  }));
+  const scores = useMemo(() => {
+    const toDate = (value) => {
+      try {
+        if (!value) return null;
+        if (typeof value?.toMillis === 'function') return new Date(value.toMillis());
+        if (typeof value?.toDate === 'function') return value.toDate();
+        if (typeof value === 'number') return new Date(value);
+        if (typeof value === 'string') {
+          const parsed = Date.parse(value);
+          return Number.isFinite(parsed) ? new Date(parsed) : null;
+        }
+      } catch (err) {
+        console.warn('Failed to parse date', err);
+      }
+      return null;
+    };
+
+    const normalizeScore = (s) => {
+      const fullName = s.userName || (s.competitor ? (
+        s.competitor.firstName && s.competitor.lastName
+          ? `${s.competitor.firstName} ${s.competitor.lastName}`
+          : s.competitor.username
+      ) : 'Unknown');
+
+      const submittedAt = toDate(s.submittedAt || s.createdAt || s.updatedAt) || new Date();
+      const xCount = typeof s.tiebreakerData?.xCount === 'number'
+        ? s.tiebreakerData.xCount
+        : Array.isArray(s.shots)
+          ? s.shots.filter((shot) => shot?.isX === true || Number(shot?.value) === 10).length
+          : 0;
+
+      return {
+        id: s.id,
+        userName: fullName,
+        totalScore: s.totalScore ?? s.score ?? 0,
+        status: s.status ?? (s.verificationStatus === 'approved' ? 'verified' : (s.verificationStatus || 'pending')),
+        submittedAt,
+        submittedDisplay: submittedAt.toLocaleDateString(),
+        xCount,
+        classification: s.competitor?.classification || s.classification || s.classificationLabel || null,
+      };
+    };
+
+    const sortValue = (a, b) => {
+      if (sortConfig.column === 'submitted') {
+        const diff = (a.submittedAt?.getTime() || 0) - (b.submittedAt?.getTime() || 0);
+        return sortConfig.direction === 'asc' ? diff : -diff;
+      }
+
+      const primary = (a.totalScore || 0) - (b.totalScore || 0);
+      if (primary !== 0) {
+        return sortConfig.direction === 'asc' ? primary : -primary;
+      }
+      const xDiff = (a.xCount || 0) - (b.xCount || 0);
+      if (xDiff !== 0) {
+        return sortConfig.direction === 'asc' ? xDiff : -xDiff;
+      }
+      const timeDiff = (a.submittedAt?.getTime() || 0) - (b.submittedAt?.getTime() || 0);
+      return sortConfig.direction === 'asc' ? timeDiff : -timeDiff;
+    };
+
+    return (rawScores || [])
+      .map(normalizeScore)
+      .sort(sortValue)
+      .map((score, index) => ({ ...score, rank: index + 1 }));
+  }, [rawScores, sortConfig]);
 
   // Registration mutation
   const registerMutation = useMutation(
@@ -435,25 +528,60 @@ const CompetitionDetail = () => {
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rank</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Shooter</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          <button
+                            type="button"
+                            onClick={() => handleSort('score')}
+                            className="flex items-center space-x-1 hover:text-gray-700"
+                          >
+                            <span>Score</span>
+                            <span>{sortIndicator('score')}</span>
+                          </button>
+                        </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Submitted</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          <button
+                            type="button"
+                            onClick={() => handleSort('submitted')}
+                            className="flex items-center space-x-1 hover:text-gray-700"
+                          >
+                            <span>Submitted</span>
+                            <span>{sortIndicator('submitted')}</span>
+                          </button>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {scores.map((score, index) => (
+                      {scores.map((score) => (
                         <tr key={score.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            #{index + 1}
+                            #{score.rank}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
+                            <div className="flex items-center space-x-3">
                               <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center mr-3">
                                 <span className="text-xs font-medium text-gray-700">
                                   {score.userName?.charAt(0).toUpperCase()}
                                 </span>
                               </div>
-                              <span className="text-sm font-medium text-gray-900">{score.userName}</span>
+                              <div>
+                                <div className="text-sm font-medium text-gray-900 flex items-center space-x-2">
+                                  <span>{score.userName}</span>
+                                  {score.classification && (
+                                    <>
+                                      <RankLogo classification={score.classification} size={18} />
+                                      <span
+                                        className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${getClassStyles(score.classification)}`}
+                                      >
+                                        {score.classification}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                                {score.xCount > 0 && (
+                                  <div className="text-xs text-gray-500">X Count: {score.xCount}</div>
+                                )}
+                              </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -474,7 +602,7 @@ const CompetitionDetail = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(score.submittedAt).toLocaleDateString()}
+                            {score.submittedDisplay}
                           </td>
                         </tr>
                       ))}
