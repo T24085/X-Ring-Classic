@@ -34,7 +34,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "deploy": "gh-pages -d build -r https://x-access-token:${GITHUB_TOKEN}@github.com/T24085/X-Ring-Classic.git"
   },
   "homepage": "/X-Ring-Classic",
   "eslintConfig": {
