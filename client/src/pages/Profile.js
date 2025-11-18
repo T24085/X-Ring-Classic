@@ -431,6 +431,14 @@ const Profile = () => {
         minScore: 0,
         maxScore: 0,
         medianScore: 0,
+        shotValueDistribution: [],
+        shotPositionPerformance: [],
+        shotGroupingData: [],
+        xHitRateTrend: [],
+        perfectShotPercentage: 0,
+        xShotPercentage: 0,
+        positionConsistency: [],
+        totalShots: 0,
       };
     }
 
@@ -549,6 +557,110 @@ const Profile = () => {
       }
     }
 
+    // Shot-level analysis - collect all individual shots
+    const allShots = [];
+    scores.forEach(score => {
+      if (Array.isArray(score.shots)) {
+        score.shots.forEach((shot, index) => {
+          const shotValue = shot?.isX === true ? 10 : (parseInt(shot?.value, 10) || 0);
+          allShots.push({
+            value: shotValue,
+            isX: shot?.isX === true,
+            position: index + 1,
+            scoreId: score.id,
+            date: score?.createdAt || score?.submittedAt || score?.date,
+          });
+        });
+      }
+    });
+
+    // Shot value distribution (0-10)
+    const shotValueDistribution = Array.from({ length: 11 }, (_, i) => ({
+      value: i,
+      count: allShots.filter(s => s.value === i).length,
+      percentage: allShots.length > 0 ? (allShots.filter(s => s.value === i).length / allShots.length * 100) : 0,
+    }));
+
+    // Shot position performance (average score by position 1-25)
+    const maxShotsPerTarget = Math.max(...scores.map(s => s.shots?.length || 0), 25);
+    const shotPositionPerformance = Array.from({ length: maxShotsPerTarget }, (_, i) => {
+      const position = i + 1;
+      const shotsAtPosition = allShots.filter(s => s.position === position);
+      if (shotsAtPosition.length === 0) return { position, avgValue: 0, count: 0, xRate: 0 };
+      const avgValue = shotsAtPosition.reduce((sum, s) => sum + s.value, 0) / shotsAtPosition.length;
+      const xRate = shotsAtPosition.filter(s => s.isX).length / shotsAtPosition.length * 100;
+      return { position, avgValue: Math.round(avgValue * 10) / 10, count: shotsAtPosition.length, xRate: Math.round(xRate * 10) / 10 };
+    });
+
+    // Shot grouping analysis (first 5, middle, last 5)
+    const groupingAnalysis = [];
+    scores.forEach(score => {
+      if (Array.isArray(score.shots) && score.shots.length >= 10) {
+        const shots = score.shots.map(s => s?.isX === true ? 10 : (parseInt(s?.value, 10) || 0));
+        const first5 = shots.slice(0, 5);
+        const middle = shots.slice(5, -5);
+        const last5 = shots.slice(-5);
+        
+        groupingAnalysis.push({
+          scoreId: score.id,
+          first5Avg: first5.reduce((a, b) => a + b, 0) / first5.length,
+          middleAvg: middle.length > 0 ? middle.reduce((a, b) => a + b, 0) / middle.length : 0,
+          last5Avg: last5.reduce((a, b) => a + b, 0) / last5.length,
+        });
+      }
+    });
+
+    const avgFirst5 = groupingAnalysis.length > 0 
+      ? groupingAnalysis.reduce((sum, g) => sum + g.first5Avg, 0) / groupingAnalysis.length 
+      : 0;
+    const avgMiddle = groupingAnalysis.length > 0 
+      ? groupingAnalysis.reduce((sum, g) => sum + g.middleAvg, 0) / groupingAnalysis.length 
+      : 0;
+    const avgLast5 = groupingAnalysis.length > 0 
+      ? groupingAnalysis.reduce((sum, g) => sum + g.last5Avg, 0) / groupingAnalysis.length 
+      : 0;
+
+    const shotGroupingData = [
+      { group: 'First 5', avgScore: Math.round(avgFirst5 * 10) / 10 },
+      { group: 'Middle', avgScore: Math.round(avgMiddle * 10) / 10 },
+      { group: 'Last 5', avgScore: Math.round(avgLast5 * 10) / 10 },
+    ];
+
+    // X-hit rate trend over time
+    const xHitRateTrend = [];
+    const scoresWithShots = sortedByDate.filter(s => Array.isArray(s.shots) && s.shots.length > 0);
+    scoresWithShots.forEach(score => {
+      const shots = score.shots;
+      const xCount = shots.filter(s => s?.isX === true).length;
+      const xRate = (xCount / shots.length) * 100;
+      const date = new Date(score?.createdAt || score?.submittedAt || score?.date || Date.now());
+      xHitRateTrend.push({
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        xRate: Math.round(xRate * 10) / 10,
+        xCount,
+        totalShots: shots.length,
+      });
+    });
+
+    // Perfect shot percentage
+    const perfectShots = allShots.filter(s => s.value === 10).length;
+    const perfectShotPercentage = allShots.length > 0 ? (perfectShots / allShots.length * 100) : 0;
+
+    // X-shot percentage
+    const xShots = allShots.filter(s => s.isX).length;
+    const xShotPercentage = allShots.length > 0 ? (xShots / allShots.length * 100) : 0;
+
+    // Shot consistency by position (standard deviation)
+    const positionConsistency = shotPositionPerformance.map(pos => {
+      if (pos.count === 0) return { ...pos, stdDev: 0 };
+      const shotsAtPos = allShots.filter(s => s.position === pos.position);
+      const values = shotsAtPos.map(s => s.value);
+      const avg = pos.avgValue;
+      const variance = values.reduce((sum, v) => sum + Math.pow(v - avg, 2), 0) / values.length;
+      const stdDev = Math.sqrt(variance);
+      return { ...pos, stdDev: Math.round(stdDev * 10) / 10 };
+    });
+
     return {
       totalScores,
       totalCompetitions,
@@ -569,10 +681,25 @@ const Profile = () => {
       minScore,
       maxScore,
       medianScore: Math.round(medianScore * 10) / 10,
+      // New shot-level statistics
+      shotValueDistribution: allShots.length > 0 ? shotValueDistribution : [],
+      shotPositionPerformance: allShots.length > 0 ? shotPositionPerformance : [],
+      shotGroupingData: allShots.length > 0 ? shotGroupingData : [],
+      xHitRateTrend: allShots.length > 0 ? xHitRateTrend.slice(-20) : [], // Last 20 competitions
+      perfectShotPercentage: Math.round(perfectShotPercentage * 10) / 10,
+      xShotPercentage: Math.round(xShotPercentage * 10) / 10,
+      positionConsistency: allShots.length > 0 ? positionConsistency : [],
+      totalShots: allShots.length,
     };
   }, [scores]);
 
-  const { totalScores, totalCompetitions, avgScore, bestIndoor, bestOutdoor, sortedScores, scoreTrend, scoreDistribution, xCountData, indoorVsOutdoor, consistency, improvement, currentStreak, bestStreak, totalXCount, avgXCount, minScore, maxScore, medianScore } = stats;
+  const { 
+    totalScores, totalCompetitions, avgScore, bestIndoor, bestOutdoor, sortedScores, scoreTrend, 
+    scoreDistribution, xCountData, indoorVsOutdoor, consistency, improvement, currentStreak, bestStreak, 
+    totalXCount, avgXCount, minScore, maxScore, medianScore,
+    shotValueDistribution, shotPositionPerformance, shotGroupingData, xHitRateTrend,
+    perfectShotPercentage, xShotPercentage, positionConsistency, totalShots
+  } = stats;
 
   const renderStatistics = () => {
     const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
@@ -723,76 +850,214 @@ const Profile = () => {
           )}
         </div>
 
-        {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Score Distribution */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Score Distribution</h3>
-            {scoreDistribution.some(b => b.count > 0) ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={scoreDistribution}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis 
-                    dataKey="range" 
-                    stroke="#6b7280"
-                    fontSize={11}
-                    tick={{ fill: '#6b7280' }}
-                  />
-                  <YAxis 
-                    stroke="#6b7280"
-                    fontSize={11}
-                    tick={{ fill: '#6b7280' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#fff', 
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      color: '#111827'
-                    }}
-                  />
-                  <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="text-center py-8 text-gray-500">No distribution data</div>
-            )}
-          </div>
+        {/* Shot-Level Statistics */}
+        {totalShots > 0 && (
+          <>
+            {/* Shot Value Distribution */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Shot Value Distribution</h3>
+              <p className="text-sm text-gray-600 mb-4">Distribution of individual shot values across all competitions</p>
+              {shotValueDistribution.some(s => s.count > 0) ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={shotValueDistribution}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis 
+                      dataKey="value" 
+                      stroke="#6b7280"
+                      fontSize={11}
+                      tick={{ fill: '#6b7280' }}
+                      label={{ value: 'Shot Value', position: 'insideBottom', offset: -5 }}
+                    />
+                    <YAxis 
+                      stroke="#6b7280"
+                      fontSize={11}
+                      tick={{ fill: '#6b7280' }}
+                      label={{ value: 'Count', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#fff', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        color: '#111827'
+                      }}
+                      formatter={(value, name, props) => [
+                        `${value} shots (${shotValueDistribution.find(s => s.value === props.payload.value)?.percentage.toFixed(1)}%)`,
+                        'Count'
+                      ]}
+                    />
+                    <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]}>
+                      {shotValueDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.value === 10 ? '#10b981' : entry.value >= 8 ? '#3b82f6' : entry.value >= 5 ? '#f59e0b' : '#ef4444'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-center py-8 text-gray-500">No shot data available</div>
+              )}
+              <div className="mt-4 grid grid-cols-3 gap-4 text-center">
+                <div className="bg-green-50 rounded-lg p-3">
+                  <div className="text-2xl font-bold text-green-700">{perfectShotPercentage.toFixed(1)}%</div>
+                  <div className="text-xs text-green-600">Perfect Shots (10)</div>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-3">
+                  <div className="text-2xl font-bold text-blue-700">{xShotPercentage.toFixed(1)}%</div>
+                  <div className="text-xs text-blue-600">X-Shots</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="text-2xl font-bold text-gray-700">{totalShots}</div>
+                  <div className="text-xs text-gray-600">Total Shots</div>
+                </div>
+              </div>
+            </div>
 
-          {/* X-Count Analysis */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">X-Count Distribution</h3>
-            {xCountData.some(b => b.count > 0) ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={xCountData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis 
-                    dataKey="range" 
-                    stroke="#6b7280"
-                    fontSize={11}
-                    tick={{ fill: '#6b7280' }}
-                  />
-                  <YAxis 
-                    stroke="#6b7280"
-                    fontSize={11}
-                    tick={{ fill: '#6b7280' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#fff', 
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      color: '#111827'
-                    }}
-                  />
-                  <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="text-center py-8 text-gray-500">No X-count data</div>
-            )}
-          </div>
-        </div>
+            {/* Shot Position Performance */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Average Score by Shot Position</h3>
+              <p className="text-sm text-gray-600 mb-4">Performance analysis across shot positions (1-{shotPositionPerformance.length})</p>
+              {shotPositionPerformance.some(p => p.count > 0) ? (
+                <ResponsiveContainer width="100%" height={350}>
+                  <BarChart data={shotPositionPerformance.filter(p => p.count > 0)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis 
+                      dataKey="position" 
+                      stroke="#6b7280"
+                      fontSize={10}
+                      tick={{ fill: '#6b7280' }}
+                      label={{ value: 'Shot Position', position: 'insideBottom', offset: -5 }}
+                    />
+                    <YAxis 
+                      domain={[0, 10]}
+                      stroke="#6b7280"
+                      fontSize={11}
+                      tick={{ fill: '#6b7280' }}
+                      label={{ value: 'Average Score', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#fff', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        color: '#111827'
+                      }}
+                      formatter={(value, name, props) => {
+                        if (name === 'avgValue') {
+                          const pos = shotPositionPerformance.find(p => p.position === props.payload.position);
+                          return [`${value.toFixed(1)} (${pos?.xRate.toFixed(1)}% X-rate)`, 'Avg Score'];
+                        }
+                        return [value, name];
+                      }}
+                    />
+                    <Bar dataKey="avgValue" fill="#8b5cf6" radius={[4, 4, 0, 0]}>
+                      {shotPositionPerformance.filter(p => p.count > 0).map((entry, index) => {
+                        const color = entry.avgValue >= 9.5 ? '#10b981' : entry.avgValue >= 9 ? '#3b82f6' : entry.avgValue >= 8 ? '#f59e0b' : '#ef4444';
+                        return <Cell key={`cell-${index}`} fill={color} />;
+                      })}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-center py-8 text-gray-500">No position data available</div>
+              )}
+            </div>
+
+            {/* Shot Grouping Analysis */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance by Shot Grouping</h3>
+              <p className="text-sm text-gray-600 mb-4">Average score comparison: First 5 shots vs Middle vs Last 5 shots</p>
+              {shotGroupingData.some(g => g.avgScore > 0) ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={shotGroupingData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis 
+                      dataKey="group" 
+                      stroke="#6b7280"
+                      fontSize={11}
+                      tick={{ fill: '#6b7280' }}
+                    />
+                    <YAxis 
+                      domain={[0, 10]}
+                      stroke="#6b7280"
+                      fontSize={11}
+                      tick={{ fill: '#6b7280' }}
+                      label={{ value: 'Average Score', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#fff', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        color: '#111827'
+                      }}
+                      formatter={(value) => `${value.toFixed(1)}`}
+                    />
+                    <Bar dataKey="avgScore" fill="#ec4899" radius={[4, 4, 0, 0]}>
+                      {shotGroupingData.map((entry, index) => {
+                        const colors = ['#3b82f6', '#8b5cf6', '#ec4899'];
+                        return <Cell key={`cell-${index}`} fill={colors[index]} />;
+                      })}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-center py-8 text-gray-500">No grouping data available</div>
+              )}
+            </div>
+
+            {/* X-Hit Rate Trend */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">X-Hit Rate Trend</h3>
+              <p className="text-sm text-gray-600 mb-4">Percentage of X-shots over time (Last 20 competitions)</p>
+              {xHitRateTrend.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={xHitRateTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="#6b7280"
+                      fontSize={11}
+                      tick={{ fill: '#6b7280' }}
+                    />
+                    <YAxis 
+                      domain={[0, 100]}
+                      stroke="#6b7280"
+                      fontSize={11}
+                      tick={{ fill: '#6b7280' }}
+                      label={{ value: 'X-Hit Rate (%)', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#fff', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        color: '#111827'
+                      }}
+                      formatter={(value, name) => {
+                        if (name === 'xRate') {
+                          const data = xHitRateTrend.find(d => d.xRate === value);
+                          return [`${value}% (${data?.xCount}/${data?.totalShots} shots)`, 'X-Hit Rate'];
+                        }
+                        return [value, name];
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="xRate" 
+                      name="X-Hit Rate"
+                      stroke="#10b981" 
+                      strokeWidth={2}
+                      dot={{ fill: '#10b981', r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-center py-8 text-gray-500">No X-hit rate data available</div>
+              )}
+            </div>
+          </>
+        )}
 
         {/* Indoor vs Outdoor Comparison */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
