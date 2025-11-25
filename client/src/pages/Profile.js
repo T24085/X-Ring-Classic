@@ -436,7 +436,7 @@ const Profile = () => {
         shotGroupingData: [],
         xHitRateTrend: [],
         perfectShotPercentage: 0,
-        xShotPercentage: 0,
+        tenShotPercentage: 0,
         positionConsistency: [],
         totalShots: 0,
       };
@@ -642,13 +642,13 @@ const Profile = () => {
       });
     });
 
-    // Perfect shot percentage
-    const perfectShots = allShots.filter(s => s.value === 10).length;
-    const perfectShotPercentage = allShots.length > 0 ? (perfectShots / allShots.length * 100) : 0;
+    // Ten-shot percentage (non-X 10s)
+    const tenShots = allShots.filter(s => s.value === 10 && !s.isX).length;
+    const tenShotPercentage = allShots.length > 0 ? (tenShots / allShots.length * 100) : 0;
 
-    // X-shot percentage
-    const xShots = allShots.filter(s => s.isX).length;
-    const xShotPercentage = allShots.length > 0 ? (xShots / allShots.length * 100) : 0;
+    // Perfect shot percentage (X-shots are the perfect shots)
+    const perfectShots = allShots.filter(s => s.isX).length;
+    const perfectShotPercentage = allShots.length > 0 ? (perfectShots / allShots.length * 100) : 0;
 
     // Shot consistency by position (standard deviation)
     const positionConsistency = shotPositionPerformance.map(pos => {
@@ -687,7 +687,7 @@ const Profile = () => {
       shotGroupingData: allShots.length > 0 ? shotGroupingData : [],
       xHitRateTrend: allShots.length > 0 ? xHitRateTrend.slice(-20) : [], // Last 20 competitions
       perfectShotPercentage: Math.round(perfectShotPercentage * 10) / 10,
-      xShotPercentage: Math.round(xShotPercentage * 10) / 10,
+      tenShotPercentage: Math.round(tenShotPercentage * 10) / 10,
       positionConsistency: allShots.length > 0 ? positionConsistency : [],
       totalShots: allShots.length,
     };
@@ -698,7 +698,7 @@ const Profile = () => {
     scoreDistribution, xCountData, indoorVsOutdoor, consistency, improvement, currentStreak, bestStreak, 
     totalXCount, avgXCount, minScore, maxScore, medianScore,
     shotValueDistribution, shotPositionPerformance, shotGroupingData, xHitRateTrend,
-    perfectShotPercentage, xShotPercentage, positionConsistency, totalShots
+    perfectShotPercentage, tenShotPercentage, positionConsistency, totalShots
   } = stats;
 
   const renderStatistics = () => {
@@ -899,11 +899,11 @@ const Profile = () => {
               <div className="mt-4 grid grid-cols-3 gap-4 text-center">
                 <div className="bg-green-50 rounded-lg p-3">
                   <div className="text-2xl font-bold text-green-700">{perfectShotPercentage.toFixed(1)}%</div>
-                  <div className="text-xs text-green-600">Perfect Shots (10)</div>
+                  <div className="text-xs text-green-600">Perfect Shots (X)</div>
                 </div>
                 <div className="bg-blue-50 rounded-lg p-3">
-                  <div className="text-2xl font-bold text-blue-700">{xShotPercentage.toFixed(1)}%</div>
-                  <div className="text-xs text-blue-600">X-Shots</div>
+                  <div className="text-2xl font-bold text-blue-700">{tenShotPercentage.toFixed(1)}%</div>
+                  <div className="text-xs text-blue-600">10s (Best Score)</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3">
                   <div className="text-2xl font-bold text-gray-700">{totalShots}</div>
