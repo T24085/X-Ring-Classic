@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { useAuth } from '../contexts/AuthContext';
-import { competitionsAPI, leaderboardsAPI, publicAPI } from '../services/api.firebase';
+import { competitionsAPI, leaderboardsAPI, publicAPI, scoresAPI } from '../services/api.firebase';
 import { 
   TrophyIcon, 
   CalendarIcon, 
@@ -137,6 +137,87 @@ const Home = () => {
     }
   );
 
+  // Fetch latest competition winner
+  const { data: latestCompetitionWinner, isLoading: winnerLoading } = useQuery(
+    ['latest-competition-winner'],
+    async () => {
+      try {
+        // Get latest competition with scores
+        const competitionsResp = await competitionsAPI.getAll({ status: 'published', limit: 10 });
+        const competitions = competitionsResp.data?.competitions || [];
+        
+        // Find competition with scores (most recent first)
+        for (const comp of competitions) {
+          try {
+            const scoresResp = await scoresAPI.getByCompetition(comp.id);
+            const scores = scoresResp.data?.scores || [];
+            
+            if (scores.length > 0) {
+              // Aggregate scores by competitor (same logic as CompetitionDetail)
+              const competitorMap = new Map();
+              
+              scores.forEach((s) => {
+                const competitorId = s.competitorId || s.userId || s.id;
+                const firstName = s.competitor?.firstName || s.firstName || '';
+                const lastName = s.competitor?.lastName || s.lastName || '';
+                const scoreValue = s.totalScore ?? s.score ?? 0;
+                const xCount = typeof s.tiebreakerData?.xCount === 'number'
+                  ? s.tiebreakerData.xCount
+                  : Array.isArray(s.shots)
+                    ? s.shots.filter((shot) => shot?.isX === true).length
+                    : 0;
+                const classification = s.competitor?.classification || s.classification || null;
+
+                if (!competitorMap.has(competitorId)) {
+                  competitorMap.set(competitorId, {
+                    competitorId,
+                    firstName,
+                    lastName,
+                    displayName: `${firstName} ${lastName?.charAt(0)?.toUpperCase() || ''}.`,
+                    classification,
+                    totalScore: 0,
+                    totalXCount: 0,
+                    scoreCount: 0,
+                  });
+                }
+
+                const competitor = competitorMap.get(competitorId);
+                competitor.totalScore += scoreValue;
+                competitor.totalXCount += xCount;
+                competitor.scoreCount += 1;
+              });
+
+              const aggregated = Array.from(competitorMap.values());
+              aggregated.sort((a, b) => {
+                if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+                return b.totalXCount - a.totalXCount;
+              });
+
+              if (aggregated.length > 0) {
+                return {
+                  competition: comp,
+                  winner: aggregated[0],
+                };
+              }
+            }
+          } catch (err) {
+            console.warn(`Failed to get scores for competition ${comp.id}:`, err);
+            continue;
+          }
+        }
+        return null;
+      } catch (err) {
+        console.error('Home: Latest competition winner error:', err);
+        return null;
+      }
+    },
+    { 
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      enabled: true,
+      retry: 1,
+    }
+  );
+
   // Landing stats
   const { data: landingStats, error: statsError } = useQuery(
     ['landing-stats'],
@@ -232,6 +313,45 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* Latest Competition Winner */}
+      {latestCompetitionWinner && latestCompetitionWinner.winner && (
+        <section className="bg-gradient-to-r from-yellow-50 via-yellow-100 to-yellow-50 border-4 border-yellow-400 rounded-2xl p-8 shadow-lg">
+          <div className="text-center">
+            <div className="flex items-center justify-center mb-4">
+              <TrophyIcon className="h-16 w-16 text-yellow-600" />
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">🏆 Latest Competition Winner 🏆</h2>
+            <h3 className="text-xl text-gray-700 mb-4">{latestCompetitionWinner.competition.title}</h3>
+            <div className="text-4xl font-bold text-yellow-700 mb-4">
+              {latestCompetitionWinner.winner.displayName}
+            </div>
+            <div className="grid grid-cols-2 gap-4 max-w-md mx-auto mb-4">
+              <div className="bg-white rounded-lg p-4 shadow">
+                <div className="text-sm text-gray-600 mb-1">Total Score</div>
+                <div className="text-2xl font-bold text-gray-900">{latestCompetitionWinner.winner.totalScore.toFixed(1)}</div>
+              </div>
+              <div className="bg-white rounded-lg p-4 shadow">
+                <div className="text-sm text-gray-600 mb-1">Total X Count</div>
+                <div className="text-2xl font-bold text-gray-900">{latestCompetitionWinner.winner.totalXCount}</div>
+              </div>
+            </div>
+            {latestCompetitionWinner.winner.classification && (
+              <div className="mb-4">
+                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getClassStyles(latestCompetitionWinner.winner.classification)}`}>
+                  {latestCompetitionWinner.winner.classification}
+                </span>
+              </div>
+            )}
+            <Link
+              to={`/competitions/${latestCompetitionWinner.competition.id}`}
+              className="inline-block mt-4 px-6 py-2 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-yellow-700 transition-colors"
+            >
+              View Competition Results
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* Stats Section */}
       <section className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -382,7 +502,7 @@ const Home = () => {
                     <div>
                       <div className="flex items-center gap-2">
                         <h4 className="font-semibold text-gray-900">
-                          {shooter.competitor.firstName} {shooter.competitor.lastName}
+                          {shooter.competitor.firstName} {shooter.competitor.lastName?.charAt(0)?.toUpperCase() || ''}.
                         </h4>
                         {shooter.competitor.classification && (
                           <span
@@ -394,7 +514,6 @@ const Home = () => {
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600">@{shooter.competitor.username}</p>
                     </div>
                   </div>
                   <div className="text-right">

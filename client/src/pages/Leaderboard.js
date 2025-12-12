@@ -320,7 +320,7 @@ const Leaderboard = () => {
                         <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
                           <RankLogo classification={entry.competitor.classification} size={24} />
                           <span>
-                            {entry.competitor.firstName} {entry.competitor.lastName}
+                            {entry.competitor.firstName} {entry.competitor.lastName?.charAt(0)?.toUpperCase() || ''}.
                           </span>
                           {entry.competitor.classification && (
                             <span
@@ -332,7 +332,6 @@ const Leaderboard = () => {
                             </span>
                           )}
                         </div>
-                        <div className="text-sm text-gray-500">@{entry.competitor.username}</div>
                       </div>
                     </div>
                   </td>
