@@ -75,11 +75,11 @@ const sections = [
   {
     id: 'classifications',
     title: '9. Classifications',
-    body: 'Class tracks consistent performance and provides fair peer groups. Provisional classes apply until enough cards are recorded.',
+    body: 'Class tracks consistent performance and provides fair peer groups. Rankings are based on recorded scorecards.',
     bullets: [
       'Computation window: last 12 months.',
       'Qualifying set: best 6 of last 10 approved cards (per 25‑shot card).',
-      'Provisional: if fewer than 6 cards exist, a provisional tier is issued from available cards.',
+      'New shooters: your rank is based on the scorecards you have recorded so far.',
       'Tiers (average card / X‑avg): Grand Master ≥ 249.0 and ≥ 15 X; Master ≥ 247.0 and ≥ 10 X; Diamond ≥ 245.0 and ≥ 8 X; Platinum ≥ 242.0 and ≥ 6 X; Gold ≥ 238.0; otherwise Bronze.'
     ]
   },

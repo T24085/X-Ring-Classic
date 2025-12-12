@@ -74,6 +74,9 @@ const Profile = () => {
   const normalizeClass = (classification) =>
     (classification || '').toLowerCase().replace(/^provisional\s+/, '').trim();
 
+  const displayClass = (classification) =>
+    (classification || '').toString().replace(/^provisional\s+/i, '').trim();
+
   const getClassStyles = (classification) => {
     switch (normalizeClass(classification)) {
       case 'grand master':
@@ -188,7 +191,7 @@ const Profile = () => {
                 <div className="flex items-center space-x-2 mt-2">
                   <RankLogo classification={user.classification} size={24} />
                   <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getClassStyles(user.classification)}`}>
-                    {user.classification}
+                    {displayClass(user.classification)}
                   </span>
                 </div>
               )}
@@ -290,7 +293,7 @@ const Profile = () => {
                   <RankLogo classification={user.classification} size={32} />
                   <div className="text-center">
                     <div className="text-lg font-semibold text-rifle-800">Current Rank</div>
-                    <div className="text-2xl font-bold text-rifle-900">{user.classification}</div>
+                    <div className="text-2xl font-bold text-rifle-900">{displayClass(user.classification)}</div>
                     {user?.averageScore && (
                       <div className="text-sm text-rifle-700">
                         Avg Score: {user.averageScore.toFixed(1)}
@@ -1220,7 +1223,7 @@ const Profile = () => {
               <div className="flex items-center justify-center mb-4">
                 <RankLogo classification={user.classification} size={48} />
               </div>
-              <div className="text-3xl font-bold text-rifle-900 mb-2">{user.classification}</div>
+              <div className="text-3xl font-bold text-rifle-900 mb-2">{displayClass(user.classification)}</div>
               <div className="text-lg text-rifle-700 mb-4">Current Classification</div>
               {user?.averageScore && (
                 <div className="text-sm text-rifle-600">

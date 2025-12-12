@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }) => {
             const clsResult = classificationFromScores(scores);
             if (clsResult) {
               // Extract the classification label string, not the whole object
-              const classificationLabel = clsResult.classificationLabel || clsResult.tier || profile.classification;
+              const classificationLabel = clsResult.tier || clsResult.classificationLabel || profile.classification;
               profile = { ...profile, classification: classificationLabel };
               // Persist in background so other views stay consistent
               setDoc(doc(db, 'users', firebaseUser.uid), { classification: classificationLabel }, { merge: true }).catch(()=>{});

@@ -88,7 +88,7 @@ export function classificationFromScores(scores, opts = {}) {
   if (all.length === 0) {
     return {
       tier: 'Bronze',
-      classificationLabel: 'Provisional Bronze',
+      classificationLabel: 'Bronze',
       provisional: true,
       sampleCount: 0
     };
@@ -113,7 +113,8 @@ export function classificationFromScores(scores, opts = {}) {
 
   return {
     tier,
-    classificationLabel: provisional ? `Provisional ${tier}` : tier,
+    // We no longer surface "Provisional" in user-facing ranks; callers can use `provisional` if needed
+    classificationLabel: tier,
     provisional,
     sampleCount: lastN.length,
     avgCard: avgPts,

@@ -207,7 +207,7 @@ const ShootingClasses = () => {
           <div className="bg-white rounded-lg p-6 shadow-sm">
             <div className="flex items-center space-x-3 mb-3">
               <Users className="w-6 h-6 text-blue-600" />
-              <h3 className="font-semibold text-gray-900">Provisional Classification</h3>
+              <h3 className="font-semibold text-gray-900">Initial Classification</h3>
             </div>
             <p className="text-gray-600 text-sm">
               New shooters are placed in Gold class by default until 5 official cards are scored.

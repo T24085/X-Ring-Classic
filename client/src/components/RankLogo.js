@@ -16,6 +16,10 @@ const filenameForClass = (classification) => {
 
 const RankLogo = ({ classification, size = 24, className = '' }) => {
   const [imageError, setImageError] = useState(false);
+  const label = useMemo(() => {
+    if (!classification) return '';
+    return String(classification).replace(/^provisional\s+/i, '').trim();
+  }, [classification]);
   const src = useMemo(() => {
     const file = filenameForClass(classification);
     if (!file) return null;
@@ -30,8 +34,8 @@ const RankLogo = ({ classification, size = 24, className = '' }) => {
   return (
     <img
       src={src}
-      alt={`${classification} logo`}
-      title={classification}
+      alt={`${label} logo`}
+      title={label}
       style={style}
       className={`inline-block object-contain ${className}`}
       onError={(e) => {

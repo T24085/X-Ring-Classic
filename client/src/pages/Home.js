@@ -32,6 +32,9 @@ const Home = () => {
     return (fi + li) || 'S';
   };
 
+  const displayClass = (classification) =>
+    (classification || '').toString().replace(/^provisional\s+/i, '').trim();
+
   const getClassStyles = (classification) => {
     // Normalize classification - remove "Provisional" prefix and handle "Rookie"
     const normalized = (classification || '').toLowerCase().replace(/^provisional\s+/, '');
@@ -439,7 +442,7 @@ const Home = () => {
                 {latestCompetitionWinner.winner.classification && (
                   <div className="mt-4">
                     <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getClassStyles(latestCompetitionWinner.winner.classification)}`}>
-                      {latestCompetitionWinner.winner.classification}
+                      {displayClass(latestCompetitionWinner.winner.classification)}
                     </span>
                   </div>
                 )}
@@ -657,9 +660,9 @@ const Home = () => {
                                     {c.classification && (
                                       <span
                                         className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getClassStyles(c.classification)}`}
-                                        title={`${c.classification} – ${getClassDescription(c.classification)}`}
+                                        title={`${displayClass(c.classification)} – ${getClassDescription(c.classification)}`}
                                       >
-                                        {c.classification}
+                                        {displayClass(c.classification)}
                                       </span>
                                     )}
                                   </div>
@@ -694,7 +697,7 @@ const Home = () => {
                                   <div className="font-semibold text-gray-900 truncate">{name}</div>
                                   {c.classification && (
                                     <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getClassStyles(c.classification)}`}>
-                                      {c.classification}
+                                      {displayClass(c.classification)}
                                     </span>
                                   )}
                                 </div>

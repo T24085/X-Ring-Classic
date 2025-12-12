@@ -34,6 +34,9 @@ const CompetitionDetail = () => {
   const normalizeClass = (classification) =>
     (classification || '').toLowerCase().replace(/^provisional\s+/, '').trim();
 
+  const displayClass = (classification) =>
+    (classification || '').toString().replace(/^provisional\s+/i, '').trim();
+
   const getClassStyles = (classification) => {
     switch (normalizeClass(classification)) {
       case 'grand master':
@@ -440,7 +443,7 @@ const CompetitionDetail = () => {
             {winner.classification && (
               <div className="mt-4">
                 <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getClassStyles(winner.classification)}`}>
-                  {winner.classification}
+                  {displayClass(winner.classification)}
                 </span>
               </div>
             )}

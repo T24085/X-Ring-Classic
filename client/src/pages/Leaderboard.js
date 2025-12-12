@@ -106,6 +106,9 @@ const Leaderboard = () => {
     return 'bg-white';
   };
 
+  const displayClass = (classification) =>
+    (classification || '').toString().replace(/^provisional\s+/i, '').trim();
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-64">
@@ -325,10 +328,10 @@ const Leaderboard = () => {
                           {entry.competitor.classification && (
                             <span
                               className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getClassBadgeStyles(entry.competitor.classification)}`}
-                              title={entry.competitor.classification}
-                              aria-label={entry.competitor.classification}
+                              title={displayClass(entry.competitor.classification)}
+                              aria-label={displayClass(entry.competitor.classification)}
                             >
-                              {entry.competitor.classification}
+                              {displayClass(entry.competitor.classification)}
                             </span>
                           )}
                         </div>
