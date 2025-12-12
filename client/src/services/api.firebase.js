@@ -249,7 +249,14 @@ export const scoresAPI = {
     const uid = auth.currentUser?.uid;
     if (!uid) throw new Error('Not authenticated');
     const shots = Array.isArray(scoreData?.shots) ? scoreData.shots : [];
-    const xCount = shots.filter(s => (s?.isX === true) || (Number(s?.value) === 10 && s?.isX)).length;
+    // X-count rules:
+    // - If shots are provided (advanced mode), compute X-count from shots marked isX === true
+    // - If shots are NOT provided (simple totals mode), accept the provided tiebreakerData.xCount
+    const providedX = scoreData?.tiebreakerData?.xCount;
+    const computedX = shots.filter(s => (s?.isX === true)).length;
+    const xCount = shots.length > 0
+      ? computedX
+      : (typeof providedX === 'number' ? providedX : 0);
     const payload = {
       ...scoreData,
       competitorId: uid,
@@ -258,6 +265,7 @@ export const scoresAPI = {
       tiebreakerData: {
         ...(scoreData?.tiebreakerData || {}),
         xCount,
+        // Treat X-shots as perfect shots
         perfectShots: xCount,
       },
     };
@@ -270,7 +278,11 @@ export const scoresAPI = {
     const uid = scoreData?.competitorId || auth.currentUser?.uid;
     if (!uid) throw new Error('Not authenticated');
     const shots = Array.isArray(scoreData?.shots) ? scoreData.shots : [];
-    const xCount = shots.filter(s => (s?.isX === true) || (Number(s?.value) === 10 && s?.isX)).length;
+    const providedX = scoreData?.tiebreakerData?.xCount;
+    const computedX = shots.filter(s => (s?.isX === true)).length;
+    const xCount = shots.length > 0
+      ? computedX
+      : (typeof providedX === 'number' ? providedX : 0);
     const payload = {
       ...scoreData,
       competitorId: uid,

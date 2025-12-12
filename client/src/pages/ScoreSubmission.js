@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { competitionsAPI, scoresAPI, usersAPI } from '../services/api.firebase';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useForm } from 'react-hook-form';
-import { Upload, Target, Camera, FileText, Save, AlertCircle } from 'lucide-react';
+import { Target, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const ScoreSubmission = () => {
@@ -12,9 +12,9 @@ const ScoreSubmission = () => {
   const { user } = useAuth();
   const [selectedCompetition, setSelectedCompetition] = useState('');
   const [shotScores, setShotScores] = useState(Array(10).fill({ value: '', isX: false }));
-  const [uploadedFiles, setUploadedFiles] = useState([]);
-  const [photoUrl, setPhotoUrl] = useState('');
-  const [videoUrl, setVideoUrl] = useState('');
+  const [reportMode, setReportMode] = useState('simple'); // 'simple' | 'advanced'
+  const [cardCount, setCardCount] = useState(4);
+  const [cards, setCards] = useState(() => Array.from({ length: 4 }, () => ({ score: '', xCount: '' })));
   const queryClient = useQueryClient();
 
   const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm();
@@ -50,7 +50,7 @@ const ScoreSubmission = () => {
   const availableCompetitions = ((userComps?.registered && userComps.registered.length > 0)
     ? userComps.registered
     : (competitions?.competitions || [])
-  ).filter((comp) => ['published', 'active'].includes(comp.status));
+  ).filter((comp) => !['draft', 'cancelled', 'archived'].includes(comp.status));
 
   useEffect(() => {
     if (!selectedCompetition && availableCompetitions.length === 1) {
@@ -109,17 +109,25 @@ const ScoreSubmission = () => {
 
   // Score submission mutation
   const submitScoreMutation = useMutation(
-    (scoreData) => scoresAPI.submit(scoreData),
+    async (payload) => {
+      if (Array.isArray(payload)) {
+        return await Promise.all(payload.map((p) => scoresAPI.submit(p)));
+      }
+      return await scoresAPI.submit(payload);
+    },
     {
       onSuccess: () => {
         toast.success('Score submitted successfully!');
         reset();
-        setShotScores(Array(10).fill({ value: '', isX: false }));
-        setUploadedFiles([]);
+        const required = selectedComp?.shotsPerTarget || 10;
+        setShotScores(Array(required).fill({ value: '', isX: false }));
+        setCards(Array.from({ length: 4 }, () => ({ score: '', xCount: '' })));
+        setCardCount(4);
+        queryClient.invalidateQueries(['competition-scores', selectedCompetition]);
         queryClient.invalidateQueries('scores');
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || 'Failed to submit score');
+        toast.error(error?.message || 'Failed to submit score');
       },
     }
   );
@@ -143,21 +151,6 @@ const ScoreSubmission = () => {
     setShotScores(newScores);
   };
 
-  const handleFileUpload = (event) => {
-    const files = Array.from(event.target.files);
-    const newFiles = files.map(file => ({
-      id: Date.now() + Math.random(),
-      file,
-      type: file.type.startsWith('image/') ? 'image' : 'video',
-      preview: URL.createObjectURL(file)
-    }));
-    setUploadedFiles(prev => [...prev, ...newFiles]);
-  };
-
-  const removeFile = (fileId) => {
-    setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
-  };
-
   const calculateTotalScore = () => {
     return shotScores.reduce((total, shot) => total + (parseInt(shot.value, 10) || 0), 0);
   };
@@ -166,12 +159,77 @@ const ScoreSubmission = () => {
     return shotScores.filter((s) => parseInt(s.value, 10) === 10 && s.isX).length;
   };
 
+  const simpleTotals = useMemo(() => {
+    const active = cards.slice(0, cardCount);
+    const totalScore = active.reduce((sum, c) => sum + (parseFloat(c.score) || 0), 0);
+    const totalX = active.reduce((sum, c) => sum + (parseInt(c.xCount, 10) || 0), 0);
+    return { totalScore, totalX };
+  }, [cards, cardCount]);
+
+  const updateCardField = (idx, field, value) => {
+    setCards((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], [field]: value };
+      return next;
+    });
+  };
+
   const onSubmit = (data) => {
     if (!selectedCompetition) {
       toast.error('Please select a competition');
       return;
     }
 
+    if (!data.category) {
+      toast.error('Please select a category (22LR or Airgun 22cal)');
+      return;
+    }
+
+    if (reportMode === 'simple') {
+      // Simple mode: submit up to 4 scorecards at once (each max 250 + 25X)
+      const maxScorePerCard = 250;
+      const maxXPerCard = 25;
+      const active = cards.slice(0, cardCount);
+
+      const anyFilled = active.some((c) => (c.score !== '' && c.score !== null && c.score !== undefined));
+      if (!anyFilled) {
+        toast.error('Please enter at least one scorecard.');
+        return;
+      }
+
+      for (let i = 0; i < active.length; i++) {
+        const sc = parseFloat(active[i].score);
+        const xc = active[i].xCount === '' ? 0 : parseInt(active[i].xCount, 10);
+        if (!Number.isFinite(sc) || sc < 0 || sc > maxScorePerCard) {
+          toast.error(`Card ${i + 1}: Score must be between 0 and ${maxScorePerCard}.`);
+          return;
+        }
+        if (!Number.isInteger(xc) || xc < 0 || xc > maxXPerCard) {
+          toast.error(`Card ${i + 1}: X Count must be between 0 and ${maxXPerCard}.`);
+          return;
+        }
+      }
+
+      const batchId = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+      const payloads = active.map((c, idx) => ({
+        competitionId: selectedCompetition,
+        category: data.category,
+        score: Math.round(parseFloat(c.score)),
+        // No shots in simple mode; provide X-count directly
+        tiebreakerData: {
+          xCount: c.xCount === '' ? 0 : parseInt(c.xCount, 10),
+        },
+        reportingMode: 'simple',
+        batchId,
+        cardIndex: idx + 1,
+        cardsInBatch: cardCount,
+      }));
+
+      submitScoreMutation.mutate(payloads);
+      return;
+    }
+
+    // Advanced mode (optional): shot-by-shot scoring for a single scorecard
     const totalScore = calculateTotalScore();
     const requiredShots = selectedComp?.shotsPerTarget || 10;
     const filledShots = shotScores.filter((v) => v && v.value !== '' && v.value !== null && v.value !== undefined);
@@ -184,37 +242,15 @@ const ScoreSubmission = () => {
       return;
     }
 
-    // Evidence URLs are optional; range officers will verify
-
-    if (!data.category) {
-      toast.error('Please select a category (22LR or Airgun 22cal)');
-      return;
-    }
-
     const payload = {
       competitionId: selectedCompetition,
-      category: data.category, // 22LR or Airgun 22cal
+      category: data.category,
       score: Math.round(totalScore),
       shots: shotScores
         .map((s) => ({ value: parseInt((s?.value ?? '0'), 10) || 0, isX: s?.isX === true }))
         .filter((s) => Number.isInteger(s.value))
         .slice(0, requiredShots),
-      equipment: {
-        rifle: data.rifle,
-        scope: data.scope,
-        ammunition: data.ammunition,
-        rest: data.rest
-      },
-      conditions: {
-        weather: data.weather,
-        temperature: data.temperature,
-        wind: data.wind,
-        notes: data.notes
-      },
-      evidence: {
-        ...(photoUrl ? { photoUrl } : {}),
-        ...(videoUrl ? { videoUrl } : {})
-      }
+      reportingMode: 'advanced',
     };
 
     submitScoreMutation.mutate(payload);
@@ -293,260 +329,154 @@ const ScoreSubmission = () => {
           </div>
         </div>
 
-        {/* Evidence URLs (optional) */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Evidence Links (optional)</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Photo URL (optional)</label>
-              <input
-                type="url"
-                value={photoUrl}
-                onChange={(e) => setPhotoUrl(e.target.value)}
-                placeholder="https://example.com/target.jpg"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Video URL (optional)</label>
-              <input
-                type="url"
-                value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-                placeholder="https://example.com/video.mp4"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-          <p className="text-xs text-gray-700 mt-2">Optional: add links to photos or videos for quicker verification.</p>
-        </div>
-
-        {/* Shot-by-Shot Scoring */}
+        {/* Score Reporting */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
             <Target className="h-5 w-5 mr-2" />
-            Shot-by-Shot Scoring
+            Score Reporting
           </h2>
-          <p className="text-sm text-gray-700 mb-3">
-            Required shots for this competition: {selectedComp?.shotsPerTarget || 10}
-          </p>
-          
-          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-10 gap-3 mb-4">
-            {shotScores.map((shot, index) => (
-              <div key={index} className="text-center">
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Shot {index + 1}
-                </label>
-                <div className="flex flex-col items-center gap-1 sm:flex-row sm:gap-2 sm:justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <button
+              type="button"
+              onClick={() => setReportMode('simple')}
+              className={`px-4 py-2 rounded-lg border text-sm font-semibold ${
+                reportMode === 'simple'
+                  ? 'bg-blue-600 text-white border-blue-700'
+                  : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              Simple (recommended)
+            </button>
+            <button
+              type="button"
+              onClick={() => setReportMode('advanced')}
+              className={`px-4 py-2 rounded-lg border text-sm font-semibold ${
+                reportMode === 'advanced'
+                  ? 'bg-blue-600 text-white border-blue-700'
+                  : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              Advanced (shot-by-shot)
+            </button>
+          </div>
+
+          {reportMode === 'simple' ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <p className="text-sm text-gray-700">
+                  Enter up to <strong>4 scorecards</strong> at once. Each card is max <strong>250</strong> and <strong>25X</strong>.
+                </p>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-gray-700">Cards</label>
                   <select
-                    value={shot.value}
-                    onChange={(e) => handleShotValueChange(index, e.target.value)}
-                    className="w-14 sm:w-16 px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={cardCount}
+                    onChange={(e) => setCardCount(parseInt(e.target.value, 10))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg"
                   >
-                    <option value="">--</option>
-                    {Array.from({ length: 11 }, (_, i) => i).map((n) => (
+                    {[1, 2, 3, 4].map((n) => (
                       <option key={n} value={n}>{n}</option>
                     ))}
                   </select>
-                  <label className="flex items-center gap-1 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={!!shot.isX}
-                      onChange={(e) => handleShotXToggle(index, e.target.checked)}
-                    />
-                    <span>X</span>
-                  </label>
                 </div>
               </div>
-            ))}
-          </div>
 
-          <div className="bg-gray-50 rounded-lg p-4">
-            <div className="flex justify-between items-center">
-              <span className="text-lg font-semibold text-gray-900">Total Score:</span>
-              <span className="text-2xl font-bold text-blue-600">{calculateTotalScore()} ({calculateXCount()}X)</span>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left font-semibold text-gray-700">Card</th>
+                      <th className="px-4 py-2 text-left font-semibold text-gray-700">Score (0–250)</th>
+                      <th className="px-4 py-2 text-left font-semibold text-gray-700">X Count (0–25)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {cards.slice(0, cardCount).map((c, idx) => (
+                      <tr key={idx}>
+                        <td className="px-4 py-3 font-medium text-gray-900">Card {idx + 1}</td>
+                        <td className="px-4 py-3">
+                          <input
+                            type="number"
+                            min="0"
+                            max="250"
+                            step="1"
+                            value={c.score}
+                            onChange={(e) => updateCardField(idx, 'score', e.target.value)}
+                            className="w-32 px-3 py-2 border border-gray-300 rounded-lg"
+                            placeholder="250"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <input
+                            type="number"
+                            min="0"
+                            max="25"
+                            step="1"
+                            value={c.xCount}
+                            onChange={(e) => updateCardField(idx, 'xCount', e.target.value)}
+                            className="w-32 px-3 py-2 border border-gray-300 rounded-lg"
+                            placeholder="25"
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-semibold text-gray-900">Total:</span>
+                  <span className="text-2xl font-bold text-blue-600">
+                    {simpleTotals.totalScore.toFixed(1)} ({simpleTotals.totalX}X)
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 mt-1">
+                  Tip: this will submit <strong>{cardCount}</strong> score entries (one per card) so leaderboards stay accurate.
+                </p>
+              </div>
             </div>
-          </div>
-        </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-700">
+                Optional: enter each shot for a single scorecard (good for tech-savvy shooters).
+                Required shots for this competition: <strong>{selectedComp?.shotsPerTarget || 10}</strong>
+              </p>
 
-        {/* Equipment Information */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-            <FileText className="h-5 w-5 mr-2" />
-            Equipment Information
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Rifle Model
-              </label>
-              <input
-                type="text"
-                {...register('rifle')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="e.g., Ruger 10/22"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Scope/Optics
-              </label>
-              <input
-                type="text"
-                {...register('scope')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="e.g., Leupold VX-3i 3-9x40"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ammunition
-              </label>
-              <input
-                type="text"
-                {...register('ammunition')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="e.g., CCI Standard Velocity"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Rest/Support
-              </label>
-              <input
-                type="text"
-                {...register('rest')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="e.g., Caldwell Lead Sled"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Shooting Conditions */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-            <FileText className="h-5 w-5 mr-2" />
-            Shooting Conditions
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Weather
-              </label>
-              <select
-                {...register('weather')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Select weather...</option>
-                <option value="sunny">Sunny</option>
-                <option value="cloudy">Cloudy</option>
-                <option value="rainy">Rainy</option>
-                <option value="windy">Windy</option>
-                <option value="indoor">Indoor</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Temperature (°F)
-              </label>
-              <input
-                type="number"
-                {...register('temperature')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="72"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Wind Speed (mph)
-              </label>
-              <input
-                type="number"
-                {...register('wind')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="5"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Additional Notes
-            </label>
-            <textarea
-              {...register('notes')}
-              rows="3"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Any additional notes about shooting conditions, equipment setup, etc."
-            />
-          </div>
-        </div>
-
-        {/* Evidence Upload */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-            <Camera className="h-5 w-5 mr-2" />
-            Evidence Upload
-          </h2>
-          
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-            <Upload className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-700 mb-4">
-              Upload photos or videos of your target, setup, or shooting process
-            </p>
-            <input
-              type="file"
-              multiple
-              accept="image/*,video/*"
-              onChange={handleFileUpload}
-              className="hidden"
-              id="file-upload"
-            />
-            <label
-              htmlFor="file-upload"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors"
-            >
-              Choose Files
-            </label>
-          </div>
-
-          {/* Uploaded Files Preview */}
-          {uploadedFiles.length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Uploaded Files</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {uploadedFiles.map((fileObj) => (
-                  <div key={fileObj.id} className="relative">
-                    {fileObj.type === 'image' ? (
-                      <img
-                        src={fileObj.preview}
-                        alt="Uploaded evidence"
-                        className="w-full h-24 object-cover rounded-lg"
-                      />
-                    ) : (
-                      <video
-                        src={fileObj.preview}
-                        className="w-full h-24 object-cover rounded-lg"
-                        controls
-                      />
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => removeFile(fileObj.id)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
-                    >
-                      ×
-                    </button>
+              <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-10 gap-3 mb-4">
+                {shotScores.map((shot, index) => (
+                  <div key={index} className="text-center">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Shot {index + 1}
+                    </label>
+                    <div className="flex flex-col items-center gap-1 sm:flex-row sm:gap-2 sm:justify-center">
+                      <select
+                        value={shot.value}
+                        onChange={(e) => handleShotValueChange(index, e.target.value)}
+                        className="w-14 sm:w-16 px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="">--</option>
+                        {Array.from({ length: 11 }, (_, i) => i).map((n) => (
+                          <option key={n} value={n}>{n}</option>
+                        ))}
+                      </select>
+                      <label className="flex items-center gap-1 text-xs">
+                        <input
+                          type="checkbox"
+                          checked={!!shot.isX}
+                          onChange={(e) => handleShotXToggle(index, e.target.checked)}
+                        />
+                        <span>X</span>
+                      </label>
+                    </div>
                   </div>
                 ))}
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-semibold text-gray-900">Total Score:</span>
+                  <span className="text-2xl font-bold text-blue-600">{calculateTotalScore()} ({calculateXCount()}X)</span>
+                </div>
               </div>
             </div>
           )}
@@ -560,7 +490,9 @@ const ScoreSubmission = () => {
               reset();
               const count = selectedComp?.shotsPerTarget || 10;
               setShotScores(Array(count).fill({ value: '', isX: false }));
-              setUploadedFiles([]);
+              setCards(Array.from({ length: 4 }, () => ({ score: '', xCount: '' })));
+              setCardCount(4);
+              setReportMode('simple');
             }}
             className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
           >
