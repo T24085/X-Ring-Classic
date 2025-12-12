@@ -1,33 +1,82 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
 import { competitionsAPI } from '../services/api.firebase';
-import { Search, Calendar, MapPin, Users, Trophy, Clock } from 'lucide-react';
+import { Calendar, MapPin, Users, Trophy, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Competitions = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  
-  const [filters, setFilters] = useState({
-    search: '',
-    type: 'all',
-    // Default to published to comply with Firestore rules for public reads
-    status: 'published',
-    location: 'all'
-  });
 
-  const { data: competitions, isLoading, error } = useQuery(
-    ['competitions', filters],
+  // Fetch active competitions (published and active)
+  const { data: activeCompetitions, isLoading: activeLoading } = useQuery(
+    ['competitions-active'],
     async () => {
-             const response = await competitionsAPI.getAll(filters);
-       return response.data;
+      const [publishedResp, activeResp] = await Promise.all([
+        competitionsAPI.getAll({ status: 'published', limit: 50 }).catch(() => ({ data: { competitions: [] } })),
+        competitionsAPI.getAll({ status: 'active', limit: 50 }).catch(() => ({ data: { competitions: [] } }))
+      ]);
+      
+      const allActive = [
+        ...(publishedResp.data?.competitions || []),
+        ...(activeResp.data?.competitions || [])
+      ];
+      
+      // Remove duplicates and sort by date
+      const unique = Array.from(new Map(allActive.map(c => [c.id, c])).values());
+      unique.sort((a, b) => {
+        const dateA = a.schedule?.competitionDate || a.startDate || a.createdAt || 0;
+        const dateB = b.schedule?.competitionDate || b.startDate || b.createdAt || 0;
+        const timeA = typeof dateA === 'string' ? new Date(dateA).getTime() : 
+                      (dateA?.toMillis?.() || (typeof dateA === 'object' && dateA?.seconds ? dateA.seconds * 1000 : 0) || 0);
+        const timeB = typeof dateB === 'string' ? new Date(dateB).getTime() : 
+                      (dateB?.toMillis?.() || (typeof dateB === 'object' && dateB?.seconds ? dateB.seconds * 1000 : 0) || 0);
+        return timeA - timeB; // Earliest first
+      });
+      
+      return { data: { competitions: unique } };
     },
     {
-      keepPreviousData: true,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 5 * 60 * 1000,
     }
   );
+
+  // Fetch completed/closed competitions
+  const { data: pastCompetitions, isLoading: pastLoading } = useQuery(
+    ['competitions-past'],
+    async () => {
+      const [completedResp, closedResp] = await Promise.all([
+        competitionsAPI.getAll({ status: 'completed', limit: 50 }).catch(() => ({ data: { competitions: [] } })),
+        competitionsAPI.getAll({ status: 'closed', limit: 50 }).catch(() => ({ data: { competitions: [] } }))
+      ]);
+      
+      const allPast = [
+        ...(completedResp.data?.competitions || []),
+        ...(closedResp.data?.competitions || [])
+      ];
+      
+      // Remove duplicates and sort by date (most recent first)
+      const unique = Array.from(new Map(allPast.map(c => [c.id, c])).values());
+      unique.sort((a, b) => {
+        const dateA = a.schedule?.competitionDate || a.startDate || a.createdAt || 0;
+        const dateB = b.schedule?.competitionDate || b.startDate || b.createdAt || 0;
+        const timeA = typeof dateA === 'string' ? new Date(dateA).getTime() : 
+                      (dateA?.toMillis?.() || (typeof dateA === 'object' && dateA?.seconds ? dateA.seconds * 1000 : 0) || 0);
+        const timeB = typeof dateB === 'string' ? new Date(dateB).getTime() : 
+                      (dateB?.toMillis?.() || (typeof dateB === 'object' && dateB?.seconds ? dateB.seconds * 1000 : 0) || 0);
+        return timeB - timeA; // Most recent first
+      });
+      
+      return { data: { competitions: unique } };
+    },
+    {
+      staleTime: 5 * 60 * 1000,
+    }
+  );
+
+  const isLoading = activeLoading || pastLoading;
+  const error = null; // Handle errors individually if needed
 
   const registerMutation = useMutation(
     (competitionId) => competitionsAPI.register(competitionId),
@@ -42,9 +91,6 @@ const Competitions = () => {
     }
   );
 
-  const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -52,6 +98,7 @@ const Competitions = () => {
       case 'published': return 'bg-green-100 text-green-800';
       case 'active': return 'bg-blue-100 text-blue-800';
       case 'completed': return 'bg-purple-100 text-purple-800';
+      case 'closed': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -107,65 +154,22 @@ const Competitions = () => {
         <p className="text-white drop-shadow-md">Browse and join .22LR rifle competitions</p>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 h-4 w-4" />
-            <input
-              type="text"
-              placeholder="Search competitions..."
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          {/* Type Filter */}
-          <select
-            value={filters.type}
-            onChange={(e) => handleFilterChange('type', e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="all">All Types</option>
-            <option value="indoor">Indoor</option>
-            <option value="outdoor">Outdoor</option>
-            <option value="precision">Precision</option>
-            <option value="speed">Speed</option>
-          </select>
-
-          {/* Status Filter */}
-          <select
-            value={filters.status}
-            onChange={(e) => handleFilterChange('status', e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="all">All Status</option>
-            <option value="published">Published</option>
-            <option value="active">Active</option>
-            <option value="completed">Completed</option>
-          </select>
-
-          {/* Location Filter */}
-          <select
-            value={filters.location}
-            onChange={(e) => handleFilterChange('location', e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="all">All Locations</option>
-            <option value="local">Local</option>
-            <option value="regional">Regional</option>
-            <option value="national">National</option>
-          </select>
+      {/* Active Competitions Section */}
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-white">Active Competitions</h2>
+          <p className="text-white/80 text-sm">
+            {(activeCompetitions?.data?.competitions || []).length} competition{(activeCompetitions?.data?.competitions || []).length !== 1 ? 's' : ''}
+          </p>
         </div>
-      </div>
 
-      
-
-       {/* Competitions Grid */}
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-         {competitions?.competitions?.map((competition) => (
+        {activeLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        ) : (activeCompetitions?.data?.competitions || []).length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {(activeCompetitions.data.competitions || []).map((competition) => (
           <div key={competition.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
             {/* Competition Header */}
             <div className="p-6 border-b border-gray-100">
@@ -241,19 +245,111 @@ const Competitions = () => {
               </div>
             </div>
           </div>
-        ))}
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-white rounded-lg shadow-sm border">
+            <div className="text-gray-600 mb-4">
+              <Trophy className="h-16 w-16 mx-auto" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No active competitions</h3>
+            <p className="text-gray-600">Check back later for new competitions.</p>
+          </div>
+        )}
       </div>
 
-      {/* Empty State */}
-      {(!competitions?.competitions || competitions.competitions.length === 0) && (
-        <div className="text-center py-12">
-          <div className="text-gray-600 mb-4">
-            <Trophy className="h-16 w-16 mx-auto" />
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No competitions found</h3>
-          <p className="text-gray-600">Try adjusting your filters or check back later for new competitions.</p>
+      {/* Completed/Closed Competitions Section */}
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-white">Past Competitions</h2>
+          <p className="text-white/80 text-sm">
+            {(pastCompetitions?.data?.competitions || []).length} competition{(pastCompetitions?.data?.competitions || []).length !== 1 ? 's' : ''}
+          </p>
         </div>
-      )}
+
+        {pastLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        ) : (pastCompetitions?.data?.competitions || []).length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {(pastCompetitions.data.competitions || []).map((competition) => (
+              <div key={competition.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow opacity-90">
+                {/* Competition Header */}
+                <div className="p-6 border-b border-gray-100">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-2xl">{getTypeIcon(competition)}</span>
+                      <h3 className="text-lg font-semibold text-gray-900">{competition.title}</h3>
+                    </div>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(competition.status)}`}>
+                      {competition.status}
+                    </span>
+                  </div>
+                  
+                  <p className="text-gray-700 text-sm mb-4">{competition.description}</p>
+                  
+                  {/* Competition Details */}
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="h-4 w-4 text-gray-600" />
+                      <span className="text-gray-900">
+                        {competition.schedule?.competitionDate 
+                          ? new Date(competition.schedule.competitionDate).toLocaleDateString()
+                          : competition.startDate 
+                          ? new Date(competition.startDate).toLocaleDateString()
+                          : 'TBD'
+                        }
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="h-4 w-4 text-gray-600" />
+                      <span className="text-gray-900">
+                        {competition.range?.name || competition.location || 'TBD'}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Users className="h-4 w-4 text-gray-600" />
+                      <span className="text-gray-900">
+                        {(competition.participantCount || competition.registeredCount || 0)} / {competition.maxParticipants} participants
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Competition Footer */}
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-2">
+                      <Trophy className="h-4 w-4 text-yellow-500" />
+                      <span className="text-sm font-medium text-gray-900">${competition.prizePool || 0}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Clock className="h-4 w-4 text-gray-600" />
+                      <span className="text-sm text-gray-700">{competition.duration || 'TBD'}</span>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => navigate(`/competitions/${competition.id}`)}
+                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    View Results
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-white rounded-lg shadow-sm border opacity-90">
+            <div className="text-gray-600 mb-4">
+              <Trophy className="h-16 w-16 mx-auto" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No past competitions</h3>
+            <p className="text-gray-600">Past competitions will appear here.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
