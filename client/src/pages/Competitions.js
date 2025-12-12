@@ -9,19 +9,12 @@ const Competitions = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // Fetch active competitions (published and active)
+  // Fetch active competitions (published)
   const { data: activeCompetitions, isLoading: activeLoading } = useQuery(
     ['competitions-active'],
     async () => {
-      const [publishedResp, activeResp] = await Promise.all([
-        competitionsAPI.getAll({ status: 'published', limit: 50 }).catch(() => ({ data: { competitions: [] } })),
-        competitionsAPI.getAll({ status: 'active', limit: 50 }).catch(() => ({ data: { competitions: [] } }))
-      ]);
-      
-      const allActive = [
-        ...(publishedResp.data?.competitions || []),
-        ...(activeResp.data?.competitions || [])
-      ];
+      const publishedResp = await competitionsAPI.getAll({ status: 'published', limit: 50 }).catch(() => ({ data: { competitions: [] } }));
+      const allActive = [...(publishedResp.data?.competitions || [])];
       
       // Remove duplicates and sort by date
       const unique = Array.from(new Map(allActive.map(c => [c.id, c])).values());
@@ -42,19 +35,12 @@ const Competitions = () => {
     }
   );
 
-  // Fetch completed/closed competitions
+  // Fetch completed competitions
   const { data: pastCompetitions, isLoading: pastLoading } = useQuery(
     ['competitions-past'],
     async () => {
-      const [completedResp, closedResp] = await Promise.all([
-        competitionsAPI.getAll({ status: 'completed', limit: 50 }).catch(() => ({ data: { competitions: [] } })),
-        competitionsAPI.getAll({ status: 'closed', limit: 50 }).catch(() => ({ data: { competitions: [] } }))
-      ]);
-      
-      const allPast = [
-        ...(completedResp.data?.competitions || []),
-        ...(closedResp.data?.competitions || [])
-      ];
+      const completedResp = await competitionsAPI.getAll({ status: 'completed', limit: 50 }).catch(() => ({ data: { competitions: [] } }));
+      const allPast = [...(completedResp.data?.competitions || [])];
       
       // Remove duplicates and sort by date (most recent first)
       const unique = Array.from(new Map(allPast.map(c => [c.id, c])).values());

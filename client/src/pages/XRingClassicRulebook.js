@@ -32,7 +32,7 @@ const sections = [
     title: '4. Equipment',
     bullets: [
       '.22LR rifle only. Any safe trigger and sighting system.',
-      'Supports: As allowed by the chosen format (e.g., benchrest front/rear rest; prone sling or bipod; standing no artificial support).',
+      'Supports: Bench sleds are NOT allowed. Must use sandbag and bipod, or sandbag-only support (front/rear).',
       'No muzzle brakes that direct blast laterally toward other shooters.',
       'Ammunition must be commercially manufactured .22 Long Rifle.'
     ]

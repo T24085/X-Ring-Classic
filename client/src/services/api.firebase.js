@@ -200,7 +200,8 @@ export const competitionsAPI = {
       ...competitionData,
       createdAt: serverTimestamp(),
       organizerId: auth.currentUser?.uid || null,
-      status: competitionData?.status || 'draft',
+      // Default to published since we no longer use draft/active/closed in the UI
+      status: competitionData?.status || 'published',
     });
     const snap = await getDoc(ref);
     return { data: { competition: { id: ref.id, ...snap.data() } } };
