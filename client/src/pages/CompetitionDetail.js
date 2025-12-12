@@ -29,6 +29,7 @@ const CompetitionDetail = () => {
   const [justRegistered, setJustRegistered] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [sortConfig, setSortConfig] = useState({ column: 'score', direction: 'desc' });
+  const [expandedCompetitors, setExpandedCompetitors] = useState(new Set());
 
   const normalizeClass = (classification) =>
     (classification || '').toLowerCase().replace(/^provisional\s+/, '').trim();
@@ -90,8 +91,22 @@ const CompetitionDetail = () => {
     }
   );
 
-  // Normalize scores to handle legacy/new API field names
-  const scores = useMemo(() => {
+  // Helper function to format name for privacy (first name + last initial)
+  const formatPrivateName = (firstName, lastName, username) => {
+    if (firstName && lastName) {
+      return `${firstName} ${lastName.charAt(0).toUpperCase()}.`;
+    }
+    if (firstName) {
+      return firstName;
+    }
+    if (username) {
+      return username;
+    }
+    return 'Unknown';
+  };
+
+  // Aggregate scores by competitor
+  const aggregatedScores = useMemo(() => {
     const toDate = (value) => {
       try {
         if (!value) return null;
@@ -108,55 +123,75 @@ const CompetitionDetail = () => {
       return null;
     };
 
-    const normalizeScore = (s) => {
-      const fullName = s.userName || (s.competitor ? (
-        s.competitor.firstName && s.competitor.lastName
-          ? `${s.competitor.firstName} ${s.competitor.lastName}`
-          : s.competitor.username
-      ) : 'Unknown');
+    // Group scores by competitor
+    const competitorMap = new Map();
 
+    (rawScores || []).forEach((s) => {
+      // Try to get competitor ID, fallback to userName for grouping
+      const competitorId = s.competitorId || s.userId || s.userName || `user_${s.id}`;
+      const firstName = s.competitor?.firstName || s.firstName || '';
+      const lastName = s.competitor?.lastName || s.lastName || '';
+      const username = s.competitor?.username || s.username || s.userName || 'Unknown';
+      
       const submittedAt = toDate(s.submittedAt || s.createdAt || s.updatedAt) || new Date();
+      const scoreValue = s.totalScore ?? s.score ?? 0;
       const xCount = typeof s.tiebreakerData?.xCount === 'number'
         ? s.tiebreakerData.xCount
         : Array.isArray(s.shots)
-          ? s.shots.filter((shot) => shot?.isX === true || Number(shot?.value) === 10).length
+          ? s.shots.filter((shot) => shot?.isX === true).length
           : 0;
+      const classification = s.competitor?.classification || s.classification || s.classificationLabel || null;
+      const status = s.status ?? (s.verificationStatus === 'approved' ? 'verified' : (s.verificationStatus || 'pending'));
 
-      return {
+      if (!competitorMap.has(competitorId)) {
+        competitorMap.set(competitorId, {
+          competitorId,
+          firstName,
+          lastName,
+          username,
+          displayName: formatPrivateName(firstName, lastName, username),
+          classification,
+          individualScores: [],
+          totalScore: 0,
+          totalXCount: 0,
+          averageScore: 0,
+          scoreCount: 0,
+        });
+      }
+
+      const competitor = competitorMap.get(competitorId);
+      competitor.individualScores.push({
         id: s.id,
-        userName: fullName,
-        totalScore: s.totalScore ?? s.score ?? 0,
-        status: s.status ?? (s.verificationStatus === 'approved' ? 'verified' : (s.verificationStatus || 'pending')),
+        score: scoreValue,
+        xCount,
+        status,
         submittedAt,
         submittedDisplay: submittedAt.toLocaleDateString(),
-        xCount,
-        classification: s.competitor?.classification || s.classification || s.classificationLabel || null,
-      };
-    };
+      });
+      competitor.totalScore += scoreValue;
+      competitor.totalXCount += xCount;
+      competitor.scoreCount += 1;
+    });
 
-    const sortValue = (a, b) => {
-      if (sortConfig.column === 'submitted') {
-        const diff = (a.submittedAt?.getTime() || 0) - (b.submittedAt?.getTime() || 0);
-        return sortConfig.direction === 'asc' ? diff : -diff;
-      }
+    // Calculate averages and sort
+    const aggregated = Array.from(competitorMap.values()).map((comp) => ({
+      ...comp,
+      averageScore: comp.scoreCount > 0 ? comp.totalScore / comp.scoreCount : 0,
+    }));
 
-      const primary = (a.totalScore || 0) - (b.totalScore || 0);
-      if (primary !== 0) {
-        return sortConfig.direction === 'asc' ? primary : -primary;
+    // Sort by total score (desc), then by total X count (desc)
+    aggregated.sort((a, b) => {
+      if (b.totalScore !== a.totalScore) {
+        return b.totalScore - a.totalScore;
       }
-      const xDiff = (a.xCount || 0) - (b.xCount || 0);
-      if (xDiff !== 0) {
-        return sortConfig.direction === 'asc' ? xDiff : -xDiff;
-      }
-      const timeDiff = (a.submittedAt?.getTime() || 0) - (b.submittedAt?.getTime() || 0);
-      return sortConfig.direction === 'asc' ? timeDiff : -timeDiff;
-    };
+      return b.totalXCount - a.totalXCount;
+    });
 
-    return (rawScores || [])
-      .map(normalizeScore)
-      .sort(sortValue)
-      .map((score, index) => ({ ...score, rank: index + 1 }));
-  }, [rawScores, sortConfig]);
+    return aggregated.map((comp, index) => ({ ...comp, rank: index + 1 }));
+  }, [rawScores]);
+
+  // Get winner (rank 1)
+  const winner = aggregatedScores.length > 0 && aggregatedScores[0] ? aggregatedScores[0] : null;
 
   // Registration mutation
   const registerMutation = useMutation(
@@ -199,6 +234,18 @@ const CompetitionDetail = () => {
     if (window.confirm('Are you sure you want to delete this competition? This action cannot be undone.')) {
       deleteMutation.mutate();
     }
+  };
+
+  const toggleCompetitorExpansion = (competitorId) => {
+    setExpandedCompetitors((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(competitorId)) {
+        newSet.delete(competitorId);
+      } else {
+        newSet.add(competitorId);
+      }
+      return newSet;
+    });
   };
 
   const isRegistered = competition?.participants?.some(p => p.userId === user?.id);
@@ -371,6 +418,36 @@ const CompetitionDetail = () => {
         </div>
       )}
 
+      {/* Winner Announcement Section */}
+      {winner && aggregatedScores.length > 0 && (
+        <div className="bg-gradient-to-r from-yellow-50 via-yellow-100 to-yellow-50 border-4 border-yellow-400 rounded-lg p-8 shadow-lg">
+          <div className="text-center">
+            <div className="flex items-center justify-center mb-4">
+              <Trophy className="h-16 w-16 text-yellow-600" />
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">🏆 Competition Winner 🏆</h2>
+            <div className="text-4xl font-bold text-yellow-700 mb-2">{winner.displayName}</div>
+            <div className="grid grid-cols-2 gap-4 max-w-md mx-auto mt-6">
+              <div className="bg-white rounded-lg p-4 shadow">
+                <div className="text-sm text-gray-600 mb-1">Total Score</div>
+                <div className="text-2xl font-bold text-gray-900">{winner.totalScore.toFixed(1)}</div>
+              </div>
+              <div className="bg-white rounded-lg p-4 shadow">
+                <div className="text-sm text-gray-600 mb-1">Total X Count</div>
+                <div className="text-2xl font-bold text-gray-900">{winner.totalXCount}</div>
+              </div>
+            </div>
+            {winner.classification && (
+              <div className="mt-4">
+                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getClassStyles(winner.classification)}`}>
+                  {winner.classification}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="bg-white rounded-lg shadow-sm border">
         <div className="border-b border-gray-200">
@@ -513,7 +590,7 @@ const CompetitionDetail = () => {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Competition Scores</h3>
-                {scores && scores.length > 0 && (
+                {aggregatedScores && aggregatedScores.length > 0 && (
                   <button className="flex items-center space-x-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                     <Download className="h-4 w-4" />
                     <span>Export Scores</span>
@@ -521,7 +598,7 @@ const CompetitionDetail = () => {
                 )}
               </div>
 
-              {scores && scores.length > 0 ? (
+              {aggregatedScores && aggregatedScores.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50">
@@ -529,83 +606,98 @@ const CompetitionDetail = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rank</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Shooter</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          <button
-                            type="button"
-                            onClick={() => handleSort('score')}
-                            className="flex items-center space-x-1 hover:text-gray-700"
-                          >
-                            <span>Score</span>
-                            <span>{sortIndicator('score')}</span>
-                          </button>
+                          Total Score
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          <button
-                            type="button"
-                            onClick={() => handleSort('submitted')}
-                            className="flex items-center space-x-1 hover:text-gray-700"
-                          >
-                            <span>Submitted</span>
-                            <span>{sortIndicator('submitted')}</span>
-                          </button>
+                          Average Score
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          Total X Count
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          Scores Submitted
                         </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {scores.map((score) => (
-                        <tr key={score.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            #{score.rank}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center space-x-3">
-                              <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center mr-3">
-                                <span className="text-xs font-medium text-gray-700">
-                                  {score.userName?.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium text-gray-900 flex items-center space-x-2">
-                                  <span>{score.userName}</span>
-                                  {score.classification && (
-                                    <>
-                                      <RankLogo classification={score.classification} size={18} />
-                                      <span
-                                        className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${getClassStyles(score.classification)}`}
-                                      >
-                                        {score.classification}
+                      {aggregatedScores.map((competitor) => {
+                        const isExpanded = expandedCompetitors.has(competitor.competitorId);
+                        return (
+                          <React.Fragment key={competitor.competitorId}>
+                            <tr className="hover:bg-gray-50 cursor-pointer" onClick={() => toggleCompetitorExpansion(competitor.competitorId)}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                #{competitor.rank}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex items-center space-x-3">
+                                  <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
+                                    <span className="text-xs font-medium text-gray-700">
+                                      {competitor.displayName?.charAt(0).toUpperCase()}
+                                    </span>
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="text-sm font-medium text-gray-900 flex items-center space-x-2">
+                                      <span>{competitor.displayName}</span>
+                                      {competitor.classification && (
+                                        <>
+                                          <RankLogo classification={competitor.classification} size={18} />
+                                          <span
+                                            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${getClassStyles(competitor.classification)}`}
+                                          >
+                                            {competitor.classification}
+                                          </span>
+                                        </>
+                                      )}
+                                      <span className="text-xs text-gray-400">
+                                        {isExpanded ? '▼' : '▶'}
                                       </span>
-                                    </>
-                                  )}
+                                    </div>
+                                  </div>
                                 </div>
-                                {score.xCount > 0 && (
-                                  <div className="text-xs text-gray-500">X Count: {score.xCount}</div>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {score.totalScore?.toFixed(1)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              score.status === 'verified' ? 'bg-green-100 text-green-800' :
-                              score.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-red-100 text-red-800'
-                            }`}>
-                              {score.status === 'verified' ? (
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                              ) : score.status === 'rejected' ? (
-                                <XCircle className="h-3 w-3 mr-1" />
-                              ) : null}
-                              {score.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {score.submittedDisplay}
-                          </td>
-                        </tr>
-                      ))}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                                {competitor.totalScore.toFixed(1)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {competitor.averageScore.toFixed(1)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {competitor.totalXCount}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {competitor.scoreCount}
+                              </td>
+                            </tr>
+                            {isExpanded && competitor.individualScores.length > 0 && (
+                              <tr className="bg-gray-50">
+                                <td colSpan={6} className="px-6 py-4">
+                                  <div className="ml-12">
+                                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Individual Scores:</h4>
+                                    <div className="space-y-2">
+                                      {competitor.individualScores.map((score) => (
+                                        <div key={score.id} className="flex items-center justify-between bg-white rounded p-2 text-sm">
+                                          <div className="flex items-center space-x-4">
+                                            <span className="text-gray-900 font-medium">Score: {score.score.toFixed(1)}</span>
+                                            <span className="text-gray-600">X Count: {score.xCount}</span>
+                                            <span className={`px-2 py-0.5 rounded-full text-xs ${
+                                              score.status === 'verified' ? 'bg-green-100 text-green-800' :
+                                              score.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                              'bg-red-100 text-red-800'
+                                            }`}>
+                                              {score.status}
+                                            </span>
+                                          </div>
+                                          <span className="text-gray-500 text-xs">{score.submittedDisplay}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

@@ -474,7 +474,8 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Sponsorship Hero Section */}
+      {/* Sponsorship Hero Section - Hidden for now */}
+      {false && (
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
@@ -556,6 +557,7 @@ const Home = () => {
           </div>
         </div>
       </section>
+      )}
     </div>
   );
 };
