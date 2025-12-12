@@ -17,6 +17,21 @@ import {
 const Home = () => {
   const { isAuthenticated } = useAuth();
   
+  const formatPrivateName = (firstName, lastName) => {
+    const f = (firstName || '').trim();
+    const l = (lastName || '').trim();
+    if (f && l) return `${f} ${l.charAt(0).toUpperCase()}.`;
+    return f || 'Shooter';
+  };
+
+  const initialsFromName = (firstName, lastName) => {
+    const f = (firstName || '').trim();
+    const l = (lastName || '').trim();
+    const fi = f ? f.charAt(0).toUpperCase() : '';
+    const li = l ? l.charAt(0).toUpperCase() : '';
+    return (fi + li) || 'S';
+  };
+
   const getClassStyles = (classification) => {
     // Normalize classification - remove "Provisional" prefix and handle "Rookie"
     const normalized = (classification || '').toLowerCase().replace(/^provisional\s+/, '');
@@ -295,20 +310,14 @@ const Home = () => {
 
 
 
-  // Debug logging
-  if (isAuthenticated) {
-    console.log('Home page - Authenticated user, data:', {
-      competitions: competitions?.competitions?.length,
-      topShooters: topShooters?.leaderboard?.length,
-      landingStats,
-      competitionsError,
-      shootersError,
-      statsError,
-    });
-  }
-
   return (
-    <div className="space-y-12">
+    <div className="relative space-y-12">
+      {/* Subtle background accents to make the page feel less flat */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-40 left-1/2 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-red-600/20 blur-3xl" />
+        <div className="absolute top-32 right-[-6rem] h-[22rem] w-[22rem] rounded-full bg-yellow-500/20 blur-3xl" />
+        <div className="absolute bottom-20 left-[-6rem] h-[24rem] w-[24rem] rounded-full bg-blue-600/15 blur-3xl" />
+      </div>
       {/* Show error messages if queries fail */}
       {(competitionsError || shootersError || statsError) && (
         <div className="bg-red-900/50 border border-red-700 rounded-lg p-4 text-white">
@@ -354,41 +363,122 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Quick Actions */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Link
+          to="/competitions"
+          className="group bg-white rounded-2xl border-2 border-red-800/70 shadow-sm hover:shadow-md transition-shadow p-6"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Explore</div>
+              <div className="text-xl font-bold text-gray-900 mt-1">Competitions</div>
+              <div className="text-sm text-gray-600 mt-1">Find active matches and results</div>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-blue-600/15 flex items-center justify-center group-hover:bg-blue-600/20">
+              <CalendarIcon className="w-6 h-6 text-blue-700" />
+            </div>
+          </div>
+        </Link>
+
+        <Link
+          to="/leaderboard"
+          className="group bg-white rounded-2xl border-2 border-red-800/70 shadow-sm hover:shadow-md transition-shadow p-6"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Rankings</div>
+              <div className="text-xl font-bold text-gray-900 mt-1">Leaderboards</div>
+              <div className="text-sm text-gray-600 mt-1">See who’s climbing</div>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-yellow-500/15 flex items-center justify-center group-hover:bg-yellow-500/20">
+              <TrophyIcon className="w-6 h-6 text-yellow-700" />
+            </div>
+          </div>
+        </Link>
+
+        <Link
+          to={isAuthenticated ? "/profile" : "/login"}
+          className="group bg-white rounded-2xl border-2 border-red-800/70 shadow-sm hover:shadow-md transition-shadow p-6"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Performance</div>
+              <div className="text-xl font-bold text-gray-900 mt-1">{isAuthenticated ? 'Your Stats' : 'Sign In'}</div>
+              <div className="text-sm text-gray-600 mt-1">{isAuthenticated ? 'Shot-level analytics and trends' : 'Access your profile & stats'}</div>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-purple-600/15 flex items-center justify-center group-hover:bg-purple-600/20">
+              <ViewfinderCircleIcon className="w-6 h-6 text-purple-700" />
+            </div>
+          </div>
+        </Link>
+      </section>
+
       {/* Latest Competition Winner */}
       {latestCompetitionWinner && latestCompetitionWinner.winner && (
-        <section className="bg-gradient-to-r from-yellow-50 via-yellow-100 to-yellow-50 border-4 border-yellow-400 rounded-2xl p-8 shadow-lg">
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-4">
-              <TrophyIcon className="h-16 w-16 text-yellow-600" />
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">🏆 Latest Competition Winner 🏆</h2>
-            <h3 className="text-xl text-gray-700 mb-4">{latestCompetitionWinner.competition.title}</h3>
-            <div className="text-4xl font-bold text-yellow-700 mb-4">
-              {latestCompetitionWinner.winner.displayName}
-            </div>
-            <div className="grid grid-cols-2 gap-4 max-w-md mx-auto mb-4">
-              <div className="bg-white rounded-lg p-4 shadow">
-                <div className="text-sm text-gray-600 mb-1">Total Score</div>
-                <div className="text-2xl font-bold text-gray-900">{latestCompetitionWinner.winner.totalScore.toFixed(1)}</div>
+        <section className="relative overflow-hidden rounded-3xl border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 via-yellow-100 to-yellow-50 shadow-xl">
+          <div
+            className="absolute inset-0 opacity-20"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 20% 20%, rgba(250, 204, 21, .55), transparent 45%), radial-gradient(circle at 80% 30%, rgba(234, 179, 8, .35), transparent 40%)",
+            }}
+          />
+          <div className="relative p-8 sm:p-10">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+              <div className="flex-1">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-600/15 text-yellow-800 border border-yellow-600/25 text-xs font-semibold uppercase tracking-wide">
+                  <TrophyIcon className="w-4 h-4" />
+                  Latest Winner
+                </div>
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-4">
+                  {latestCompetitionWinner.winner.displayName}
+                </h2>
+                <p className="text-gray-700 mt-2 text-lg">{latestCompetitionWinner.competition.title}</p>
+
+                {latestCompetitionWinner.winner.classification && (
+                  <div className="mt-4">
+                    <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getClassStyles(latestCompetitionWinner.winner.classification)}`}>
+                      {latestCompetitionWinner.winner.classification}
+                    </span>
+                  </div>
+                )}
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link
+                    to={`/competitions/${latestCompetitionWinner.competition.id}`}
+                    className="inline-flex items-center justify-center px-6 py-2.5 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-yellow-700 transition-colors shadow"
+                  >
+                    View Competition Results
+                  </Link>
+                  <Link
+                    to="/competitions"
+                    className="inline-flex items-center justify-center px-6 py-2.5 bg-white/80 text-gray-900 rounded-lg font-semibold hover:bg-white transition-colors border border-yellow-600/30"
+                  >
+                    Browse Competitions
+                  </Link>
+                </div>
               </div>
-              <div className="bg-white rounded-lg p-4 shadow">
-                <div className="text-sm text-gray-600 mb-1">Total X Count</div>
-                <div className="text-2xl font-bold text-gray-900">{latestCompetitionWinner.winner.totalXCount}</div>
+
+              <div className="flex-1">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white rounded-2xl p-5 shadow-sm border border-yellow-600/15">
+                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Total Score</div>
+                    <div className="text-3xl font-extrabold text-gray-900 mt-1">
+                      {latestCompetitionWinner.winner.totalScore.toFixed(1)}
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">Across submitted scorecards</div>
+                  </div>
+                  <div className="bg-white rounded-2xl p-5 shadow-sm border border-yellow-600/15">
+                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Total X Count</div>
+                    <div className="text-3xl font-extrabold text-gray-900 mt-1">
+                      {latestCompetitionWinner.winner.totalXCount}
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">Perfect shots (X)</div>
+                  </div>
+                </div>
               </div>
             </div>
-            {latestCompetitionWinner.winner.classification && (
-              <div className="mb-4">
-                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getClassStyles(latestCompetitionWinner.winner.classification)}`}>
-                  {latestCompetitionWinner.winner.classification}
-                </span>
-              </div>
-            )}
-            <Link
-              to={`/competitions/${latestCompetitionWinner.competition.id}`}
-              className="inline-block mt-4 px-6 py-2 bg-yellow-600 text-white rounded-lg font-semibold hover:bg-yellow-700 transition-colors"
-            >
-              View Competition Results
-            </Link>
           </div>
         </section>
       )}
@@ -523,68 +613,128 @@ const Home = () => {
           </Link>
         </div>
         
-            <div className="card">
-              <div className="space-y-4">
-                {(topShooters?.leaderboard || []).map((shooter, index) => (
-                  <div
-                    key={`${shooter.competitor.id}-${index}`}
-                    className={`flex items-center justify-between py-3 border-b border-red-900/40 last:border-b-0 ${getClassRowBg(shooter.competitor?.classification)}`}
-                  >
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      index === 0 ? 'bg-yellow-500 text-yellow-900' :
-                      index === 1 ? 'bg-slate-400 text-slate-900' :
-                      index === 2 ? 'bg-orange-500 text-orange-900' :
-                      'bg-blue-500 text-blue-900'
-                    }`}>
-                      {index + 1}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold text-gray-900">
-                          {shooter.competitor.firstName} {shooter.competitor.lastName?.charAt(0)?.toUpperCase() || ''}.
-                        </h4>
-                        {shooter.competitor.classification && (
-                          <span
-                            className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getClassStyles(shooter.competitor.classification)}`}
-                            title={`${shooter.competitor.classification} – ${getClassDescription(shooter.competitor.classification)}`}
-                            aria-label={`${shooter.competitor.classification} – ${getClassDescription(shooter.competitor.classification)}`}
-                          >
-                            {shooter.competitor.classification}
-                          </span>
-                        )}
+            <div className="bg-white rounded-2xl border-2 border-red-800 shadow-sm p-6">
+              {(() => {
+                const lb = topShooters?.leaderboard || [];
+                const podium = lb.slice(0, 3);
+                const rest = lb.slice(3);
+
+                const medalBg = (i) => (
+                  i === 0 ? 'bg-yellow-500 text-yellow-900' :
+                  i === 1 ? 'bg-slate-400 text-slate-900' :
+                  'bg-orange-500 text-orange-900'
+                );
+
+                return (
+                  <>
+                    {podium.length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        {podium.map((shooter, i) => {
+                          const c = shooter.competitor || {};
+                          const name = formatPrivateName(c.firstName, c.lastName);
+                          const initials = initialsFromName(c.firstName, c.lastName);
+                          const score = (shooter.bestScore ?? shooter.score)?.toFixed(1);
+                          return (
+                            <div
+                              key={`${c.id || i}-podium`}
+                              className={`rounded-2xl border p-5 shadow-sm ${i === 0 ? 'border-yellow-500/50 bg-yellow-50' : 'border-gray-200 bg-gray-50'}`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-extrabold ${medalBg(i)}`}>
+                                  {i + 1}
+                                </div>
+                                <div className="text-xs font-semibold text-gray-600">
+                                  {(shooter.competitionsCount ?? 1)} {(shooter.competitionsCount ?? 1) === 1 ? 'competition' : 'competitions'}
+                                </div>
+                              </div>
+                              <div className="mt-4 flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-xl bg-white border flex items-center justify-center font-extrabold text-gray-800">
+                                  {initials}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <div className="font-bold text-gray-900 truncate">{name}</div>
+                                    {c.classification && (
+                                      <span
+                                        className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getClassStyles(c.classification)}`}
+                                        title={`${c.classification} – ${getClassDescription(c.classification)}`}
+                                      >
+                                        {c.classification}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-sm text-gray-600 mt-1">
+                                    Best: <span className="font-semibold text-gray-900">{score}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
+                    )}
+
+                    <div className="space-y-2">
+                      {rest.map((shooter, idx) => {
+                        const rank = idx + 4;
+                        const c = shooter.competitor || {};
+                        const name = formatPrivateName(c.firstName, c.lastName);
+                        const score = (shooter.bestScore ?? shooter.score)?.toFixed(1);
+                        return (
+                          <div
+                            key={`${c.id || rank}-row`}
+                            className={`flex items-center justify-between rounded-xl px-4 py-3 border border-gray-200 ${getClassRowBg(c.classification)}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-blue-600/15 text-blue-800 flex items-center justify-center text-sm font-extrabold">
+                                {rank}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <div className="font-semibold text-gray-900 truncate">{name}</div>
+                                  {c.classification && (
+                                    <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getClassStyles(c.classification)}`}>
+                                      {c.classification}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs text-gray-600">
+                                  {(shooter.competitionsCount ?? 1)} {(shooter.competitionsCount ?? 1) === 1 ? 'competition' : 'competitions'}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-semibold text-gray-900">{score}</div>
+                              <div className="text-xs text-gray-600">Best score</div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-gray-900">{(shooter.bestScore ?? shooter.score)?.toFixed(1)}</div>
-                    <div className="text-sm text-gray-600">
-                      {(shooter.competitionsCount ?? 1)} {((shooter.competitionsCount ?? 1) === 1 ? 'competition' : 'competitions')}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            
-            {/* Show loading placeholders when loading or no data */}
-            {(shootersLoading || !topShooters?.leaderboard?.length) && (
-              Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between py-3 border-b border-red-900/40 last:border-b-0 animate-pulse">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-8 h-8 bg-gray-800 rounded-full"></div>
-                    <div>
-                      <div className="h-4 bg-gray-800 rounded w-32 mb-1"></div>
-                      <div className="h-3 bg-gray-800 rounded w-20"></div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="h-4 bg-gray-800 rounded w-12 mb-1"></div>
-                    <div className="h-3 bg-gray-800 rounded w-20"></div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+
+                    {(shootersLoading || !topShooters?.leaderboard?.length) && (
+                      <div className="mt-2">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <div key={i} className="flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0 animate-pulse">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-10 h-10 bg-gray-200 rounded-xl"></div>
+                              <div>
+                                <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+                                <div className="h-3 bg-gray-200 rounded w-20"></div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="h-4 bg-gray-200 rounded w-12 mb-2"></div>
+                              <div className="h-3 bg-gray-200 rounded w-20"></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
         {/* Classification Legend */}
         <div className="mt-4 bg-white rounded-lg shadow-sm border-2 border-red-800 p-4">
           <h3 className="text-sm font-semibold text-gray-900 mb-3">Classification Legend</h3>
