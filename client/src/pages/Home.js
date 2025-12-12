@@ -142,9 +142,49 @@ const Home = () => {
     ['latest-competition-winner'],
     async () => {
       try {
-        // Get latest competition with scores
-        const competitionsResp = await competitionsAPI.getAll({ status: 'published', limit: 10 });
-        const competitions = competitionsResp.data?.competitions || [];
+        // Get competitions with scores - prioritize completed/closed, then published
+        // Try to fetch completed and closed first (may require auth), fallback to published
+        let allCompetitions = [];
+        
+        // Try completed competitions first (most likely to have winners)
+        try {
+          const completedResp = await competitionsAPI.getAll({ status: 'completed', limit: 20 });
+          allCompetitions.push(...(completedResp.data?.competitions || []));
+        } catch (err) {
+          console.warn('Could not fetch completed competitions:', err);
+        }
+        
+        // Try closed competitions
+        try {
+          const closedResp = await competitionsAPI.getAll({ status: 'closed', limit: 20 });
+          allCompetitions.push(...(closedResp.data?.competitions || []));
+        } catch (err) {
+          console.warn('Could not fetch closed competitions:', err);
+        }
+        
+        // Always include published competitions
+        try {
+          const publishedResp = await competitionsAPI.getAll({ status: 'published', limit: 20 });
+          allCompetitions.push(...(publishedResp.data?.competitions || []));
+        } catch (err) {
+          console.warn('Could not fetch published competitions:', err);
+        }
+        
+        // Remove duplicates by ID
+        const uniqueCompetitions = Array.from(
+          new Map(allCompetitions.map(comp => [comp.id, comp])).values()
+        );
+        
+        // Sort by competition date (most recent first)
+        const competitions = uniqueCompetitions.sort((a, b) => {
+          const dateA = a.schedule?.competitionDate || a.startDate || a.createdAt || 0;
+          const dateB = b.schedule?.competitionDate || b.startDate || b.createdAt || 0;
+          const timeA = typeof dateA === 'string' ? new Date(dateA).getTime() : 
+                        (dateA?.toMillis?.() || (typeof dateA === 'object' && dateA?.seconds ? dateA.seconds * 1000 : 0) || 0);
+          const timeB = typeof dateB === 'string' ? new Date(dateB).getTime() : 
+                        (dateB?.toMillis?.() || (typeof dateB === 'object' && dateB?.seconds ? dateB.seconds * 1000 : 0) || 0);
+          return timeB - timeA; // Most recent first
+        });
         
         // Find competition with scores (most recent first)
         for (const comp of competitions) {
