@@ -1,76 +1,96 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { competitionsAPI, scoresAPI } from '../services/api.firebase';
-import { Target, Users, Save, CheckCircle } from 'lucide-react';
+import { Users, Save, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+const MAX_CARDS = 4;
+
+const emptyCard = () => ({ score: '', xCount: '' });
 
 const AdminEnterScore = () => {
   const queryClient = useQueryClient();
   const [competitionId, setCompetitionId] = useState('');
   const [competitorId, setCompetitorId] = useState('');
-  const [category, setCategory] = useState(''); // 22LR or Airgun 22cal
-  const [shotScores, setShotScores] = useState(Array(10).fill({ value: '', isX: false }));
+  const [category, setCategory] = useState('');
+  const [cardCount, setCardCount] = useState(MAX_CARDS);
+  const [cards, setCards] = useState(() => Array.from({ length: MAX_CARDS }, emptyCard));
   const [photoUrl, setPhotoUrl] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
 
-  // Load competitions (published/active preferred)
   const { data: competitionsResp } = useQuery(
     ['admin-enter-score-competitions'],
-    () => competitionsAPI.getAll().then(r => r.data),
+    () => competitionsAPI.getAll().then((r) => r.data),
     { staleTime: 5 * 60 * 1000 }
   );
 
-  const competitions = (competitionsResp?.competitions || []).filter(c => c.status === 'published' || c.status === 'active');
+  const competitions = (competitionsResp?.competitions || []).filter(
+    (c) => c.status === 'published' || c.status === 'active'
+  );
 
-  // Load selected competition for participants and required shots
   const { data: selectedComp } = useQuery(
     ['competition', competitionId],
-    () => competitionId ? competitionsAPI.getById(competitionId).then(r => r.data?.competition) : null,
+    () => (competitionId ? competitionsAPI.getById(competitionId).then((r) => r.data?.competition) : null),
     { enabled: !!competitionId, staleTime: 2 * 60 * 1000 }
   );
 
   const participants = useMemo(() => selectedComp?.participants || [], [selectedComp]);
+  const shotsPerCard = selectedComp?.shotsPerTarget || 25;
+  const maxScorePerCard = shotsPerCard * 10;
+  const maxXPerCard = shotsPerCard;
 
   useEffect(() => {
-    // Reset competitor when competition changes
     setCompetitorId('');
-    const required = selectedComp?.shotsPerTarget || 10;
-    if (required && shotScores.length !== required) {
-      setShotScores(Array(required).fill({ value: '', isX: false }));
+    setCardCount(MAX_CARDS);
+    setCards(Array.from({ length: MAX_CARDS }, emptyCard));
+  }, [competitionId]);
+
+  const updateCardField = (index, field, rawValue) => {
+    const next = [...cards];
+    if (rawValue === '') {
+      next[index] = { ...next[index], [field]: '' };
+      setCards(next);
+      return;
     }
-  }, [competitionId, selectedComp]);
 
-  const setShotValue = (index, value) => {
-    const next = [...shotScores];
-    const intVal = value === '' ? '' : Math.max(0, Math.min(10, parseInt(value, 10) || 0));
-    next[index] = { value: intVal, isX: intVal === 10 ? (next[index]?.isX || false) : false };
-    setShotScores(next);
+    const parsed = parseInt(rawValue, 10);
+    if (Number.isNaN(parsed)) {
+      return;
+    }
+
+    const bounded =
+      field === 'score'
+        ? Math.max(0, Math.min(maxScorePerCard, parsed))
+        : Math.max(0, Math.min(maxXPerCard, parsed));
+
+    next[index] = { ...next[index], [field]: bounded };
+    setCards(next);
   };
 
-  const toggleX = (index, checked) => {
-    const next = [...shotScores];
-    const current = next[index] || { value: '', isX: false };
-    next[index] = checked ? { value: 10, isX: true } : { value: current.value, isX: false };
-    setShotScores(next);
-  };
-
-  const totalScore = useMemo(() => shotScores.reduce((t, s) => t + (parseInt(s.value, 10) || 0), 0), [shotScores]);
-  const xCount = useMemo(() => shotScores.filter(s => parseInt(s.value, 10) === 10 && s.isX).length, [shotScores]);
+  const activeCards = useMemo(() => cards.slice(0, cardCount), [cards, cardCount]);
+  const enteredCards = useMemo(
+    () => activeCards.filter((c) => c.score !== '' && c.score !== null && c.score !== undefined),
+    [activeCards]
+  );
+  const totalAcrossCards = useMemo(
+    () => enteredCards.reduce((sum, c) => sum + (parseInt(c.score, 10) || 0), 0),
+    [enteredCards]
+  );
 
   const mutation = useMutation(
-    (payload) => scoresAPI.submitOnBehalf(payload),
+    async (payloads) => Promise.all(payloads.map((payload) => scoresAPI.submitOnBehalf(payload))),
     {
-      onSuccess: () => {
-        toast.success('Score submitted on behalf of competitor');
+      onSuccess: (_, payloads) => {
+        toast.success(`Submitted ${payloads.length} score card(s)`);
         queryClient.invalidateQueries(['competition-scores', competitionId]);
-        setShotScores(Array(selectedComp?.shotsPerTarget || 10).fill({ value: '', isX: false }));
+        setCards(Array.from({ length: MAX_CARDS }, emptyCard));
         setPhotoUrl('');
         setVideoUrl('');
         setCompetitorId('');
       },
       onError: (error) => {
         toast.error(error.response?.data?.error || 'Failed to submit score');
-      }
+      },
     }
   );
 
@@ -78,29 +98,55 @@ const AdminEnterScore = () => {
     e.preventDefault();
     if (!competitionId) return toast.error('Choose a competition');
     if (!competitorId) return toast.error('Choose a competitor');
-    const required = selectedComp?.shotsPerTarget || 10;
-    const filled = shotScores.filter(s => s.value !== '' && s.value !== null && s.value !== undefined);
-    if (filled.length !== required) {
-      return toast.error(`This competition requires ${required} shots. You entered ${filled.length}.`);
+    if (!category) return toast.error('Please select a weapon category (22LR or Airgun 22cal)');
+
+    if (enteredCards.length === 0) {
+      return toast.error('Enter at least one card score.');
     }
 
-    if (!category) {
-      return toast.error('Please select a weapon category (22LR or Airgun 22cal)');
+    for (let i = 0; i < activeCards.length; i += 1) {
+      const card = activeCards[i];
+      if (card.score === '' || card.score === null || card.score === undefined) {
+        continue;
+      }
+
+      const score = parseInt(card.score, 10);
+      const xCount = card.xCount === '' || card.xCount === null || card.xCount === undefined ? 0 : parseInt(card.xCount, 10);
+
+      if (!Number.isInteger(score) || score < 0 || score > maxScorePerCard) {
+        return toast.error(`Card ${i + 1}: score must be between 0 and ${maxScorePerCard}.`);
+      }
+
+      if (!Number.isInteger(xCount) || xCount < 0 || xCount > maxXPerCard) {
+        return toast.error(`Card ${i + 1}: X count must be between 0 and ${maxXPerCard}.`);
+      }
+
+      if (xCount > Math.floor(score / 10)) {
+        return toast.error(`Card ${i + 1}: X count cannot exceed the number of 10s in score.`);
+      }
     }
 
-    const shots = shotScores.map(s => ({ value: parseInt((s?.value ?? '0'), 10) || 0, isX: s?.isX === true })).slice(0, required);
-    const payload = {
-      competitionId,
-      competitorId,
-      category, // 22LR or Airgun 22cal
-      score: Math.round(totalScore),
-      shots,
-      evidence: {
-        ...(photoUrl ? { photoUrl } : {}),
-        ...(videoUrl ? { videoUrl } : {}),
-      },
-    };
-    mutation.mutate(payload);
+    const payloads = enteredCards.map((card) => {
+      const score = parseInt(card.score, 10);
+      const xCount = card.xCount === '' || card.xCount === null || card.xCount === undefined ? 0 : parseInt(card.xCount, 10);
+
+      return {
+        competitionId,
+        competitorId,
+        category,
+        score,
+        tiebreakerData: {
+          xCount,
+          perfectShots: xCount,
+        },
+        evidence: {
+          ...(photoUrl ? { photoUrl } : {}),
+          ...(videoUrl ? { videoUrl } : {}),
+        },
+      };
+    });
+
+    mutation.mutate(payloads);
   };
 
   return (
@@ -108,7 +154,7 @@ const AdminEnterScore = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white drop-shadow-lg">Enter Score (Admin)</h1>
-          <p className="text-white drop-shadow-md">Submit a score for a registered competitor. Submissions are auto-approved.</p>
+          <p className="text-white drop-shadow-md">Enter card totals for a registered competitor. Up to 4 cards per submission.</p>
         </div>
         <CheckCircle className="w-8 h-8 text-green-500" />
       </div>
@@ -125,9 +171,10 @@ const AdminEnterScore = () => {
                 required
               >
                 <option value="">Select competition...</option>
-                {competitions.map(c => (
+                {competitions.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.title} {c.schedule?.competitionDate ? `— ${new Date(c.schedule.competitionDate).toLocaleDateString()}` : ''}
+                    {c.title}
+                    {c.schedule?.competitionDate ? ` - ${new Date(c.schedule.competitionDate).toLocaleDateString()}` : ''}
                   </option>
                 ))}
               </select>
@@ -146,12 +193,12 @@ const AdminEnterScore = () => {
               >
                 <option value="">Select competitor...</option>
                 {participants.map((p) => (
-                  <option key={p.userId} value={p.userId}>{p.userName || p.username || p.userId}</option>
+                  <option key={p.userId} value={p.userId}>
+                    {p.userName || p.username || p.userId}
+                  </option>
                 ))}
               </select>
-              {!competitionId && (
-                <p className="text-xs text-gray-700 mt-1">Choose a competition to see registered participants.</p>
-              )}
+              {!competitionId && <p className="text-xs text-gray-700 mt-1">Choose a competition to see registered participants.</p>}
               {competitionId && participants.length === 0 && (
                 <p className="text-xs text-gray-500 mt-1">No registered participants found for this competition.</p>
               )}
@@ -173,47 +220,75 @@ const AdminEnterScore = () => {
           </div>
         </div>
 
-        {/* Shot Entry */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-            <Target className="h-5 w-5 mr-2" /> Shots — required: {selectedComp?.shotsPerTarget || 10}
-          </h2>
-          <div className="grid grid-cols-5 md:grid-cols-10 gap-3 mb-4">
-            {shotScores.map((shot, index) => (
-              <div key={index} className="text-center">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Shot {index + 1}</label>
-                <div className="flex items-center gap-2 justify-center">
-                  <select
-                    value={shot.value}
-                    onChange={(e) => setShotValue(index, e.target.value)}
-                    className="w-16 px-2 py-1 text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">--</option>
-                    {Array.from({ length: 11 }, (_, i) => i).map((n) => (
-                      <option key={n} value={n}>{n}</option>
-                    ))}
-                  </select>
-                  <label className="flex items-center gap-1 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={!!shot.isX}
-                      onChange={(e) => toggleX(index, e.target.checked)}
-                    />
-                    <span>X</span>
-                  </label>
+        <div className="bg-white rounded-lg shadow-sm border p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900">Scorecards</h2>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-700">Cards</label>
+              <select
+                value={cardCount}
+                onChange={(e) => setCardCount(parseInt(e.target.value, 10))}
+                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
+              >
+                {[1, 2, 3, 4].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <p className="text-sm text-gray-700">
+            Per card max: <strong>{maxScorePerCard}</strong> points and <strong>{maxXPerCard}X</strong>.
+          </p>
+
+          <div className="space-y-3">
+            {activeCards.map((card, index) => (
+              <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end bg-gray-50 rounded-lg p-3">
+                <div className="text-sm font-medium text-gray-800">Card {index + 1}</div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Total Score</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max={maxScorePerCard}
+                    step="1"
+                    value={card.score}
+                    onChange={(e) => updateCardField(index, 'score', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder={`0-${maxScorePerCard}`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">X Count</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max={maxXPerCard}
+                    step="1"
+                    value={card.xCount}
+                    onChange={(e) => updateCardField(index, 'xCount', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder={`0-${maxXPerCard}`}
+                  />
                 </div>
               </div>
             ))}
           </div>
+
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="flex justify-between items-center">
-              <span className="text-lg font-semibold text-gray-900">Total Score:</span>
-              <span className="text-2xl font-bold text-blue-600">{totalScore} ({xCount}X)</span>
+              <span className="text-lg font-semibold text-gray-900">Cards Entered:</span>
+              <span className="text-xl font-bold text-blue-600">{enteredCards.length}</span>
+            </div>
+            <div className="flex justify-between items-center mt-2">
+              <span className="text-lg font-semibold text-gray-900">Combined Total:</span>
+              <span className="text-2xl font-bold text-blue-600">{totalAcrossCards}</span>
             </div>
           </div>
         </div>
 
-        {/* Evidence (optional) */}
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -245,7 +320,14 @@ const AdminEnterScore = () => {
             disabled={mutation.isLoading}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
           >
-            {mutation.isLoading ? 'Submitting...' : (<><Save className="w-4 h-4 mr-2" /> Submit Score</>)}
+            {mutation.isLoading ? (
+              'Submitting...'
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Submit Score(s)
+              </>
+            )}
           </button>
         </div>
       </form>
@@ -254,4 +336,3 @@ const AdminEnterScore = () => {
 };
 
 export default AdminEnterScore;
-

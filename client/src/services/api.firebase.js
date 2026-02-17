@@ -352,7 +352,53 @@ export const scoresAPI = {
   },
   getPendingVerification: async () => {
     const snap = await getDocs(query(collection(db, 'scores'), where('verificationStatus', '==', 'pending')));
-    const scores = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const rawScores = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    const competitorIds = Array.from(new Set(rawScores.map(s => s.competitorId || s.competitor?.id).filter(Boolean)));
+    const competitionIds = Array.from(new Set(rawScores.map(s => s.competitionId || s.competition?.id).filter(Boolean)));
+
+    const [userResults, competitionResults] = await Promise.all([
+      Promise.allSettled(competitorIds.map(uid => getDoc(doc(db, 'users', uid)))),
+      Promise.allSettled(competitionIds.map(cid => getDoc(doc(db, 'competitions', cid)))),
+    ]);
+
+    const userMap = new Map();
+    userResults.forEach((res, i) => {
+      const uid = competitorIds[i];
+      if (res.status === 'fulfilled' && res.value.exists()) {
+        userMap.set(uid, { id: uid, ...res.value.data() });
+      }
+    });
+
+    const competitionMap = new Map();
+    competitionResults.forEach((res, i) => {
+      const cid = competitionIds[i];
+      if (res.status === 'fulfilled' && res.value.exists()) {
+        competitionMap.set(cid, { id: cid, ...res.value.data() });
+      }
+    });
+
+    const toMillis = (ts) => {
+      if (!ts) return 0;
+      if (typeof ts?.toMillis === 'function') return ts.toMillis();
+      if (typeof ts?.toDate === 'function') return ts.toDate().getTime();
+      if (typeof ts?.seconds === 'number') return ts.seconds * 1000;
+      const parsed = Date.parse(ts);
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
+
+    const scores = rawScores
+      .map((score) => {
+        const competitorKey = score.competitorId || score.competitor?.id;
+        const competitionKey = score.competitionId || score.competition?.id;
+        return {
+          ...score,
+          competitor: userMap.get(competitorKey) || score.competitor || null,
+          competition: competitionMap.get(competitionKey) || score.competition || null,
+        };
+      })
+      .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
+
     return { scores };
   },
 };

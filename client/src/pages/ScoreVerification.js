@@ -88,6 +88,14 @@ const ScoreVerification = () => {
   }
 
   const scores = pendingScores?.scores || [];
+  const getCompetitorName = (score) => {
+    const firstName = score?.competitor?.firstName;
+    const lastName = score?.competitor?.lastName;
+    const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
+    if (fullName) return fullName;
+    if (score?.competitor?.username) return score.competitor.username;
+    return score?.competitorId || 'Unknown competitor';
+  };
 
   return (
     <div className="space-y-6">
@@ -133,11 +141,11 @@ const ScoreVerification = () => {
                       <div className="flex items-center space-x-2">
                         {getStatusIcon(score.verificationStatus)}
                         <span className="text-sm font-medium text-gray-900">
-                          {score.competitor?.firstName} {score.competitor?.lastName}
+                          {getCompetitorName(score)}
                         </span>
-                        <span className="text-sm text-gray-700">
-                          (@{score.competitor?.username})
-                        </span>
+                        {score.competitor?.username && (
+                          <span className="text-sm text-gray-700">(@{score.competitor.username})</span>
+                        )}
                       </div>
                       <div className="flex items-center space-x-2">
                         <Trophy className="w-4 h-4 text-gray-600" />
@@ -150,7 +158,7 @@ const ScoreVerification = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                       <div>
                         <p className="text-sm text-gray-700">Score</p>
-                        <p className="text-2xl font-bold text-gray-900">{score.score}/100</p>
+                        <p className="text-2xl font-bold text-gray-900">{score.score}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-700">Perfect Shots</p>
@@ -263,9 +271,7 @@ const ScoreVerification = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-700">Competitor</p>
-                      <p className="font-medium">
-                        {selectedScore.competitor?.firstName} {selectedScore.competitor?.lastName}
-                      </p>
+                      <p className="font-medium">{getCompetitorName(selectedScore)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-700">Competition</p>
@@ -273,7 +279,7 @@ const ScoreVerification = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Score</p>
-                      <p className="text-2xl font-bold">{selectedScore.score}/100</p>
+                      <p className="text-2xl font-bold">{selectedScore.score}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Perfect Shots</p>
