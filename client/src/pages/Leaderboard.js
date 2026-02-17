@@ -275,7 +275,41 @@ const Leaderboard = () => {
           <h2 className="text-lg font-semibold text-gray-900">Rankings</h2>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="md:hidden divide-y divide-gray-200">
+          {leaderboard?.leaderboard?.map((entry, index) => (
+            <div key={`m-${entry.competitor.id}-${entry.rank}-${index}`} className={`p-4 ${getClassRowBg(entry.competitor?.classification)}`}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  {getMedalIcon(entry.rank) && <span className="text-lg">{getMedalIcon(entry.rank)}</span>}
+                  <span className="font-semibold text-gray-900">#{entry.rank}</span>
+                </div>
+                <span className="text-sm text-gray-700">{entry.competitionsCount ?? 1} comps</span>
+              </div>
+              <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                <RankLogo classification={entry.competitor.classification} size={20} />
+                <span className="truncate">
+                  {entry.competitor.firstName} {entry.competitor.lastName?.charAt(0)?.toUpperCase() || ''}.
+                </span>
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                <div className="bg-white/80 rounded p-2">
+                  <p className="text-gray-600">Avg</p>
+                  <p className="font-semibold text-gray-900">{entry.averageScore?.toFixed(1) ?? entry.score?.toFixed(1)}</p>
+                </div>
+                <div className="bg-white/80 rounded p-2">
+                  <p className="text-gray-600">Best</p>
+                  <p className="font-semibold text-gray-900">{(entry.bestScore ?? entry.score)?.toFixed(1)}</p>
+                </div>
+                <div className="bg-white/80 rounded p-2">
+                  <p className="text-gray-600">X</p>
+                  <p className="font-semibold text-gray-900">{entry.tiebreakerData?.xCount ?? 0}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>

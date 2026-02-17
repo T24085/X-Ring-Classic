@@ -177,8 +177,8 @@ const ScoreVerification = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-white mb-4 drop-shadow-lg">Score Verification</h1>
-        <p className="text-xl text-white max-w-3xl mx-auto drop-shadow-md">
+        <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4 drop-shadow-lg">Score Verification</h1>
+        <p className="text-base sm:text-xl text-white max-w-3xl mx-auto drop-shadow-md">
           Review and verify pending score submissions from competitors
         </p>
       </div>
@@ -239,19 +239,19 @@ const ScoreVerification = () => {
               <div key={score.id} className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-4 mb-4">
-                      <div className="flex items-center space-x-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 gap-2 mb-4">
+                      <div className="flex items-center space-x-2 min-w-0">
                         {getStatusIcon(score.verificationStatus)}
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-gray-900 truncate">
                           {getCompetitorName(score)}
                         </span>
                         {score.competitor?.username && (
-                          <span className="text-sm text-gray-700">(@{score.competitor.username})</span>
+                          <span className="text-sm text-gray-700 truncate">(@{score.competitor.username})</span>
                         )}
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 min-w-0">
                         <Trophy className="w-4 h-4 text-gray-600" />
-                        <span className="text-sm text-gray-700">
+                        <span className="text-sm text-gray-700 truncate">
                           {score.competition?.title}
                         </span>
                       </div>
@@ -314,16 +314,16 @@ const ScoreVerification = () => {
                     )}
                   </div>
 
-                  <div className="ml-6 flex flex-col space-y-2">
+                  <div className="ml-0 sm:ml-6 mt-4 sm:mt-0 flex flex-col space-y-2 w-full sm:w-auto">
                     <button
                       onClick={() => setSelectedScore(score)}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 w-full sm:w-auto"
                     >
                       Review Details
                     </button>
                     <button
                       onClick={() => openEditModal(score)}
-                      className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100"
+                      className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 w-full sm:w-auto"
                     >
                       Edit/Reassign
                     </button>
@@ -331,11 +331,11 @@ const ScoreVerification = () => {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="flex space-x-3 mt-4">
+                <div className="flex flex-col sm:flex-row gap-3 mt-4">
                   <button
                     onClick={() => handleVerify(score.id, 'approved')}
                     disabled={verifyMutation.isLoading}
-                    className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                    className="flex items-center justify-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
                   >
                     <CheckCircle className="w-4 h-4" />
                     <span>Approve</span>
@@ -343,7 +343,7 @@ const ScoreVerification = () => {
                   <button
                     onClick={() => handleVerify(score.id, 'rejected')}
                     disabled={verifyMutation.isLoading}
-                    className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                    className="flex items-center justify-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
                   >
                     <XCircle className="w-4 h-4" />
                     <span>Reject</span>
@@ -446,7 +446,7 @@ const ScoreVerification = () => {
                 {/* Score Details */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Score Details</h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-700">Competitor</p>
                       <p className="font-medium">{getCompetitorName(selectedScore)}</p>
@@ -473,7 +473,7 @@ const ScoreVerification = () => {
                 {/* Shots */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Shot Details</h3>
-                  <div className="grid grid-cols-10 gap-2">
+                  <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
                     {selectedScore.shots?.map((shot, index) => (
                       <div key={index} className="text-center">
                         <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-medium ${shot.isX ? 'border-blue-500 text-blue-600' : 'border-gray-300'}`}>
@@ -533,7 +533,7 @@ const ScoreVerification = () => {
                 </div>
 
                 {/* Actions */}
-                <div className="flex justify-end space-x-3">
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
                   <button
                     onClick={() => setSelectedScore(null)}
                     className="px-4 py-2 text-gray-700 hover:text-gray-900"
