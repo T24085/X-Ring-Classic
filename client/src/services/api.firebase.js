@@ -242,6 +242,47 @@ export const competitionsAPI = {
 
     return { data: { message: 'Successfully registered for competition' } };
   },
+  registerCompetitor: async (competitionId, userId) => {
+    const actor = auth.currentUser;
+    if (!actor) throw new Error('Not authenticated');
+    if (!competitionId) throw new Error('Competition ID is required');
+    if (!userId) throw new Error('User ID is required');
+
+    const [actorSnap, userSnap, competitionSnap] = await Promise.all([
+      getDoc(doc(db, 'users', actor.uid)),
+      getDoc(doc(db, 'users', userId)),
+      getDoc(doc(db, 'competitions', competitionId)),
+    ]);
+
+    const actorRole = actorSnap.exists() ? actorSnap.data()?.role : null;
+    if (actorRole !== 'admin' && actorRole !== 'range_admin') {
+      throw new Error('Admin access required');
+    }
+    if (!userSnap.exists()) throw new Error('User not found');
+    if (!competitionSnap.exists()) throw new Error('Competition not found');
+
+    const regsSnap = await getDocs(query(
+      collection(db, 'registrations'),
+      where('userId', '==', userId),
+      where('competitionId', '==', competitionId)
+    ));
+    if (!regsSnap.empty) {
+      return { data: { message: 'Shooter is already registered', alreadyRegistered: true } };
+    }
+
+    await addDoc(collection(db, 'registrations'), {
+      competitionId,
+      userId,
+      status: 'registered',
+      registeredAt: new Date().toISOString(),
+      createdAt: serverTimestamp(),
+      addedBy: actor.uid,
+      addedByRole: actorRole,
+      addedByAdmin: true,
+    });
+
+    return { data: { message: 'Shooter added to competition', alreadyRegistered: false } };
+  },
 };
 
 // Scores API (minimal)

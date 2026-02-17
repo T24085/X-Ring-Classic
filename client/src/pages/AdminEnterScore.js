@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { competitionsAPI, scoresAPI } from '../services/api.firebase';
+import { adminAPI, competitionsAPI, scoresAPI } from '../services/api.firebase';
 import { Users, Save, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -15,6 +15,7 @@ const AdminEnterScore = () => {
   const [category, setCategory] = useState('');
   const [cardCount, setCardCount] = useState(MAX_CARDS);
   const [cards, setCards] = useState(() => Array.from({ length: MAX_CARDS }, emptyCard));
+  const [addUserId, setAddUserId] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
 
@@ -35,12 +36,30 @@ const AdminEnterScore = () => {
   );
 
   const participants = useMemo(() => selectedComp?.participants || [], [selectedComp]);
+  const participantIds = useMemo(() => new Set(participants.map((p) => p.userId).filter(Boolean)), [participants]);
   const shotsPerCard = selectedComp?.shotsPerTarget || 25;
   const maxScorePerCard = shotsPerCard * 10;
   const maxXPerCard = shotsPerCard;
 
+  const { data: usersResp } = useQuery(
+    ['admin-user-list-for-registration'],
+    () => adminAPI.getUsers({ limit: 2000 }),
+    { staleTime: 2 * 60 * 1000, enabled: !!competitionId }
+  );
+
+  const availableShooters = useMemo(() => {
+    const users = usersResp?.users || [];
+    return users.filter((u) => {
+      if (!u?.id) return false;
+      if (participantIds.has(u.id)) return false;
+      const role = u.role || 'user';
+      return role !== 'admin' && role !== 'range_admin' && role !== 'sponsor';
+    });
+  }, [usersResp, participantIds]);
+
   useEffect(() => {
     setCompetitorId('');
+    setAddUserId('');
     setCardCount(MAX_CARDS);
     setCards(Array.from({ length: MAX_CARDS }, emptyCard));
   }, [competitionId]);
@@ -75,6 +94,23 @@ const AdminEnterScore = () => {
   const totalAcrossCards = useMemo(
     () => enteredCards.reduce((sum, c) => sum + (parseInt(c.score, 10) || 0), 0),
     [enteredCards]
+  );
+
+  const registerMutation = useMutation(
+    async ({ competitionId: targetCompetitionId, userId }) =>
+      competitionsAPI.registerCompetitor(targetCompetitionId, userId),
+    {
+      onSuccess: async (result, variables) => {
+        const wasAlreadyRegistered = !!result?.data?.alreadyRegistered;
+        toast.success(wasAlreadyRegistered ? 'Shooter was already registered' : 'Shooter added to competition');
+        await queryClient.invalidateQueries(['competition', variables.competitionId]);
+        setCompetitorId(variables.userId);
+        setAddUserId('');
+      },
+      onError: (error) => {
+        toast.error(error?.message || 'Failed to add shooter');
+      },
+    }
   );
 
   const mutation = useMutation(
@@ -201,6 +237,46 @@ const AdminEnterScore = () => {
               {!competitionId && <p className="text-xs text-gray-700 mt-1">Choose a competition to see registered participants.</p>}
               {competitionId && participants.length === 0 && (
                 <p className="text-xs text-gray-500 mt-1">No registered participants found for this competition.</p>
+              )}
+              {competitionId && (
+                <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
+                  <p className="text-xs font-medium text-gray-700">Shooter forgot to register?</p>
+                  <div className="flex flex-col md:flex-row gap-2">
+                    <select
+                      value={addUserId}
+                      onChange={(e) => setAddUserId(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      disabled={registerMutation.isLoading}
+                    >
+                      <option value="">Select shooter to add...</option>
+                      {availableShooters.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.firstName || u.lastName
+                            ? `${u.firstName || ''} ${u.lastName || ''}`.trim()
+                            : (u.username || u.email || u.id)}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!competitionId) {
+                          toast.error('Choose a competition first');
+                          return;
+                        }
+                        if (!addUserId) {
+                          toast.error('Select a shooter to add');
+                          return;
+                        }
+                        registerMutation.mutate({ competitionId, userId: addUserId });
+                      }}
+                      disabled={registerMutation.isLoading || !addUserId}
+                      className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {registerMutation.isLoading ? 'Adding...' : 'Add To Competition'}
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
 
