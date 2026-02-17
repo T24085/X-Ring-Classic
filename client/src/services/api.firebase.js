@@ -246,6 +246,67 @@ export const competitionsAPI = {
 
 // Scores API (minimal)
 export const scoresAPI = {
+  getAdminScores: async (params = {}) => {
+    const snap = await getDocs(collection(db, 'scores'));
+    const allRaw = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const statusFilter = params?.verificationStatus;
+    const limit = Number(params?.limit || 300);
+
+    const filtered = allRaw
+      .filter((s) => !s.deleted)
+      .filter((s) => {
+        if (!statusFilter || statusFilter === 'all') return true;
+        return (s.verificationStatus || 'pending') === statusFilter;
+      });
+
+    const competitorIds = Array.from(new Set(filtered.map(s => s.competitorId || s.competitor?.id).filter(Boolean)));
+    const competitionIds = Array.from(new Set(filtered.map(s => s.competitionId || s.competition?.id).filter(Boolean)));
+
+    const [userResults, competitionResults] = await Promise.all([
+      Promise.allSettled(competitorIds.map(uid => getDoc(doc(db, 'users', uid)))),
+      Promise.allSettled(competitionIds.map(cid => getDoc(doc(db, 'competitions', cid)))),
+    ]);
+
+    const userMap = new Map();
+    userResults.forEach((res, i) => {
+      const uid = competitorIds[i];
+      if (res.status === 'fulfilled' && res.value.exists()) {
+        userMap.set(uid, { id: uid, ...res.value.data() });
+      }
+    });
+
+    const competitionMap = new Map();
+    competitionResults.forEach((res, i) => {
+      const cid = competitionIds[i];
+      if (res.status === 'fulfilled' && res.value.exists()) {
+        competitionMap.set(cid, { id: cid, ...res.value.data() });
+      }
+    });
+
+    const toMillis = (ts) => {
+      if (!ts) return 0;
+      if (typeof ts?.toMillis === 'function') return ts.toMillis();
+      if (typeof ts?.toDate === 'function') return ts.toDate().getTime();
+      if (typeof ts?.seconds === 'number') return ts.seconds * 1000;
+      const parsed = Date.parse(ts);
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
+
+    const scores = filtered
+      .map((score) => {
+        const competitorKey = score.competitorId || score.competitor?.id;
+        const competitionKey = score.competitionId || score.competition?.id;
+        return {
+          ...score,
+          competitor: userMap.get(competitorKey) || score.competitor || null,
+          competition: competitionMap.get(competitionKey) || score.competition || null,
+        };
+      })
+      .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt))
+      .slice(0, Math.max(1, limit));
+
+    return { scores };
+  },
   submit: async (scoreData) => {
     const uid = auth.currentUser?.uid;
     if (!uid) throw new Error('Not authenticated');
@@ -341,6 +402,25 @@ export const scoresAPI = {
       verifiedAt: serverTimestamp(),
     });
     return { data: { message: `Score ${status}` } };
+  },
+  adminUpdate: async (scoreId, updateData = {}) => {
+    const nextScore = Math.max(0, parseInt(updateData?.score, 10) || 0);
+    const nextXCount = Math.max(0, parseInt(updateData?.xCount, 10) || 0);
+    const payload = {
+      ...(updateData?.competitorId ? { competitorId: updateData.competitorId } : {}),
+      ...(typeof updateData?.score !== 'undefined' ? { score: nextScore } : {}),
+      tiebreakerData: {
+        ...(updateData?.existingTiebreakerData || {}),
+        ...(typeof updateData?.xCount !== 'undefined'
+          ? { xCount: nextXCount, perfectShots: nextXCount }
+          : {}),
+      },
+      correctionNotes: updateData?.correctionNotes || '',
+      correctedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+    await updateDoc(doc(db, 'scores', scoreId), payload);
+    return { data: { message: 'Score updated successfully' } };
   },
   flag: async (scoreId, reason) => {
     await updateDoc(doc(db, 'scores', scoreId), {

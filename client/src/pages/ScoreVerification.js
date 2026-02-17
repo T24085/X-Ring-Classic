@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { scoresAPI } from '../services/api.firebase';
+import { scoresAPI, competitionsAPI } from '../services/api.firebase';
 import { 
   CheckCircle, 
   XCircle, 
   Clock, 
-  Target, 
-  User, 
   Trophy,
   Eye,
   AlertTriangle
@@ -15,16 +13,30 @@ import toast from 'react-hot-toast';
 
 const ScoreVerification = () => {
   const [selectedScore, setSelectedScore] = useState(null);
+  const [editingScore, setEditingScore] = useState(null);
+  const [editForm, setEditForm] = useState({ competitorId: '', score: '', xCount: '', correctionNotes: '' });
+  const [search, setSearch] = useState('');
+  const [viewMode, setViewMode] = useState('pending');
   const [verificationNotes, setVerificationNotes] = useState('');
   const queryClient = useQueryClient();
 
-  const { data: pendingScores, isLoading, error } = useQuery(
-    'pending-verification',
-    scoresAPI.getPendingVerification,
+  const { data: scoreResults, isLoading, error } = useQuery(
+    ['admin-score-list', viewMode],
+    () => (viewMode === 'pending'
+      ? scoresAPI.getPendingVerification()
+      : scoresAPI.getAdminScores({ verificationStatus: 'all', limit: 500 })),
     {
       staleTime: 30 * 1000, // 30 seconds
       refetchInterval: 30 * 1000 // Auto-refresh every 30 seconds
     }
+  );
+
+  const { data: editCompetitionData } = useQuery(
+    ['score-edit-competition', editingScore?.competitionId],
+    () => editingScore?.competitionId
+      ? competitionsAPI.getById(editingScore.competitionId).then(r => r.data?.competition)
+      : null,
+    { enabled: !!editingScore?.competitionId }
   );
 
   const verifyMutation = useMutation(
@@ -32,7 +44,8 @@ const ScoreVerification = () => {
     {
       onSuccess: (data, variables) => {
         toast.success(`Score ${variables.status} successfully`);
-        queryClient.invalidateQueries('pending-verification');
+        queryClient.invalidateQueries(['admin-score-list', 'pending']);
+        queryClient.invalidateQueries(['admin-score-list', 'all']);
         setSelectedScore(null);
         setVerificationNotes('');
       },
@@ -42,11 +55,65 @@ const ScoreVerification = () => {
     }
   );
 
+  const updateMutation = useMutation(
+    ({ scoreId, payload }) => scoresAPI.adminUpdate(scoreId, payload),
+    {
+      onSuccess: () => {
+        toast.success('Score updated');
+        queryClient.invalidateQueries(['admin-score-list', 'pending']);
+        queryClient.invalidateQueries(['admin-score-list', 'all']);
+        setEditingScore(null);
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.error || 'Failed to update score');
+      }
+    }
+  );
+
   const handleVerify = (scoreId, status) => {
     verifyMutation.mutate({
       scoreId,
       status,
       notes: verificationNotes
+    });
+  };
+
+  const openEditModal = (score) => {
+    setEditingScore(score);
+    setEditForm({
+      competitorId: score?.competitorId || '',
+      score: score?.score ?? '',
+      xCount: score?.tiebreakerData?.xCount ?? 0,
+      correctionNotes: score?.correctionNotes || '',
+    });
+  };
+
+  const handleEditSave = () => {
+    if (!editingScore?.id) return;
+    if (!editForm.competitorId) {
+      toast.error('Please select a competitor');
+      return;
+    }
+    const nextScore = parseInt(editForm.score, 10);
+    const nextX = parseInt(editForm.xCount, 10);
+    if (!Number.isInteger(nextScore) || nextScore < 0) {
+      toast.error('Enter a valid score');
+      return;
+    }
+    if (!Number.isInteger(nextX) || nextX < 0) {
+      toast.error('Enter a valid X count');
+      return;
+    }
+
+    updateMutation.mutate({
+      scoreId: editingScore.id,
+      payload: {
+        competitorId: editForm.competitorId,
+        score: nextScore,
+        xCount: nextX,
+        correctionNotes: editForm.correctionNotes,
+        existingTiebreakerData: editingScore?.tiebreakerData || {},
+      }
     });
   };
 
@@ -87,7 +154,7 @@ const ScoreVerification = () => {
     );
   }
 
-  const scores = pendingScores?.scores || [];
+  const scores = scoreResults?.scores || [];
   const getCompetitorName = (score) => {
     const firstName = score?.competitor?.firstName;
     const lastName = score?.competitor?.lastName;
@@ -96,6 +163,15 @@ const ScoreVerification = () => {
     if (score?.competitor?.username) return score.competitor.username;
     return score?.competitorId || 'Unknown competitor';
   };
+  const filteredScores = scores.filter((score) => {
+    if (!search.trim()) return true;
+    const q = search.trim().toLowerCase();
+    const name = getCompetitorName(score).toLowerCase();
+    const username = (score?.competitor?.username || '').toLowerCase();
+    const compTitle = (score?.competition?.title || '').toLowerCase();
+    const scoreId = (score?.id || '').toLowerCase();
+    return name.includes(q) || username.includes(q) || compTitle.includes(q) || scoreId.includes(q);
+  });
 
   return (
     <div className="space-y-6">
@@ -107,14 +183,40 @@ const ScoreVerification = () => {
         </p>
       </div>
 
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setViewMode('pending')}
+              className={`px-3 py-2 rounded-lg text-sm font-medium ${viewMode === 'pending' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+            >
+              Pending Only
+            </button>
+            <button
+              onClick={() => setViewMode('all')}
+              className={`px-3 py-2 rounded-lg text-sm font-medium ${viewMode === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+            >
+              All Scores
+            </button>
+          </div>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search shooter, competition, or score ID"
+            className="w-full md:w-96 px-3 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+      </div>
+
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <Clock className="w-8 h-8 text-yellow-500" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-700">Pending</p>
-              <p className="text-2xl font-bold text-gray-900">{scores.length}</p>
+              <p className="text-sm font-medium text-gray-700">{viewMode === 'pending' ? 'Pending' : 'Loaded Scores'}</p>
+              <p className="text-2xl font-bold text-gray-900">{filteredScores.length}</p>
             </div>
           </div>
         </div>
@@ -126,14 +228,14 @@ const ScoreVerification = () => {
           <h2 className="text-lg font-semibold text-gray-900">Pending Verifications</h2>
         </div>
         
-        {scores.length === 0 ? (
+        {filteredScores.length === 0 ? (
           <div className="p-8 text-center">
             <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-            <p className="text-gray-700">No pending scores to verify</p>
+            <p className="text-gray-700">No scores found for current filters</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
-            {scores.map((score) => (
+            {filteredScores.map((score) => (
               <div key={score.id} className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -219,6 +321,12 @@ const ScoreVerification = () => {
                     >
                       Review Details
                     </button>
+                    <button
+                      onClick={() => openEditModal(score)}
+                      className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100"
+                    >
+                      Edit/Reassign
+                    </button>
                   </div>
                 </div>
 
@@ -246,6 +354,76 @@ const ScoreVerification = () => {
           </div>
         )}
       </div>
+
+      {editingScore && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-xl w-full">
+            <div className="p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">Edit/Reassign Score</h2>
+                <button onClick={() => setEditingScore(null)} className="text-gray-500 hover:text-gray-800">Close</button>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Competitor</label>
+                <select
+                  value={editForm.competitorId}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, competitorId: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="">Select competitor...</option>
+                  {(editCompetitionData?.participants || []).map((p) => (
+                    <option key={p.userId} value={p.userId}>
+                      {p.userName || p.userId}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">Score</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editForm.score}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, score: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">X Count</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editForm.xCount}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, xCount: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Correction Notes (optional)</label>
+                <textarea
+                  rows={3}
+                  value={editForm.correctionNotes}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, correctionNotes: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  placeholder="Reason for correction"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <button onClick={() => setEditingScore(null)} className="px-4 py-2 text-gray-700 hover:text-gray-900">Cancel</button>
+                <button
+                  onClick={handleEditSave}
+                  disabled={updateMutation.isLoading}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {updateMutation.isLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Verification Modal */}
       {selectedScore && (
