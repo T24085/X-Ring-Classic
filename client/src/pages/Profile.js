@@ -429,6 +429,17 @@ const Profile = () => {
     return d ? d.toLocaleDateString() : 'Date unavailable';
   };
 
+  const getCompetitionTitle = (score) => {
+    if (!score) return 'Unknown Competition';
+    return (
+      score?.competition?.title ||
+      score?.competitionTitle ||
+      score?.competitionName ||
+      score?.eventName ||
+      (score?.competitionId ? `Competition ${score.competitionId}` : 'Unknown Competition')
+    );
+  };
+
   const scores = userStats?.scores || [];
   
   // Comprehensive statistics calculations using useMemo
@@ -514,7 +525,7 @@ const Profile = () => {
         fullDate: parsedDate ? parsedDate.toLocaleDateString() : 'Date unavailable',
         score: toNumberScore(s),
         xCount: getXCount(s),
-        competitionTitle: s?.competition?.title || 'Unknown competition',
+        competitionTitle: getCompetitionTitle(s),
       };
     });
 
@@ -1199,7 +1210,7 @@ const Profile = () => {
               return (
                 <div key={score.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="flex-1">
-                    <div className="font-semibold text-gray-900">{score.competition?.title || 'Unknown Competition'}</div>
+                    <div className="font-semibold text-gray-900">{getCompetitionTitle(score)}</div>
                     <div className="text-sm text-gray-600">{formatDate(score.createdAt || score.submittedAt)}</div>
                   </div>
                   <div className="flex items-center space-x-4">
@@ -1226,7 +1237,7 @@ const Profile = () => {
           <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h4 className="text-xl font-semibold text-gray-900">Shots — {shotsModalScore.competition?.title}</h4>
+                <h4 className="text-xl font-semibold text-gray-900">Shots — {getCompetitionTitle(shotsModalScore)}</h4>
                 <button
                   onClick={() => setShotsModalScore(null)}
                   className="text-gray-400 hover:text-gray-600"

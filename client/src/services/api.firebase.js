@@ -903,7 +903,43 @@ export const usersAPI = {
   },
   getScores: async (userId, _params) => {
     const snap = await getDocs(query(collection(db, 'scores'), where('competitorId', '==', userId)));
-    const scores = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const rawScores = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Hydrate competition details for profile views (title/type/date).
+    const competitionIds = Array.from(new Set(rawScores.map(s => s.competitionId).filter(Boolean)));
+    const competitionResults = await Promise.allSettled(
+      competitionIds.map((id) => getDoc(doc(db, 'competitions', id)))
+    );
+
+    const competitionMap = new Map();
+    competitionResults.forEach((result, idx) => {
+      const compId = competitionIds[idx];
+      if (result.status === 'fulfilled' && result.value.exists()) {
+        competitionMap.set(compId, { id: result.value.id, ...result.value.data() });
+      }
+    });
+
+    const toMillis = (ts) => {
+      if (!ts) return 0;
+      if (typeof ts?.toMillis === 'function') return ts.toMillis();
+      if (typeof ts?.toDate === 'function') return ts.toDate().getTime();
+      if (typeof ts?.seconds === 'number') return ts.seconds * 1000;
+      if (typeof ts === 'number') return ts < 1e12 ? ts * 1000 : ts;
+      const parsed = Date.parse(ts);
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
+
+    const scores = rawScores
+      .map((score) => ({
+        ...score,
+        competition: score.competition || competitionMap.get(score.competitionId) || null,
+      }))
+      .sort((a, b) => {
+        const aTs = toMillis(a.createdAt) || toMillis(a.submittedAt);
+        const bTs = toMillis(b.createdAt) || toMillis(b.submittedAt);
+        return bTs - aTs;
+      });
+
     return { data: { scores } };
   },
   getCompetitions: async (userId, _params) => {
@@ -1042,16 +1078,18 @@ export const adminAPI = {
         startDate.setDate(now.getDate() - 30);
     }
 
-    // Get all users and competitions
-    const [usersSnap, competitionsSnap, scoresSnap] = await Promise.all([
+    // Get all users, competitions, scores, and registrations
+    const [usersSnap, competitionsSnap, scoresSnap, registrationsSnap] = await Promise.all([
       getDocs(collection(db, 'users')),
       getDocs(collection(db, 'competitions')),
       getDocs(collection(db, 'scores')),
+      getDocs(collection(db, 'registrations')),
     ]);
 
     const users = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     const competitions = competitionsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     const scores = scoresSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const registrations = registrationsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
     // Helper to convert Firestore timestamp to Date
     const toDate = (ts) => {
@@ -1132,24 +1170,37 @@ export const adminAPI = {
       return created && created >= startDate;
     }).length;
 
-    const pendingScores = scores.filter(s => (s.verificationStatus || 'approved') === 'pending').length;
+    const isPendingForReview = (status) => (
+      status == null ||
+      status === 'pending' ||
+      status === 'submitted' ||
+      status === 'unverified' ||
+      status === 'under_review'
+    );
+    const pendingScores = scores.filter((s) => isPendingForReview(s.verificationStatus)).length;
 
-    // Calculate revenue: $10 per approved score
-    // Each score represents a paid entry fee, confirmed when approved
-    const ENTRY_FEE_PER_SCORE = 10;
-    
-    // Total revenue: all approved scores
-    // Only count scores that are explicitly approved (verificationStatus === 'approved')
-    const approvedScores = scores.filter(s => s.verificationStatus === 'approved');
-    const totalRevenue = approvedScores.length * ENTRY_FEE_PER_SCORE;
-    
-    // Revenue this period: approved scores verified (or submitted) within the period
-    const revenueThisPeriodScores = approvedScores.filter(s => {
-      // Prefer verifiedAt date (when it was approved), fallback to createdAt (when submitted)
-      const dateToCheck = toDate(s.verifiedAt) || toDate(s.createdAt) || toDate(s.submittedAt);
-      return dateToCheck && dateToCheck >= startDate;
+    // Revenue model: $12 per user participation (registration), not per scorecard.
+    const PARTICIPATION_FEE = 12;
+    const participationKey = (reg) => {
+      const userId = reg?.userId || reg?.competitorId || '';
+      const competitionId = reg?.competitionId || '';
+      return `${userId}|${competitionId}`;
+    };
+
+    const uniqueParticipations = new Map();
+    registrations.forEach((reg) => {
+      const key = participationKey(reg);
+      if (key === '|') return;
+      if (!uniqueParticipations.has(key)) uniqueParticipations.set(key, reg);
     });
-    const revenueThisPeriod = revenueThisPeriodScores.length * ENTRY_FEE_PER_SCORE;
+
+    const totalRevenue = uniqueParticipations.size * PARTICIPATION_FEE;
+
+    const revenueThisPeriodParticipations = Array.from(uniqueParticipations.values()).filter((reg) => {
+      const registeredAt = toDate(reg?.registeredAt) || toDate(reg?.createdAt);
+      return registeredAt && registeredAt >= startDate;
+    });
+    const revenueThisPeriod = revenueThisPeriodParticipations.length * PARTICIPATION_FEE;
 
     const totals = await publicAPI.getStats();
     
@@ -1216,7 +1267,17 @@ export const adminAPI = {
     const snap = await getDocs(collection(db, 'scores'));
     let scores = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (params?.verificationStatus) {
-      scores = scores.filter(s => (s.verificationStatus || 'approved') === params.verificationStatus);
+      if (params.verificationStatus === 'pending') {
+        scores = scores.filter((s) => (
+          s.verificationStatus == null ||
+          s.verificationStatus === 'pending' ||
+          s.verificationStatus === 'submitted' ||
+          s.verificationStatus === 'unverified' ||
+          s.verificationStatus === 'under_review'
+        ));
+      } else {
+        scores = scores.filter((s) => (s.verificationStatus || 'approved') === params.verificationStatus);
+      }
     }
     return { scores };
   },
@@ -1472,7 +1533,14 @@ export const rangeAdminAPI = {
 
     // Calculate stats
     const activeCompetitions = rangeCompetitions.filter(c => c.status === 'published').length;
-    const pendingScores = rangeScores.filter(s => (s.verificationStatus || 'pending') === 'pending').length;
+    const isPendingForReview = (status) => (
+      status == null ||
+      status === 'pending' ||
+      status === 'submitted' ||
+      status === 'unverified' ||
+      status === 'under_review'
+    );
+    const pendingScores = rangeScores.filter((s) => isPendingForReview(s.verificationStatus)).length;
     const totalRegistrations = rangeRegs.length;
     const newRegistrationsThisPeriod = rangeRegs.filter(r => {
       const created = toDate(r.createdAt || r.registeredAt);
@@ -1560,9 +1628,15 @@ export const rangeAdminAPI = {
     // Get pending scores for these competitions
     const scoresSnap = await getDocs(collection(db, 'scores'));
     const allScores = scoresSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const pendingScores = allScores.filter(s => 
-      competitionIds.includes(s.competitionId) && 
-      (s.verificationStatus || 'pending') === 'pending'
+    const pendingScores = allScores.filter((s) =>
+      competitionIds.includes(s.competitionId) &&
+      (
+        s.verificationStatus == null ||
+        s.verificationStatus === 'pending' ||
+        s.verificationStatus === 'submitted' ||
+        s.verificationStatus === 'unverified' ||
+        s.verificationStatus === 'under_review'
+      )
     );
 
     // Hydrate competitor and competition info
