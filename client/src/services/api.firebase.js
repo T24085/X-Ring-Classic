@@ -528,11 +528,43 @@ export const scoresAPI = {
 export const leaderboardsAPI = {
   getOverall: async (params = {}) => {
     try {
-      // Firestore requires composite indexes for complex order/filters; keep simple
-      const lim = Number(params?.limit || 10);
-      const category = params?.category; // Filter by category if provided (22LR or Airgun 22cal)
-      
-      // Build query with category filter if provided
+      const lim = Number(params?.limit || 50);
+      const category = params?.category;
+      const timeFrame = params?.timeFrame || 'all-time';
+
+      const toMillis = (ts) => {
+        if (!ts) return 0;
+        if (typeof ts?.toMillis === 'function') return ts.toMillis();
+        if (typeof ts?.toDate === 'function') return ts.toDate().getTime();
+        if (typeof ts?.seconds === 'number') return ts.seconds * 1000;
+        if (typeof ts === 'number') return ts < 1e12 ? ts * 1000 : ts;
+        const parsed = Date.parse(ts);
+        return Number.isFinite(parsed) ? parsed : 0;
+      };
+
+      const getTimeframeStart = (frame) => {
+        if (!frame || frame === 'all-time') return 0;
+        const now = new Date();
+        if (frame === 'this-year') return new Date(now.getFullYear(), 0, 1).getTime();
+        if (frame === 'this-month') return new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+        if (frame === 'last-30-days') return now.getTime() - (30 * 24 * 60 * 60 * 1000);
+        return 0;
+      };
+
+      const scoreDateMs = (score) =>
+        toMillis(score?.createdAt) ||
+        toMillis(score?.submittedAt) ||
+        toMillis(score?.verifiedAt) ||
+        0;
+
+      const getXCount = (score) => {
+        if (typeof score?.tiebreakerData?.xCount === 'number') return score.tiebreakerData.xCount;
+        if (Array.isArray(score?.shots)) {
+          return score.shots.filter((sh) => sh?.isX === true).length;
+        }
+        return 0;
+      };
+
       let q;
       if (category) {
         q = query(
@@ -551,9 +583,14 @@ export const leaderboardsAPI = {
       let allScores = snap.docs.map(d => ({ id: d.id, ...d.data() }))
         .filter(s => s.verificationStatus === 'approved' || !s.verificationStatus);
 
-      console.log(`[Leaderboard] Found ${allScores.length} approved scores`);
+      const timeframeStart = getTimeframeStart(timeFrame);
+      if (timeframeStart > 0) {
+        allScores = allScores.filter((s) => scoreDateMs(s) >= timeframeStart);
+      }
 
-      // Group scores by competitorId
+      const totalCompetitions = new Set(allScores.map((s) => s.competitionId).filter(Boolean)).size;
+      const totalScoreEntries = allScores.length;
+
       const scoresByUser = new Map();
       allScores.forEach(score => {
         const competitorId = score.competitorId;
@@ -616,50 +653,72 @@ export const leaderboardsAPI = {
           email: userScores[0]?.competitor?.email || userScores[0]?.email || '',
         };
 
-        // Calculate aggregated stats
-        const validScores = userScores.map(s => s.score || 0).filter(s => s > 0);
-        const averageScore = validScores.length > 0 
-          ? validScores.reduce((a, b) => a + b, 0) / validScores.length 
-          : 0;
+        const validScores = userScores
+          .map((s) => (typeof s.score === 'number' ? s.score : Number(s.score || 0)))
+          .filter((score) => Number.isFinite(score) && score >= 0);
+
+        const totalPoints = validScores.reduce((sum, score) => sum + score, 0);
+        const averageScore = validScores.length > 0 ? totalPoints / validScores.length : 0;
         const bestScore = validScores.length > 0 ? Math.max(...validScores) : 0;
         
-        // Count unique competitions
         const uniqueCompetitions = new Set(userScores.map(s => s.competitionId).filter(Boolean));
         const competitionsCount = uniqueCompetitions.size || 1;
         
-        // Calculate total/average X count (include all scores, even with 0 X count)
         let totalXCount = 0;
         userScores.forEach(s => {
-          const computedX = (Array.isArray(s.shots) ? s.shots.filter(sh => (Number(sh?.value) === 10 && (sh?.isX === true))).length : 0);
-          const xCount = (typeof s.tiebreakerData?.xCount === 'number') ? s.tiebreakerData.xCount : computedX;
-          totalXCount += xCount; // Include all scores, even if X count is 0
+          totalXCount += getXCount(s);
         });
         const avgXCount = userScores.length > 0 ? totalXCount / userScores.length : 0;
         
-        // Calculate classification based on current average score and X count
-        // Always recalculate to ensure accuracy based on current performance
-        const cls = classificationFromAvg(averageScore, avgXCount);
+        const clsBaseScore = averageScore > 250 ? averageScore / 4 : averageScore;
+        const clsBaseX = avgXCount > 25 ? avgXCount / 4 : avgXCount;
+        const cls = competitor.classification || classificationFromAvg(clsBaseScore, clsBaseX);
         if (cls) competitor.classification = cls;
         
         leaderboard.push({
           competitor,
-          score: averageScore, // For display compatibility
+          score: totalPoints,
+          totalPoints,
+          totalXCount,
           bestScore,
-          averageScore,
+          averageScore: Math.round(averageScore * 10) / 10,
           competitionsCount,
-          tiebreakerData: { xCount: Math.round(avgXCount) },
+          scoresCount: validScores.length,
+          tiebreakerData: { xCount: totalXCount },
         });
       });
       
-      // Sort by average score descending and apply limit
-      leaderboard.sort((a, b) => (b.averageScore || 0) - (a.averageScore || 0));
-      const limitedLeaderboard = leaderboard.slice(0, lim).map((entry, idx) => ({
-        ...entry,
-        rank: idx + 1,
-      }));
-      
-      console.log(`[Leaderboard] Returning ${limitedLeaderboard.length} leaderboard entries (${leaderboard.length} unique users)`);
-      return { data: { leaderboard: limitedLeaderboard } };
+      leaderboard.sort((a, b) => {
+        if ((b.totalPoints || 0) !== (a.totalPoints || 0)) return (b.totalPoints || 0) - (a.totalPoints || 0);
+        if ((b.totalXCount || 0) !== (a.totalXCount || 0)) return (b.totalXCount || 0) - (a.totalXCount || 0);
+        if ((b.averageScore || 0) !== (a.averageScore || 0)) return (b.averageScore || 0) - (a.averageScore || 0);
+        return (b.bestScore || 0) - (a.bestScore || 0);
+      });
+
+      let previous = null;
+      let currentRank = 0;
+      const ranked = leaderboard.map((entry, idx) => {
+        const key = `${entry.totalPoints}|${entry.totalXCount}|${entry.averageScore}|${entry.bestScore}`;
+        if (key !== previous) currentRank = idx + 1;
+        previous = key;
+        return { ...entry, rank: currentRank };
+      });
+
+      const limitedLeaderboard = ranked.slice(0, lim);
+      const top = ranked[0];
+
+      return {
+        data: {
+          leaderboard: limitedLeaderboard,
+          summary: {
+            totalParticipants: ranked.length,
+            totalCompetitions,
+            totalScoreEntries,
+            topPoints: top?.totalPoints || 0,
+            topXCount: top?.totalXCount || 0,
+          },
+        },
+      };
     } catch (error) {
       console.error('[Leaderboard] Error in getOverall:', error);
       throw error;
@@ -691,6 +750,37 @@ export const leaderboardsAPI = {
     let scores = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .filter(s => s.verificationStatus === 'approved' || !s.verificationStatus)
       .sort((a, b) => (b.score || 0) - (a.score || 0));
+
+    const getXCount = (score) => {
+      if (typeof score?.tiebreakerData?.xCount === 'number') return score.tiebreakerData.xCount;
+      if (Array.isArray(score?.shots)) return score.shots.filter((sh) => sh?.isX === true).length;
+      return 0;
+    };
+
+    const bestByUser = new Map();
+    scores.forEach((score) => {
+      if (!score?.competitorId) return;
+      const current = bestByUser.get(score.competitorId);
+      if (!current) {
+        bestByUser.set(score.competitorId, score);
+        return;
+      }
+      const currentScore = Number(current?.score || 0);
+      const nextScore = Number(score?.score || 0);
+      if (nextScore > currentScore) {
+        bestByUser.set(score.competitorId, score);
+        return;
+      }
+      if (nextScore === currentScore && getXCount(score) > getXCount(current)) {
+        bestByUser.set(score.competitorId, score);
+      }
+    });
+    scores = Array.from(bestByUser.values());
+    scores.sort((a, b) => {
+      const scoreDiff = (Number(b?.score || 0) - Number(a?.score || 0));
+      if (scoreDiff !== 0) return scoreDiff;
+      return getXCount(b) - getXCount(a);
+    });
 
     // Populate competitor profiles - show all scores for all authenticated users
     const ids = Array.from(new Set(scores.map(s => s.competitorId).filter(Boolean)));
@@ -728,6 +818,8 @@ export const leaderboardsAPI = {
     });
 
     // Show all scores - no filtering for authenticated users
+    let previous = null;
+    let currentRank = 0;
     const leaderboard = scores.map((s, idx) => {
       const u = userMap.get(s.competitorId);
       // If user data exists, use it; otherwise fall back to score data or defaults
@@ -742,16 +834,34 @@ export const leaderboardsAPI = {
       const xAvg = s.tiebreakerData?.xCount || 0;
       const cls = competitor.classification || classificationFromAvg(avg, xAvg) || undefined;
       if (cls) competitor.classification = cls;
+      const tieKey = `${s.score || 0}|${getXCount(s)}`;
+      if (tieKey !== previous) currentRank = idx + 1;
+      previous = tieKey;
       return {
-        rank: idx + 1,
+        rank: currentRank,
         competitor,
         score: s.score || 0,
+        totalPoints: s.score || 0,
+        totalXCount: getXCount(s),
         bestScore: s.bestScore || s.score || 0,
         averageScore: s.averageScore || s.score || 0,
         competitionsCount: s.competitionsCount || 1,
+        scoresCount: 1,
+        tiebreakerData: { ...(s.tiebreakerData || {}), xCount: getXCount(s) },
       };
     });
-    return { data: { leaderboard } };
+    return {
+      data: {
+        leaderboard,
+        summary: {
+          totalParticipants: leaderboard.length,
+          totalCompetitions: 1,
+          totalScoreEntries: leaderboard.length,
+          topPoints: leaderboard[0]?.totalPoints || 0,
+          topXCount: leaderboard[0]?.totalXCount || 0,
+        },
+      },
+    };
   },
   getByFormat: async (_format, params = {}) => leaderboardsAPI.getOverall(params),
 };
