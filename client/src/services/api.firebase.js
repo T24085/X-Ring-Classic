@@ -528,7 +528,7 @@ export const scoresAPI = {
 export const leaderboardsAPI = {
   getOverall: async (params = {}) => {
     try {
-      const lim = Number(params?.limit || 50);
+      const requestedLimit = Number(params?.limit || 0);
       const category = params?.category;
       const timeFrame = params?.timeFrame || 'all-time';
 
@@ -689,22 +689,26 @@ export const leaderboardsAPI = {
       });
       
       leaderboard.sort((a, b) => {
-        if ((b.totalPoints || 0) !== (a.totalPoints || 0)) return (b.totalPoints || 0) - (a.totalPoints || 0);
-        if ((b.totalXCount || 0) !== (a.totalXCount || 0)) return (b.totalXCount || 0) - (a.totalXCount || 0);
         if ((b.averageScore || 0) !== (a.averageScore || 0)) return (b.averageScore || 0) - (a.averageScore || 0);
-        return (b.bestScore || 0) - (a.bestScore || 0);
+        const aAvgX = (a.scoresCount || 0) > 0 ? (a.totalXCount || 0) / a.scoresCount : 0;
+        const bAvgX = (b.scoresCount || 0) > 0 ? (b.totalXCount || 0) / b.scoresCount : 0;
+        if (bAvgX !== aAvgX) return bAvgX - aAvgX;
+        if ((b.bestScore || 0) !== (a.bestScore || 0)) return (b.bestScore || 0) - (a.bestScore || 0);
+        return (b.totalPoints || 0) - (a.totalPoints || 0);
       });
 
       let previous = null;
       let currentRank = 0;
       const ranked = leaderboard.map((entry, idx) => {
-        const key = `${entry.totalPoints}|${entry.totalXCount}|${entry.averageScore}|${entry.bestScore}`;
+        const avgX = (entry.scoresCount || 0) > 0 ? (entry.totalXCount || 0) / entry.scoresCount : 0;
+        const key = `${entry.averageScore}|${avgX}|${entry.bestScore}|${entry.totalPoints}`;
         if (key !== previous) currentRank = idx + 1;
         previous = key;
         return { ...entry, rank: currentRank };
       });
 
-      const limitedLeaderboard = ranked.slice(0, lim);
+      const effectiveLimit = requestedLimit > 0 ? requestedLimit : ranked.length;
+      const limitedLeaderboard = ranked.slice(0, effectiveLimit);
       const top = ranked[0];
 
       return {
@@ -714,6 +718,7 @@ export const leaderboardsAPI = {
             totalParticipants: ranked.length,
             totalCompetitions,
             totalScoreEntries,
+            topAverageScore: top?.averageScore || 0,
             topPoints: top?.totalPoints || 0,
             topXCount: top?.totalXCount || 0,
           },

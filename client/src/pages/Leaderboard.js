@@ -96,7 +96,7 @@ const Leaderboard = () => {
         </div>
         <h1 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">Competition Leaderboard</h1>
         <p className="text-white drop-shadow-md">
-          Ranked by total points (1000 max per scorecard), then total X count (100 max per scorecard)
+          Ranked by average score across all approved scorecards, with X average as tie-breaker
         </p>
       </div>
 
@@ -156,8 +156,10 @@ const Leaderboard = () => {
           <div className="flex items-center">
             <Trophy className="h-8 w-8 text-yellow-600 mr-3" />
             <div>
-              <p className="text-sm text-gray-600">Top Total Points</p>
-              <p className="text-xl font-bold text-gray-900">{summary.topPoints || 0}</p>
+              <p className="text-sm text-gray-600">Top Avg Score</p>
+              <p className="text-xl font-bold text-gray-900">
+                {Number(summary.topAverageScore || 0).toFixed(1)}
+              </p>
             </div>
           </div>
         </div>
@@ -196,16 +198,18 @@ const Leaderboard = () => {
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
                 <div className="bg-white/80 rounded p-2">
-                  <p className="text-gray-600">Points</p>
-                  <p className="font-semibold text-gray-900">{entry.totalPoints ?? entry.score ?? 0}</p>
-                </div>
-                <div className="bg-white/80 rounded p-2">
-                  <p className="text-gray-600">X Total</p>
-                  <p className="font-semibold text-gray-900">{entry.totalXCount ?? entry.tiebreakerData?.xCount ?? 0}</p>
-                </div>
-                <div className="bg-white/80 rounded p-2">
                   <p className="text-gray-600">Avg/Card</p>
                   <p className="font-semibold text-gray-900">{entry.averageScore?.toFixed(1) ?? '0.0'}</p>
+                </div>
+                <div className="bg-white/80 rounded p-2">
+                  <p className="text-gray-600">Avg X/Card</p>
+                  <p className="font-semibold text-gray-900">
+                    {entry.scoresCount ? ((entry.totalXCount || 0) / entry.scoresCount).toFixed(1) : '0.0'}
+                  </p>
+                </div>
+                <div className="bg-white/80 rounded p-2">
+                  <p className="text-gray-600">Cards</p>
+                  <p className="font-semibold text-gray-900">{entry.scoresCount ?? 0}</p>
                 </div>
               </div>
             </div>
@@ -219,8 +223,8 @@ const Leaderboard = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shooter</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg/Card</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg X/Card</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Points</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total X</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Competitions</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cards</th>
               </tr>
@@ -269,10 +273,12 @@ const Leaderboard = () => {
                     <div className="text-sm font-medium text-gray-900">{entry.averageScore?.toFixed(1) ?? '0.0'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{entry.totalPoints ?? entry.score ?? 0}</div>
+                    <div className="text-sm text-gray-900">
+                      {entry.scoresCount ? ((entry.totalXCount || 0) / entry.scoresCount).toFixed(1) : '0.0'}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{entry.totalXCount ?? entry.tiebreakerData?.xCount ?? 0}</div>
+                    <div className="text-sm text-gray-900">{entry.totalPoints ?? entry.score ?? 0}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{entry.competitionsCount ?? 0}</div>
