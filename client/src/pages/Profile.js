@@ -32,9 +32,7 @@ import {
   CogIcon,
   PencilIcon,
   CheckIcon,
-  XMarkIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 
 const Profile = () => {
@@ -218,7 +216,7 @@ const Profile = () => {
                 onClick={() => navigate('/admin/users')}
                 className="btn-secondary flex items-center space-x-2"
               >
-                <span>← Back to Users</span>
+                <span>Back to Users</span>
               </button>
             )}
             {isViewingOwnProfile && (
@@ -393,20 +391,42 @@ const Profile = () => {
     return Number.isFinite(v) ? v : 0;
   };
 
-  const formatDate = (ts) => {
-    if (!ts) return 'N/A';
+  const parseDateSafe = (ts) => {
+    if (!ts) return null;
     try {
       if (typeof ts === 'object') {
-        if (typeof ts.toDate === 'function') return ts.toDate().toLocaleDateString();
-        if (typeof ts.toMillis === 'function') return new Date(ts.toMillis()).toLocaleDateString();
-        if (typeof ts._seconds === 'number') return new Date(ts._seconds * 1000).toLocaleDateString();
-        if (typeof ts.seconds === 'number') return new Date(ts.seconds * 1000).toLocaleDateString();
+        if (typeof ts.toDate === 'function') {
+          const d = ts.toDate();
+          return Number.isNaN(d?.getTime?.()) ? null : d;
+        }
+        if (typeof ts.toMillis === 'function') {
+          const d = new Date(ts.toMillis());
+          return Number.isNaN(d.getTime()) ? null : d;
+        }
+        if (typeof ts._seconds === 'number') {
+          const d = new Date(ts._seconds * 1000);
+          return Number.isNaN(d.getTime()) ? null : d;
+        }
+        if (typeof ts.seconds === 'number') {
+          const d = new Date(ts.seconds * 1000);
+          return Number.isNaN(d.getTime()) ? null : d;
+        }
+      }
+      if (typeof ts === 'number') {
+        const n = ts < 1e12 ? ts * 1000 : ts;
+        const d = new Date(n);
+        return Number.isNaN(d.getTime()) ? null : d;
       }
       const d = new Date(ts);
-      return isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString();
+      return Number.isNaN(d.getTime()) ? null : d;
     } catch (_) {
-      return 'N/A';
+      return null;
     }
+  };
+
+  const formatDate = (ts) => {
+    const d = parseDateSafe(ts);
+    return d ? d.toLocaleDateString() : 'Date unavailable';
   };
 
   const scores = userStats?.scores || [];
@@ -447,8 +467,8 @@ const Profile = () => {
 
     // Sort scores by date (oldest first for trend)
     const sortedByDate = [...scores].sort((a, b) => {
-      const ad = new Date(a?.createdAt || a?.submittedAt || a?.date || 0).getTime();
-      const bd = new Date(b?.createdAt || b?.submittedAt || b?.date || 0).getTime();
+      const ad = parseDateSafe(a?.createdAt || a?.submittedAt || a?.date)?.getTime() || 0;
+      const bd = parseDateSafe(b?.createdAt || b?.submittedAt || b?.date)?.getTime() || 0;
       return ad - bd;
     });
 
@@ -486,12 +506,15 @@ const Profile = () => {
     // Score trend data (last 20 scores or all if less)
     const recentScores = sortedByDate.slice(-20);
     const scoreTrend = recentScores.map((s, idx) => {
-      const date = new Date(s?.createdAt || s?.submittedAt || s?.date || Date.now());
+      const rawDate = s?.createdAt || s?.submittedAt || s?.date;
+      const parsedDate = parseDateSafe(rawDate);
       return {
         index: idx + 1,
-        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        date: parsedDate ? parsedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : `Entry ${idx + 1}`,
+        fullDate: parsedDate ? parsedDate.toLocaleDateString() : 'Date unavailable',
         score: toNumberScore(s),
         xCount: getXCount(s),
+        competitionTitle: s?.competition?.title || 'Unknown competition',
       };
     });
 
@@ -636,9 +659,11 @@ const Profile = () => {
       const shots = score.shots;
       const xCount = shots.filter(s => s?.isX === true).length;
       const xRate = (xCount / shots.length) * 100;
-      const date = new Date(score?.createdAt || score?.submittedAt || score?.date || Date.now());
+      const rawDate = score?.createdAt || score?.submittedAt || score?.date;
+      const parsedDate = parseDateSafe(rawDate);
       xHitRateTrend.push({
-        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        date: parsedDate ? parsedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown',
+        fullDate: parsedDate ? parsedDate.toLocaleDateString() : 'Date unavailable',
         xRate: Math.round(xRate * 10) / 10,
         xCount,
         totalShots: shots.length,
@@ -725,125 +750,158 @@ const Profile = () => {
       );
     }
 
+    const latestScore = sortedScores[0] || null;
+    const oldestScore = sortedScores[sortedScores.length - 1] || null;
+    const latestScoreDate = latestScore ? formatDate(latestScore.createdAt || latestScore.submittedAt || latestScore.date) : 'Date unavailable';
+    const oldestScoreDate = oldestScore ? formatDate(oldestScore.createdAt || oldestScore.submittedAt || oldestScore.date) : 'Date unavailable';
+    const missingTrendDates = scoreTrend.filter(point => point.fullDate === 'Date unavailable').length;
+    const scoresWithDates = totalScores - missingTrendDates;
+    const recentFive = sortedScores.slice(0, 5);
+    const previousFive = sortedScores.slice(5, 10);
+    const recentFiveAvg = recentFive.length ? recentFive.reduce((sum, item) => sum + toNumberScore(item), 0) / recentFive.length : 0;
+    const previousFiveAvg = previousFive.length ? previousFive.reduce((sum, item) => sum + toNumberScore(item), 0) / previousFive.length : 0;
+    const recentMomentum = previousFive.length ? recentFiveAvg - previousFiveAvg : 0;
+
     return (
       <div className="space-y-6">
-        {/* Enhanced Performance Overview */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Overview</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 text-center border border-blue-200">
-              <div className="text-2xl font-bold text-blue-700">{avgScore}</div>
-              <div className="text-xs text-blue-600 mt-1">Average Score</div>
+        {/* Statistics Snapshot */}
+        <div className="bg-white rounded-lg shadow p-6 border border-gray-100">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Statistics Snapshot</h3>
+              <p className="text-sm text-gray-600 mt-1">A clear summary of participation, performance, and momentum.</p>
             </div>
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 text-center border border-green-200">
-              <div className="text-2xl font-bold text-green-700">{maxScore}</div>
-              <div className="text-xs text-green-600 mt-1">Best Score</div>
+            <div className="text-right">
+              <div className="text-sm text-gray-500">Data quality</div>
+              <div className={`text-sm font-semibold ${missingTrendDates > 0 ? 'text-amber-700' : 'text-green-700'}`}>
+                {scoresWithDates}/{totalScores} entries dated
+              </div>
             </div>
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 text-center border border-purple-200">
-              <div className="text-2xl font-bold text-purple-700">{medianScore}</div>
-              <div className="text-xs text-purple-600 mt-1">Median Score</div>
+          </div>
+
+          {missingTrendDates > 0 && (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              {missingTrendDates} score {missingTrendDates === 1 ? 'entry is' : 'entries are'} missing a valid date. The trend chart still includes them with fallback labels.
             </div>
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 text-center border border-orange-200">
-              <div className="text-2xl font-bold text-orange-700">{bestIndoor || '—'}</div>
-              <div className="text-xs text-orange-600 mt-1">Best Indoor</div>
+          )}
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <div className="text-xs uppercase tracking-wide text-blue-700">Score Entries</div>
+              <div className="mt-2 text-2xl font-bold text-blue-900">{totalScores}</div>
+              <div className="mt-1 text-xs text-blue-700">Across {totalCompetitions} competitions</div>
             </div>
-            <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-lg p-4 text-center border border-cyan-200">
-              <div className="text-2xl font-bold text-cyan-700">{bestOutdoor || '—'}</div>
-              <div className="text-xs text-cyan-600 mt-1">Best Outdoor</div>
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+              <div className="text-xs uppercase tracking-wide text-emerald-700">Best Score</div>
+              <div className="mt-2 text-2xl font-bold text-emerald-900">{maxScore}</div>
+              <div className="mt-1 text-xs text-emerald-700">Lowest score: {minScore}</div>
             </div>
-            <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-4 text-center border border-yellow-200">
-              <div className="text-2xl font-bold text-yellow-700">{avgXCount.toFixed(1)}</div>
-              <div className="text-xs text-yellow-600 mt-1">Avg X Count</div>
+            <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+              <div className="text-xs uppercase tracking-wide text-indigo-700">Date Range</div>
+              <div className="mt-2 text-sm font-semibold text-indigo-900">{oldestScoreDate}</div>
+              <div className="mt-1 text-xs text-indigo-700">to {latestScoreDate}</div>
+            </div>
+            <div className="rounded-lg border border-rose-200 bg-rose-50 p-4">
+              <div className="text-xs uppercase tracking-wide text-rose-700">Last 5 Momentum</div>
+              <div className={`mt-2 text-2xl font-bold ${recentMomentum >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                {previousFive.length ? `${recentMomentum >= 0 ? '+' : ''}${recentMomentum.toFixed(1)}` : 'N/A'}
+              </div>
+              <div className="mt-1 text-xs text-rose-700">Recent avg {recentFiveAvg.toFixed(1)}</div>
             </div>
           </div>
         </div>
 
-        {/* Advanced Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Core Performance */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Consistency</p>
-                <p className="text-2xl font-bold text-gray-900">{consistency.toFixed(1)}</p>
-                <p className="text-xs text-gray-500 mt-1">Lower is better</p>
-              </div>
-              <div className={`p-3 rounded-lg ${consistency < 5 ? 'bg-green-100' : consistency < 10 ? 'bg-yellow-100' : 'bg-red-100'}`}>
-                {consistency < 5 ? <ArrowTrendingUpIcon className="w-6 h-6 text-green-600" /> : <ArrowTrendingDownIcon className="w-6 h-6 text-red-600" />}
-              </div>
-            </div>
+            <p className="text-sm text-gray-600">Average Score</p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">{avgScore.toFixed(1)}</p>
+            <p className="text-xs text-gray-500 mt-1">Median: {medianScore.toFixed(1)}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Improvement</p>
-                <p className={`text-2xl font-bold ${improvement >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {improvement >= 0 ? '+' : ''}{improvement.toFixed(1)}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">vs early performance</p>
-              </div>
-              {improvement >= 0 ? (
-                <ArrowTrendingUpIcon className="w-6 h-6 text-green-600" />
-              ) : (
-                <ArrowTrendingDownIcon className="w-6 h-6 text-red-600" />
-              )}
-            </div>
+            <p className="text-sm text-gray-600">Discipline Bests</p>
+            <p className="text-lg font-bold text-gray-900 mt-1">Indoor: {bestIndoor || 'N/A'}</p>
+            <p className="text-lg font-bold text-gray-900">Outdoor: {bestOutdoor || 'N/A'}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Current Streak</p>
-                <p className="text-2xl font-bold text-blue-600">{currentStreak}</p>
-                <p className="text-xs text-gray-500 mt-1">Above average</p>
-              </div>
-              <TrophyIcon className="w-6 h-6 text-blue-600" />
-            </div>
+            <p className="text-sm text-gray-600">Consistency (Std Dev)</p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">{consistency.toFixed(1)}</p>
+            <p className="text-xs text-gray-500 mt-1">Lower means steadier results</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Best Streak</p>
-                <p className="text-2xl font-bold text-purple-600">{bestStreak}</p>
-                <p className="text-xs text-gray-500 mt-1">All time</p>
-              </div>
-              <TrophyIcon className="w-6 h-6 text-purple-600" />
-            </div>
+            <p className="text-sm text-gray-600">Improvement</p>
+            <p className={`text-2xl font-bold mt-1 ${improvement >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {improvement >= 0 ? '+' : ''}{improvement.toFixed(1)}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">Comparing first half vs second half</p>
+          </div>
+        </div>
+
+        {/* Momentum */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
+            <p className="text-sm text-gray-600">Current Streak</p>
+            <p className="text-2xl font-bold text-blue-600 mt-1">{currentStreak}</p>
+            <p className="text-xs text-gray-500 mt-1">Consecutive above-average scores</p>
+          </div>
+          <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
+            <p className="text-sm text-gray-600">Best Streak</p>
+            <p className="text-2xl font-bold text-purple-600 mt-1">{bestStreak}</p>
+            <p className="text-xs text-gray-500 mt-1">All-time best run</p>
+          </div>
+          <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
+            <p className="text-sm text-gray-600">Average X Count</p>
+            <p className="text-2xl font-bold text-amber-700 mt-1">{avgXCount.toFixed(1)}</p>
+            <p className="text-xs text-gray-500 mt-1">Total X hits: {totalXCount}</p>
           </div>
         </div>
 
         {/* Score Trend Chart */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Score Trend (Last 20 Competitions)</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">Score Trend (Last 20 Entries)</h3>
+          <p className="text-sm text-gray-600 mb-4">Hover each point for score, competition, and full date details.</p>
           {scoreTrend.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={scoreTrend}>
+            <ResponsiveContainer width="100%" height={320}>
+              <LineChart data={scoreTrend} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis 
-                  dataKey="date" 
+                <XAxis
+                  dataKey="date"
                   stroke="#6b7280"
                   fontSize={11}
                   tick={{ fill: '#6b7280' }}
                 />
-                <YAxis 
+                <YAxis
                   domain={[Math.max(0, minScore - 10), Math.min(250, maxScore + 10)]}
                   stroke="#6b7280"
                   fontSize={11}
                   tick={{ fill: '#6b7280' }}
                 />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#fff', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#fff',
                     border: '1px solid #e5e7eb',
                     borderRadius: '8px',
                     color: '#111827'
                   }}
+                  formatter={(value, key, ctx) => {
+                    if (key === 'score') {
+                      return [`${value} (${ctx.payload.xCount}X)`, 'Score'];
+                    }
+                    return [value, key];
+                  }}
+                  labelFormatter={(_, payload) => {
+                    const point = payload?.[0]?.payload;
+                    if (!point) return '';
+                    return `${point.competitionTitle} - ${point.fullDate}`;
+                  }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="score" 
+                <Line
+                  type="monotone"
+                  dataKey="score"
                   name="Score"
-                  stroke="#3b82f6" 
-                  strokeWidth={2}
-                  dot={{ fill: '#3b82f6', r: 3 }}
+                  stroke="#2563eb"
+                  strokeWidth={2.5}
+                  dot={{ fill: '#2563eb', r: 3 }}
                   activeDot={{ r: 5 }}
                 />
               </LineChart>
@@ -1036,9 +1094,9 @@ const Profile = () => {
                         borderRadius: '8px',
                         color: '#111827'
                       }}
-                      formatter={(value, name) => {
+                      formatter={(value, name, ctx) => {
                         if (name === 'xRate') {
-                          const data = xHitRateTrend.find(d => d.xRate === value);
+                          const data = ctx?.payload;
                           return [`${value}% (${data?.xCount}/${data?.totalShots} shots)`, 'X-Hit Rate'];
                         }
                         return [value, name];
@@ -1503,3 +1561,6 @@ const Profile = () => {
 };
 
 export default Profile;
+
+
+
