@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from 'react-query';
 import { leaderboardsAPI } from '../services/api.firebase';
 import { Trophy, Target, Users, Calendar } from 'lucide-react';
@@ -7,6 +7,8 @@ import RankLogo from '../components/RankLogo';
 const Leaderboard = () => {
   const [selectedWeaponCategory, setSelectedWeaponCategory] = useState('');
   const [timeFrame, setTimeFrame] = useState('all-time');
+  const [sortBy, setSortBy] = useState('averageScore');
+  const [sortDir, setSortDir] = useState('desc');
 
   const { data: leaderboardData, isLoading, error } = useQuery(
     ['leaderboard', selectedWeaponCategory, timeFrame],
@@ -26,6 +28,50 @@ const Leaderboard = () => {
 
   const leaderboard = leaderboardData?.leaderboard || [];
   const summary = leaderboardData?.summary || {};
+
+  const getAvgXPerCard = (entry) => {
+    const cards = Number(entry?.scoresCount || 0);
+    if (!cards) return 0;
+    return Number(entry?.totalXCount || 0) / cards;
+  };
+
+  const getSortValue = (entry, key) => {
+    if (key === 'averageScore') return Number(entry?.averageScore || 0);
+    if (key === 'avgXPerCard') return getAvgXPerCard(entry);
+    if (key === 'totalPoints') return Number(entry?.totalPoints || entry?.score || 0);
+    if (key === 'competitionsCount') return Number(entry?.competitionsCount || 0);
+    if (key === 'scoresCount') return Number(entry?.scoresCount || 0);
+    return 0;
+  };
+
+  const sortedLeaderboard = useMemo(() => {
+    const factor = sortDir === 'asc' ? 1 : -1;
+    return [...leaderboard].sort((a, b) => {
+      const aValue = getSortValue(a, sortBy);
+      const bValue = getSortValue(b, sortBy);
+      if (aValue !== bValue) return (aValue - bValue) * factor;
+
+      // Stable tie-breakers when selected sort value is equal.
+      if ((a?.averageScore || 0) !== (b?.averageScore || 0)) {
+        return ((a?.averageScore || 0) - (b?.averageScore || 0)) * factor;
+      }
+      return (Number(a?.totalPoints || 0) - Number(b?.totalPoints || 0)) * factor;
+    });
+  }, [leaderboard, sortBy, sortDir]);
+
+  const handleSort = (key) => {
+    if (sortBy === key) {
+      setSortDir((prev) => (prev === 'desc' ? 'asc' : 'desc'));
+      return;
+    }
+    setSortBy(key);
+    setSortDir('desc');
+  };
+
+  const sortIndicator = (key) => {
+    if (sortBy !== key) return '↕';
+    return sortDir === 'desc' ? '↓' : '↑';
+  };
 
   const getMedalIcon = (position) => {
     if (position === 1) return '🥇';
@@ -181,12 +227,12 @@ const Leaderboard = () => {
         </div>
 
         <div className="md:hidden divide-y divide-gray-200">
-          {leaderboard.map((entry, index) => (
-            <div key={`m-${entry.competitor?.id || index}-${entry.rank}-${index}`} className={`p-4 ${getClassRowBg(entry.competitor?.classification)}`}>
+          {sortedLeaderboard.map((entry, index) => (
+            <div key={`m-${entry.competitor?.id || index}-${index}`} className={`p-4 ${getClassRowBg(entry.competitor?.classification)}`}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  {getMedalIcon(entry.rank) && <span className="text-lg">{getMedalIcon(entry.rank)}</span>}
-                  <span className="font-semibold text-gray-900">#{entry.rank}</span>
+                  {getMedalIcon(index + 1) && <span className="text-lg">{getMedalIcon(index + 1)}</span>}
+                  <span className="font-semibold text-gray-900">#{index + 1}</span>
                 </div>
                 <span className="text-sm text-gray-700">{entry.competitionsCount ?? 0} comps</span>
               </div>
@@ -204,7 +250,7 @@ const Leaderboard = () => {
                 <div className="bg-white/80 rounded p-2">
                   <p className="text-gray-600">Avg X/Card</p>
                   <p className="font-semibold text-gray-900">
-                    {entry.scoresCount ? ((entry.totalXCount || 0) / entry.scoresCount).toFixed(1) : '0.0'}
+                    {getAvgXPerCard(entry).toFixed(1)}
                   </p>
                 </div>
                 <div className="bg-white/80 rounded p-2">
@@ -222,24 +268,44 @@ const Leaderboard = () => {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shooter</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg/Card</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg X/Card</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Points</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Competitions</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cards</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <button type="button" onClick={() => handleSort('averageScore')} className="hover:text-gray-800">
+                    Avg/Card {sortIndicator('averageScore')}
+                  </button>
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <button type="button" onClick={() => handleSort('avgXPerCard')} className="hover:text-gray-800">
+                    Avg X/Card {sortIndicator('avgXPerCard')}
+                  </button>
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <button type="button" onClick={() => handleSort('totalPoints')} className="hover:text-gray-800">
+                    Total Points {sortIndicator('totalPoints')}
+                  </button>
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <button type="button" onClick={() => handleSort('competitionsCount')} className="hover:text-gray-800">
+                    Competitions {sortIndicator('competitionsCount')}
+                  </button>
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <button type="button" onClick={() => handleSort('scoresCount')} className="hover:text-gray-800">
+                    Cards {sortIndicator('scoresCount')}
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {leaderboard.map((entry, index) => (
+              {sortedLeaderboard.map((entry, index) => (
                 <tr
-                  key={`${entry.competitor?.id || index}-${entry.rank}-${index}`}
+                  key={`${entry.competitor?.id || index}-${index}`}
                   className={`transition-colors ${getClassRowBg(entry.competitor?.classification)} hover:opacity-95`}
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      {getMedalIcon(entry.rank) && <span className="text-xl mr-2">{getMedalIcon(entry.rank)}</span>}
-                      <span className={`text-sm font-medium ${entry.rank <= 3 ? 'text-gray-900' : 'text-gray-500'}`}>
-                        #{entry.rank}
+                      {getMedalIcon(index + 1) && <span className="text-xl mr-2">{getMedalIcon(index + 1)}</span>}
+                      <span className={`text-sm font-medium ${index + 1 <= 3 ? 'text-gray-900' : 'text-gray-500'}`}>
+                        #{index + 1}
                       </span>
                     </div>
                   </td>
@@ -274,7 +340,7 @@ const Leaderboard = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {entry.scoresCount ? ((entry.totalXCount || 0) / entry.scoresCount).toFixed(1) : '0.0'}
+                      {getAvgXPerCard(entry).toFixed(1)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
