@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ollama-network"
+version = "0.1.0"
+description = "Reciprocal local-only Ollama inference network MVP."
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = ["google-auth[requests]>=2.38", "google-cloud-firestore>=2.21"]
+
+[project.scripts]
+ollama-network-server = "ollama_network.server:main"
+ollama-network-cli = "ollama_network.cli:main"
+ollama-network-worker = "ollama_network.worker_daemon:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.2"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.package-data]
+ollama_network = ["assets/*.png"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-p no:cacheprovider"
