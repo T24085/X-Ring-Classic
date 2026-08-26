@@ -128,10 +128,6 @@ const Layout = () => {
                   className="h-full w-full object-contain"
                 />
               </span>
-              <span className="hidden border-l border-white/10 pl-3 lg:block">
-                <span className="block text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-400">22 LR</span>
-                <span className="mt-1 block text-[10px] font-medium uppercase tracking-[0.14em] text-gray-600">Precision sport</span>
-              </span>
             </Link>
 
             {/* Desktop navigation */}
