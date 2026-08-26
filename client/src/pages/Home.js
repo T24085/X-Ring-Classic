@@ -325,7 +325,7 @@ const Home = () => {
 
 
   return (
-    <div className="relative grid items-start gap-4 lg:grid-cols-[minmax(0,9rem)_minmax(0,1fr)_minmax(0,9rem)] xl:grid-cols-[minmax(0,11rem)_minmax(0,1fr)_minmax(0,11rem)] xl:gap-6">
+    <div className="relative grid items-start gap-4 lg:grid-cols-[minmax(0,10rem)_minmax(0,1fr)_minmax(0,10rem)] xl:grid-cols-[minmax(0,14rem)_minmax(0,1fr)_minmax(0,14rem)] 2xl:grid-cols-[minmax(0,16rem)_minmax(0,1fr)_minmax(0,16rem)] xl:gap-6">
       <ColbyChristieBanner />
       <div className="relative space-y-12">
       {/* Subtle background accents to make the page feel less flat */}
