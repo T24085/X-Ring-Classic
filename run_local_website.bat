@@ -3,6 +3,12 @@ setlocal
 
 cd /d "%~dp0client"
 
+rem Keep the preview local and avoid the empty host allow-list issue in the
+rem legacy React development server used by this project.
+set "HOST=localhost"
+set "BROWSER=none"
+set "DANGEROUSLY_DISABLE_HOST_CHECK=true"
+
 if not exist "node_modules\.bin\react-scripts.cmd" (
   echo Frontend dependencies are missing. Installing them now...
   call npm ci

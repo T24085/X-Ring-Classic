@@ -304,13 +304,21 @@ const Home = () => {
   );
 
   const ColbyChristieBanner = () => (
-    <aside className="hidden self-start overflow-hidden rounded-xl border border-yellow-700/60 bg-black shadow-xl lg:sticky lg:top-6 lg:block">
-      <img
-        src={`${process.env.PUBLIC_URL}/colby-christie-gunsmithing.png`}
-        alt="Colby Christie Gunsmithing — precision, reliability, performance"
-        className="block h-auto w-full object-cover"
-        loading="lazy"
-      />
+    <aside className="hidden self-stretch lg:block">
+      <div className="sticky top-6 flex max-h-[calc(100vh-3rem)] min-h-[36rem] flex-col overflow-hidden rounded-xl border border-yellow-700/60 bg-black shadow-xl">
+        <img
+          src={`${process.env.PUBLIC_URL}/colby-christie-gunsmithing.png`}
+          alt="Colby Christie Gunsmithing — precision, reliability, performance"
+          className="block h-auto w-full flex-none object-cover"
+          loading="lazy"
+        />
+        <div className="flex min-h-[8rem] flex-1 flex-col items-center justify-center bg-gradient-to-b from-black via-gray-950 to-black px-3 py-6 text-center text-yellow-500">
+          <div className="mb-3 h-px w-2/3 bg-yellow-600/60" />
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em]">Colby Christie</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-gray-300">Gunsmithing</p>
+          <p className="mt-3 text-[9px] uppercase tracking-[0.12em] text-yellow-700">Precision · Reliability · Performance</p>
+        </div>
+      </div>
     </aside>
   );
 

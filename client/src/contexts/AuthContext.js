@@ -53,41 +53,62 @@ const authReducer = (state, action) => {
   }
 };
 
+// Firebase authentication and the user's Firestore profile are separate
+// resources. A profile read failure should not turn a successful login into
+// an authentication failure.
+const loadAuthenticatedUser = async (firebaseUser) => {
+  let token = null;
+  try {
+    token = await firebaseUser.getIdToken();
+  } catch (error) {
+    console.warn('Unable to refresh Firebase ID token:', error);
+  }
+
+  let profile = { email: firebaseUser.email || '' };
+  try {
+    const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
+    if (snap.exists()) {
+      profile = { ...profile, ...snap.data() };
+    }
+  } catch (error) {
+    console.warn('Unable to load user profile; continuing with Firebase account:', error);
+  }
+
+  // Classification is supplemental profile data. It must never block auth.
+  try {
+    const scoresSnap = await getDocs(query(collection(db, 'scores'), where('competitorId', '==', firebaseUser.uid)));
+    const scores = scoresSnap.docs.map(d => d.data());
+    const clsResult = classificationFromScores(scores);
+    if (clsResult) {
+      const classificationLabel = clsResult.tier || clsResult.classificationLabel || profile.classification;
+      profile = { ...profile, classification: classificationLabel };
+      setDoc(doc(db, 'users', firebaseUser.uid), { classification: classificationLabel }, { merge: true }).catch(() => {});
+    }
+  } catch (error) {
+    console.warn('Unable to refresh classification; continuing with profile:', error);
+  }
+
+  return {
+    user: { id: firebaseUser.uid, ...profile },
+    token,
+  };
+};
+
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Listen for Firebase Auth changes and load profile
+  // Listen for Firebase Auth changes and load profile data without allowing
+  // Firestore/profile issues to invalidate a valid Firebase session.
   useEffect(() => {
     const unsub = onAuthStateChanged(fbAuth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          const token = await firebaseUser.getIdToken();
-          const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
-          let profile = snap.exists() ? snap.data() : { email: firebaseUser.email };
-
-          // Always compute classification from recent scores; override stale profile value
-          try {
-            const scoresSnap = await getDocs(query(collection(db, 'scores'), where('competitorId', '==', firebaseUser.uid)));
-            const scores = scoresSnap.docs.map(d => d.data());
-            const clsResult = classificationFromScores(scores);
-            if (clsResult) {
-              // Extract the classification label string, not the whole object
-              const classificationLabel = clsResult.tier || clsResult.classificationLabel || profile.classification;
-              profile = { ...profile, classification: classificationLabel };
-              // Persist in background so other views stay consistent
-              setDoc(doc(db, 'users', firebaseUser.uid), { classification: classificationLabel }, { merge: true }).catch(()=>{});
-            }
-          } catch {}
-          dispatch({
-            type: 'LOGIN_SUCCESS',
-            payload: { user: { id: firebaseUser.uid, ...profile }, token }
-          });
-        } catch (e) {
-          dispatch({ type: 'LOGIN_FAILURE', payload: e.message || 'Failed to load profile' });
-        }
-      } else {
+      if (!firebaseUser) {
         dispatch({ type: 'LOGOUT' });
+        return;
       }
+
+      const { user, token } = await loadAuthenticatedUser(firebaseUser);
+      if (token) localStorage.setItem('token', token);
+      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token } });
     });
     return () => unsub();
   }, []);
@@ -95,7 +116,10 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     dispatch({ type: 'LOGIN_START' });
     try {
-      await signInWithEmailAndPassword(fbAuth, email, password);
+      const credential = await signInWithEmailAndPassword(fbAuth, email, password);
+      const { user, token } = await loadAuthenticatedUser(credential.user);
+      if (token) localStorage.setItem('token', token);
+      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token } });
       return { success: true };
     } catch (error) {
       dispatch({ type: 'LOGIN_FAILURE', payload: error.message || 'Login failed' });
@@ -116,7 +140,19 @@ export const AuthProvider = ({ children }) => {
         role: role || 'competitor',
         createdAt: serverTimestamp(),
       };
-      await setDoc(doc(db, 'users', cred.user.uid), profile, { merge: true });
+      try {
+        await setDoc(doc(db, 'users', cred.user.uid), profile, { merge: true });
+      } catch (profileError) {
+        // The Firebase account is already valid even if the profile write is
+        // temporarily unavailable. Do not report a false registration error.
+        console.warn('Account created but profile could not be saved:', profileError);
+      }
+      const token = await cred.user.getIdToken().catch(() => null);
+      if (token) localStorage.setItem('token', token);
+      dispatch({
+        type: 'LOGIN_SUCCESS',
+        payload: { user: { id: cred.user.uid, ...profile }, token },
+      });
       return { success: true };
     } catch (error) {
       dispatch({ type: 'LOGIN_FAILURE', payload: error.message || 'Registration failed' });
@@ -125,8 +161,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    await signOut(fbAuth);
-    dispatch({ type: 'LOGOUT' });
+    try {
+      await signOut(fbAuth);
+    } finally {
+      localStorage.removeItem('token');
+      dispatch({ type: 'LOGOUT' });
+    }
   };
 
   const updateUser = (userData) => {
