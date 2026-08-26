@@ -22,6 +22,36 @@ import {
 } from '@heroicons/react/24/outline';
 import { useState, useRef, useEffect } from 'react';
 
+const PUBLIC_EXACT_PATHS = new Set([
+  '/',
+  '/competitions',
+  '/leaderboard',
+  '/shooting-classes',
+  '/ranges',
+  '/rulebook',
+  '/pitch-deck',
+  '/sponsorship',
+]);
+
+const ColbyChristieBanner = () => (
+  <aside className="hidden self-stretch lg:block">
+    <div className="sticky top-24 flex max-h-[calc(100vh-7rem)] min-h-[36rem] flex-col overflow-hidden rounded-xl border border-yellow-700/60 bg-black shadow-xl">
+      <img
+        src={`${process.env.PUBLIC_URL}/colby-christie-gunsmithing.png`}
+        alt="Colby Christie Gunsmithing — precision, reliability, performance"
+        className="block h-auto w-full flex-none object-cover"
+        loading="lazy"
+      />
+      <div className="flex min-h-[8rem] flex-1 flex-col items-center justify-center bg-gradient-to-b from-black via-gray-950 to-black px-3 py-6 text-center text-yellow-500">
+        <div className="mb-3 h-px w-2/3 bg-yellow-600/60" />
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em]">Colby Christie</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-gray-300">Gunsmithing</p>
+        <p className="mt-3 text-[9px] uppercase tracking-[0.12em] text-yellow-700">Precision · Reliability · Performance</p>
+      </div>
+    </div>
+  </aside>
+);
+
 const Layout = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const location = useLocation();
@@ -64,6 +94,9 @@ const Layout = () => {
   const isRangeAdmin = user?.role === 'range_admin' && user?.role !== 'admin';
   const isAdminRoute = location.pathname.startsWith('/admin');
   const showSponsorDashboard = user?.role === 'sponsor' || user?.role === 'admin';
+  const isPublicPage = PUBLIC_EXACT_PATHS.has(location.pathname)
+    || (location.pathname.startsWith('/competitions/') && !location.pathname.endsWith('/edit'))
+    || location.pathname.startsWith('/leaderboard/');
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -343,7 +376,17 @@ const Layout = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Outlet />
+        {isPublicPage ? (
+          <div className="relative grid items-start gap-4 lg:grid-cols-[minmax(0,10rem)_minmax(0,1fr)_minmax(0,10rem)] xl:grid-cols-[minmax(0,14rem)_minmax(0,1fr)_minmax(0,14rem)] 2xl:grid-cols-[minmax(0,16rem)_minmax(0,1fr)_minmax(0,16rem)] xl:gap-6">
+            <ColbyChristieBanner />
+            <div className="min-w-0">
+              <Outlet />
+            </div>
+            <ColbyChristieBanner />
+          </div>
+        ) : (
+          <Outlet />
+        )}
       </main>
 
       {/* Footer */}

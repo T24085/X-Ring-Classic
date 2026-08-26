@@ -309,25 +309,6 @@ const Home = () => {
     </div>
   );
 
-  const ColbyChristieBanner = () => (
-    <aside className="hidden self-stretch lg:block">
-      <div className="sticky top-6 flex max-h-[calc(100vh-3rem)] min-h-[36rem] flex-col overflow-hidden rounded-xl border border-yellow-700/60 bg-black shadow-xl">
-        <img
-          src={`${process.env.PUBLIC_URL}/colby-christie-gunsmithing.png`}
-          alt="Colby Christie Gunsmithing — precision, reliability, performance"
-          className="block h-auto w-full flex-none object-cover"
-          loading="lazy"
-        />
-        <div className="flex min-h-[8rem] flex-1 flex-col items-center justify-center bg-gradient-to-b from-black via-gray-950 to-black px-3 py-6 text-center text-yellow-500">
-          <div className="mb-3 h-px w-2/3 bg-yellow-600/60" />
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em]">Colby Christie</p>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-gray-300">Gunsmithing</p>
-          <p className="mt-3 text-[9px] uppercase tracking-[0.12em] text-yellow-700">Precision · Reliability · Performance</p>
-        </div>
-      </div>
-    </aside>
-  );
-
   const fmt = (n) => {
     if (!Number.isFinite(n)) return '0';
     if (n >= 1000) return `${(n/1000).toFixed(n % 1000 === 0 ? 0 : 1)}k+`;
@@ -339,9 +320,7 @@ const Home = () => {
 
 
   return (
-    <div className="relative grid items-start gap-4 lg:grid-cols-[minmax(0,10rem)_minmax(0,1fr)_minmax(0,10rem)] xl:grid-cols-[minmax(0,14rem)_minmax(0,1fr)_minmax(0,14rem)] 2xl:grid-cols-[minmax(0,16rem)_minmax(0,1fr)_minmax(0,16rem)] xl:gap-6">
-      <ColbyChristieBanner />
-      <div className="relative space-y-12">
+    <div className="relative space-y-12">
       {/* Subtle background accents to make the page feel less flat */}
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-40 left-1/2 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-red-600/20 blur-3xl" />
@@ -901,8 +880,6 @@ const Home = () => {
         </div>
       </section>
       )}
-      </div>
-      <ColbyChristieBanner />
     </div>
   );
 };
