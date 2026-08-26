@@ -1094,11 +1094,19 @@ export const adminAPI = {
     // Helper to convert Firestore timestamp to Date
     const toDate = (ts) => {
       if (!ts) return null;
-      if (ts.toMillis) return new Date(ts.toMillis());
-      if (ts.toDate) return ts.toDate();
-      if (typeof ts === 'string') return new Date(ts);
-      if (typeof ts === 'number') return new Date(ts);
-      return null;
+      let parsed = null;
+      if (ts.toMillis) parsed = new Date(ts.toMillis());
+      else if (ts.toDate) parsed = ts.toDate();
+      else if (typeof ts === 'string' || typeof ts === 'number') parsed = new Date(ts);
+      else if (typeof ts === 'object' && typeof ts._seconds === 'number') parsed = new Date(ts._seconds * 1000);
+      if (!parsed || Number.isNaN(parsed.getTime())) return null;
+      return parsed;
+    };
+
+    const displayName = (user) => {
+      const full = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
+      if (full) return full;
+      return user?.username || user?.email || 'A user';
     };
 
     // Calculate user growth data points
@@ -1203,7 +1211,70 @@ export const adminAPI = {
     const revenueThisPeriod = revenueThisPeriodParticipations.length * PARTICIPATION_FEE;
 
     const totals = await publicAPI.getStats();
-    
+
+    const userById = new Map(users.map((u) => [u.id, u]));
+    const competitionById = new Map(competitions.map((c) => [c.id, c]));
+    const allActivity = [];
+
+    users.forEach((user) => {
+      const createdAt = toDate(user?.createdAt);
+      if (!createdAt) return;
+      allActivity.push({
+        type: 'user',
+        timestamp: createdAt.toISOString(),
+        message: `${displayName(user)} registered`,
+      });
+    });
+
+    competitions.forEach((competition) => {
+      const createdAt = toDate(competition?.createdAt) || toDate(competition?.publishedAt) || toDate(competition?.updatedAt);
+      if (!createdAt) return;
+      const title = competition?.title || competition?.name || 'Untitled competition';
+      allActivity.push({
+        type: 'competition',
+        timestamp: createdAt.toISOString(),
+        message: `Competition created: ${title}`,
+      });
+    });
+
+    scores.forEach((score) => {
+      const createdAt = toDate(score?.createdAt) || toDate(score?.submittedAt) || toDate(score?.updatedAt);
+      if (!createdAt) return;
+      const competitor = userById.get(score?.competitorId);
+      const competitorName = displayName(competitor);
+      const scoreValue = Number.isFinite(Number(score?.score))
+        ? Number(score.score)
+        : Number.isFinite(Number(score?.totalScore))
+          ? Number(score.totalScore)
+          : null;
+      allActivity.push({
+        type: 'score',
+        timestamp: createdAt.toISOString(),
+        message: scoreValue != null
+          ? `Score submitted by ${competitorName}: ${scoreValue}`
+          : `Score submitted by ${competitorName}`,
+      });
+    });
+
+    registrations.forEach((registration) => {
+      const registeredAt = toDate(registration?.registeredAt) || toDate(registration?.createdAt) || toDate(registration?.updatedAt);
+      if (!registeredAt) return;
+      const competitor = userById.get(registration?.userId || registration?.competitorId);
+      const competitorName = displayName(competitor);
+      const competition = competitionById.get(registration?.competitionId);
+      const competitionTitle = competition?.title || competition?.name || 'a competition';
+      allActivity.push({
+        type: 'competition',
+        timestamp: registeredAt.toISOString(),
+        message: `${competitorName} registered for ${competitionTitle}`,
+      });
+    });
+
+    const recentActivityInPeriod = allActivity.filter((item) => toDate(item.timestamp) >= startDate);
+    const recentActivity = (recentActivityInPeriod.length > 0 ? recentActivityInPeriod : allActivity)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 10);
+
     return {
       stats: {
         totalUsers: totals.totalUsers || 0,
@@ -1224,7 +1295,7 @@ export const adminAPI = {
       },
       userGrowthData,
       competitionActivityData,
-      recentActivity: [],
+      recentActivity,
     };
   },
   getUsers: async (params = {}) => {
@@ -1524,11 +1595,19 @@ export const rangeAdminAPI = {
     // Helper to convert Firestore timestamp to Date
     const toDate = (ts) => {
       if (!ts) return null;
-      if (ts.toMillis) return new Date(ts.toMillis());
-      if (ts.toDate) return ts.toDate();
-      if (typeof ts === 'string') return new Date(ts);
-      if (typeof ts === 'number') return new Date(ts);
-      return null;
+      let parsed = null;
+      if (ts.toMillis) parsed = new Date(ts.toMillis());
+      else if (ts.toDate) parsed = ts.toDate();
+      else if (typeof ts === 'string' || typeof ts === 'number') parsed = new Date(ts);
+      else if (typeof ts === 'object' && typeof ts._seconds === 'number') parsed = new Date(ts._seconds * 1000);
+      if (!parsed || Number.isNaN(parsed.getTime())) return null;
+      return parsed;
+    };
+
+    const displayName = (user) => {
+      const full = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
+      if (full) return full;
+      return user?.username || user?.email || 'A user';
     };
 
     // Calculate stats

@@ -303,6 +303,17 @@ const Home = () => {
     </div>
   );
 
+  const ColbyChristieBanner = () => (
+    <aside className="hidden self-start overflow-hidden rounded-xl border border-yellow-700/60 bg-black shadow-xl lg:sticky lg:top-6 lg:block">
+      <img
+        src={`${process.env.PUBLIC_URL}/colby-christie-gunsmithing.png`}
+        alt="Colby Christie Gunsmithing — precision, reliability, performance"
+        className="block h-auto w-full object-cover"
+        loading="lazy"
+      />
+    </aside>
+  );
+
   const fmt = (n) => {
     if (!Number.isFinite(n)) return '0';
     if (n >= 1000) return `${(n/1000).toFixed(n % 1000 === 0 ? 0 : 1)}k+`;
@@ -314,7 +325,9 @@ const Home = () => {
 
 
   return (
-    <div className="relative space-y-12">
+    <div className="relative grid items-start gap-4 lg:grid-cols-[minmax(0,9rem)_minmax(0,1fr)_minmax(0,9rem)] xl:grid-cols-[minmax(0,11rem)_minmax(0,1fr)_minmax(0,11rem)] xl:gap-6">
+      <ColbyChristieBanner />
+      <div className="relative space-y-12">
       {/* Subtle background accents to make the page feel less flat */}
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-40 left-1/2 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-red-600/20 blur-3xl" />
@@ -870,6 +883,8 @@ const Home = () => {
         </div>
       </section>
       )}
+      </div>
+      <ColbyChristieBanner />
     </div>
   );
 };
