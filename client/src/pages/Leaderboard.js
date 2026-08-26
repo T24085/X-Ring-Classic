@@ -108,6 +108,11 @@ const Leaderboard = () => {
   const displayClass = (classification) =>
     (classification || '').toString().replace(/^provisional\s+/i, '').trim();
 
+  const hasRankLogo = (classification) =>
+    ['grand master', 'master', 'diamond', 'platinum', 'gold', 'bronze'].includes(normalizeClass(classification));
+
+  const getInitial = (entry) => entry?.competitor?.firstName?.charAt(0)?.toUpperCase() || '?';
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-64">
@@ -236,8 +241,14 @@ const Leaderboard = () => {
                 </div>
                 <span className="text-sm text-gray-700">{entry.competitionsCount ?? 0} comps</span>
               </div>
-              <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
-                <RankLogo classification={entry.competitor?.classification} size={20} />
+              <div className="text-sm font-medium text-gray-900 flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center">
+                  {hasRankLogo(entry.competitor?.classification) ? (
+                    <RankLogo classification={entry.competitor.classification} size={34} className="h-8 w-8" />
+                  ) : (
+                    <span className="text-sm font-semibold text-gray-700">{getInitial(entry)}</span>
+                  )}
+                </div>
                 <span className="truncate">
                   {entry.competitor?.firstName} {entry.competitor?.lastName?.charAt(0)?.toUpperCase() || ''}.
                 </span>
@@ -311,14 +322,15 @@ const Leaderboard = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center mr-3">
-                        <span className="text-sm font-medium text-gray-700">
-                          {entry.competitor?.firstName?.charAt(0)?.toUpperCase() || '?'}
-                        </span>
+                      <div className="h-10 w-10 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center mr-3">
+                        {hasRankLogo(entry.competitor?.classification) ? (
+                          <RankLogo classification={entry.competitor.classification} size={34} className="h-8 w-8" />
+                        ) : (
+                          <span className="text-sm font-semibold text-gray-700">{getInitial(entry)}</span>
+                        )}
                       </div>
                       <div>
                         <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
-                          <RankLogo classification={entry.competitor?.classification} size={24} />
                           <span>
                             {entry.competitor?.firstName} {entry.competitor?.lastName?.charAt(0)?.toUpperCase() || ''}.
                           </span>
