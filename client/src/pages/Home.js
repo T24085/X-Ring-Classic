@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { competitionsAPI, leaderboardsAPI, publicAPI, scoresAPI } from '../services/api.firebase';
+import RankLogo from '../components/RankLogo';
 import { 
   TrophyIcon, 
   CalendarIcon, 
@@ -34,6 +35,11 @@ const Home = () => {
 
   const displayClass = (classification) =>
     (classification || '').toString().replace(/^provisional\s+/i, '').trim();
+
+  const hasRankLogo = (classification) =>
+    ['grand master', 'master', 'diamond', 'platinum', 'gold', 'bronze'].includes(
+      (classification || '').toString().toLowerCase().replace(/^provisional\s+/, '').trim()
+    );
 
   const getClassStyles = (classification) => {
     // Normalize classification - remove "Provisional" prefix and handle "Rookie"
@@ -673,7 +679,11 @@ const Home = () => {
                               </div>
                               <div className="mt-4 flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-xl bg-white border flex items-center justify-center font-extrabold text-gray-800">
-                                  {initials}
+                                  {hasRankLogo(c.classification) ? (
+                                    <RankLogo classification={c.classification} size={42} className="h-10 w-10" />
+                                  ) : (
+                                    initials
+                                  )}
                                 </div>
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap">
