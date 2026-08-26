@@ -7,6 +7,7 @@ import {
   UserIcon,
   CogIcon,
   ArrowRightOnRectangleIcon,
+  ArrowUpRightIcon,
   Bars3Icon,
   XMarkIcon,
   StarIcon,
@@ -16,7 +17,8 @@ import {
   ChartBarIcon,
   UserGroupIcon,
   CurrencyDollarIcon,
-  MegaphoneIcon
+  MegaphoneIcon,
+  ShoppingBagIcon
 } from '@heroicons/react/24/outline';
 import { useState, useRef, useEffect } from 'react';
 
@@ -84,320 +86,258 @@ const Layout = () => {
     logout();
   };
 
+  const filteredAdminMenuItems = (isRangeAdmin ? rangeAdminMenuItems : adminMenuItems).filter(item => {
+    if (item.href === '/admin/range-management' || item.href === '/admin/users') {
+      return user?.role === 'admin';
+    }
+    if (item.href === '/dashboard/sponsor') {
+      return showSponsorDashboard;
+    }
+    return true;
+  });
+
   return (
     <div className="min-h-screen relative z-10">
       {/* Header */}
-      <header className="bg-gray-900/95 backdrop-blur-sm shadow-md border-b-2 border-red-800 relative z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-3">
-            {/* Logo */}
-            <div className="flex items-center">
-              <Link to="/" className="flex items-center space-x-3">
-                <img 
-                  src={`${process.env.PUBLIC_URL}/TheXringClassic.png`} 
-                  alt="The X-Ring Classic" 
-                  className="h-12 w-auto object-contain"
-                />
-              </Link>
-            </div>
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0a0d13]/95 shadow-[0_16px_45px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+        <div className="border-b border-white/5 bg-black/20">
+          <div className="mx-auto flex max-w-[92rem] items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-gray-500 sm:text-[10px]">
+              The X-Ring Classic <span className="px-1 text-red-500">/</span> Precision in every round
+            </p>
+            <a
+              href="https://shop.gunguysii.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400 transition-colors hover:text-yellow-400 sm:flex"
+            >
+              Gun Guys II online shop
+              <ArrowUpRightIcon className="h-3 w-3" />
+            </a>
+          </div>
+        </div>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-2">
-              {/* Main navigation items */}
+        <div className="mx-auto max-w-[92rem] px-4 sm:px-6 lg:px-8">
+          <div className="flex min-h-[76px] items-center gap-4 lg:gap-6">
+            {/* Brand lockup */}
+            <Link to="/" className="group flex shrink-0 items-center gap-3" aria-label="The X-Ring Classic home">
+              <span className="relative flex h-12 w-[4.5rem] items-center justify-center overflow-hidden rounded-lg border border-white/15 bg-white shadow-lg shadow-black/20 transition-transform duration-300 group-hover:-translate-y-0.5">
+                <img
+                  src={`${process.env.PUBLIC_URL}/TheXringClassic.png`}
+                  alt="The X-Ring Classic"
+                  className="h-full w-full object-contain"
+                />
+              </span>
+              <span className="hidden border-l border-white/10 pl-3 lg:block">
+                <span className="block text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-400">22 LR</span>
+                <span className="mt-1 block text-[10px] font-medium uppercase tracking-[0.14em] text-gray-600">Precision sport</span>
+              </span>
+            </Link>
+
+            {/* Desktop navigation */}
+            <nav className="ml-auto hidden items-center gap-0.5 lg:flex" aria-label="Primary navigation">
               {mainNavigation.map((item) => {
                 const isActive = location.pathname === item.href;
                 return (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'text-gray-200 bg-gray-800/50'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`group relative flex items-center gap-2 px-3 py-7 text-[10px] font-semibold uppercase tracking-[0.13em] transition-colors duration-200 xl:px-3.5 ${
+                      isActive ? 'text-white' : 'text-gray-500 hover:text-gray-100'
                     }`}
                   >
-                    <item.icon className="w-4 h-4" />
+                    <item.icon className={`h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5 ${isActive ? 'text-red-400' : 'text-gray-600 group-hover:text-red-400'}`} />
                     <span>{item.name}</span>
+                    <span className={`absolute bottom-0 left-3 right-3 h-0.5 origin-center rounded-full bg-red-500 transition-transform duration-200 xl:left-3.5 xl:right-3.5 ${isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
                   </Link>
                 );
               })}
 
-              {/* Profile link (if authenticated) */}
               {isAuthenticated && (
                 <Link
                   to="/profile"
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    location.pathname === '/profile'
-                      ? 'text-gray-200 bg-gray-800/50'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                  }`}
+                  aria-current={location.pathname === '/profile' ? 'page' : undefined}
+                  className={`group relative flex items-center gap-2 px-3 py-7 text-[10px] font-semibold uppercase tracking-[0.13em] transition-colors duration-200 ${location.pathname === '/profile' ? 'text-white' : 'text-gray-500 hover:text-gray-100'}`}
                 >
-                  <UserIcon className="w-4 h-4" />
+                  <UserIcon className={`h-4 w-4 ${location.pathname === '/profile' ? 'text-red-400' : 'text-gray-600 group-hover:text-red-400'}`} />
                   <span>Profile</span>
+                  <span className={`absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-red-500 transition-transform duration-200 ${location.pathname === '/profile' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
                 </Link>
               )}
 
-              {/* Admin dropdown menu */}
               {hasAdminAccess && (
                 <div className="relative z-[100]" ref={adminDropdownRef}>
                   <button
+                    type="button"
                     onClick={() => setAdminDropdownOpen(!adminDropdownOpen)}
-                    className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isAdminRoute
-                        ? 'text-gray-200 bg-gray-800/50'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                    }`}
+                    aria-expanded={adminDropdownOpen}
+                    className={`group relative flex items-center gap-2 px-3 py-7 text-[10px] font-semibold uppercase tracking-[0.13em] transition-colors duration-200 ${isAdminRoute ? 'text-white' : 'text-gray-500 hover:text-gray-100'}`}
                   >
-                    <CogIcon className="w-4 h-4" />
+                    <CogIcon className={`h-4 w-4 ${isAdminRoute ? 'text-red-400' : 'text-gray-600 group-hover:text-red-400'}`} />
                     <span>Admin</span>
-                    <ChevronDownIcon className={`w-4 h-4 transition-transform ${adminDropdownOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform duration-200 ${adminDropdownOpen ? 'rotate-180 text-red-400' : ''}`} />
+                    <span className={`absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-red-500 transition-transform duration-200 ${isAdminRoute ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
                   </button>
 
-                  {/* Dropdown menu */}
                   {adminDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white border-2 border-red-800 z-[9999]">
-                      <div className="py-1" role="menu">
-                        {(isRangeAdmin ? rangeAdminMenuItems : adminMenuItems)
-                          .filter(item => {
-                            // Filter based on role
-                            if (item.href === '/admin/range-management' || item.href === '/admin/users') {
-                              return user?.role === 'admin';
-                            }
-                            // Show Sponsor Dashboard only to sponsors and admins
-                            if (item.href === '/dashboard/sponsor') {
-                              return showSponsorDashboard;
-                            }
-                            return true;
-                          })
-                          .map((item) => {
-                            const isActive = location.pathname === item.href;
-                            return (
-                              <Link
-                                key={item.name}
-                                to={item.href}
-                                onClick={() => setAdminDropdownOpen(false)}
-                                className={`flex items-center space-x-2 px-4 py-2 text-sm transition-colors ${
-                                  isActive
-                                    ? 'bg-blue-50 text-blue-700 font-medium'
-                                    : 'text-gray-900 hover:bg-gray-100'
-                                }`}
-                                role="menuitem"
-                              >
-                                <item.icon className={`w-4 h-4 ${isActive ? 'text-blue-700' : 'text-gray-700'}`} />
-                                <span>{item.name}</span>
-                              </Link>
-                            );
-                          })}
+                    <div className="absolute right-0 top-[calc(100%-0.5rem)] w-64 rounded-2xl border border-white/10 bg-[#111722]/98 p-2 shadow-2xl shadow-black/40 ring-1 ring-black/40">
+                      <div className="border-b border-white/10 px-3 pb-2 pt-1">
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-red-400">Control room</p>
+                        <p className="mt-1 text-xs text-gray-500">Manage the competition platform</p>
+                      </div>
+                      <div className="mt-2 space-y-1" role="menu">
+                        {filteredAdminMenuItems.map((item) => {
+                          const isActive = location.pathname === item.href;
+                          return (
+                            <Link
+                              key={item.name}
+                              to={item.href}
+                              onClick={() => setAdminDropdownOpen(false)}
+                              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition-colors ${isActive ? 'bg-red-500/15 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                              role="menuitem"
+                            >
+                              <item.icon className={`h-4 w-4 ${isActive ? 'text-red-400' : 'text-gray-600'}`} />
+                              <span>{item.name}</span>
+                            </Link>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Shop Now Button */}
               <a
                 href="https://shop.gunguysii.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-1 px-4 py-2 rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors shadow-md"
+                className="ml-2 flex items-center gap-2 rounded-lg border border-red-400/30 bg-red-600 px-3.5 py-3 text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-lg shadow-red-950/30 transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-500 hover:shadow-red-950/50"
               >
-                <TrophyIcon className="w-4 h-4" />
-                <span>Shop Now</span>
+                <ShoppingBagIcon className="h-4 w-4" />
+                <span>Shop</span>
+                <ArrowUpRightIcon className="h-3.5 w-3.5" />
               </a>
             </nav>
 
-            {/* User Menu */}
-            <div className="hidden md:flex items-center space-x-4">
+            {/* Desktop account utility */}
+            <div className="hidden items-center gap-3 border-l border-white/10 pl-4 lg:flex">
               {isAuthenticated ? (
                 <>
-                  <div className="flex items-center space-x-2">
+                  <Link to="/profile" className="group flex items-center gap-2" title="Open profile">
                     {user?.classification && typeof user.classification === 'string' ? (
                       <img
                         src={`${process.env.PUBLIC_URL}/${(user.classification.includes('Grand') ? 'GM' : user.classification).replace(/\s+/g, '')}.png`}
                         alt={user.classification}
-                        className="w-8 h-8 object-contain"
+                        className="h-8 w-8 object-contain"
                         onError={(e) => {
                           e.target.style.display = 'none';
                           e.target.nextSibling.style.display = 'flex';
                         }}
                       />
                     ) : null}
-                    <div 
-                      className={`w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center ${user?.classification && typeof user.classification === 'string' ? 'hidden' : ''}`}
-                    >
-                      <span className="text-gray-200 font-medium text-sm">
-                        {user?.profile?.firstName?.[0] || user?.username?.[0] || 'U'}
-                      </span>
-                    </div>
-                    <span className="text-sm text-gray-200">
+                    <span className={`flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/10 text-xs font-semibold text-gray-200 ${user?.classification && typeof user.classification === 'string' ? 'hidden' : ''}`}>
+                      {user?.profile?.firstName?.[0] || user?.username?.[0] || 'U'}
+                    </span>
+                    <span className="hidden max-w-20 truncate text-xs font-medium text-gray-400 transition-colors group-hover:text-white xl:block">
                       {user?.profile?.firstName || user?.username}
                     </span>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center space-x-1 text-gray-300 hover:text-white transition-colors"
-                  >
-                    <ArrowRightOnRectangleIcon className="w-4 h-4" />
-                    <span className="text-sm">Logout</span>
+                  </Link>
+                  <button onClick={handleLogout} className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-white/5 hover:text-white" aria-label="Log out" title="Log out">
+                    <ArrowRightOnRectangleIcon className="h-4 w-4" />
                   </button>
                 </>
               ) : (
-                <div className="flex items-center space-x-4">
-                  <Link
-                    to="/login"
-                    className="text-gray-300 hover:text-white text-sm font-medium"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="btn-primary text-sm"
-                  >
-                    Register
-                  </Link>
-                </div>
+                <>
+                  <Link to="/login" className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500 transition-colors hover:text-white">Login</Link>
+                  <Link to="/register" className="rounded-lg border border-white/15 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-300 transition-colors hover:border-red-400/50 hover:bg-white/5 hover:text-white">Register</Link>
+                </>
               )}
             </div>
 
             {/* Mobile actions */}
-            <div className="md:hidden flex items-center gap-3">
+            <div className="ml-auto flex items-center gap-2 lg:hidden">
               {!isAuthenticated && (
-                <>
-                  <Link
-                    to="/login"
-                    className="text-sm text-gray-300 hover:text-white"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="px-3 py-1 text-sm rounded-md bg-gray-700 text-white hover:bg-gray-600"
-                  >
-                    Register
-                  </Link>
-                </>
+                <Link to="/login" className="hidden text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400 transition-colors hover:text-white sm:block">Login</Link>
               )}
               <button
+                type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="text-gray-300 hover:text-white"
-                aria-label="Toggle menu"
+                className="rounded-lg border border-white/10 p-2 text-gray-300 transition-colors hover:border-red-400/40 hover:bg-white/5 hover:text-white"
+                aria-expanded={mobileMenuOpen}
+                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               >
-                {mobileMenuOpen ? (
-                  <XMarkIcon className="w-6 h-6" />
-                ) : (
-                  <Bars3Icon className="w-6 h-6" />
-                )}
+                {mobileMenuOpen ? <XMarkIcon className="h-5 w-5" /> : <Bars3Icon className="h-5 w-5" />}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-red-900">
-            <nav className="px-4 py-2 space-y-1">
-              {/* Main navigation */}
-              {mainNavigation.map((item) => {
-                const isActive = location.pathname === item.href;
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'text-gray-200 bg-gray-800/50'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                    }`}
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
+          <div className="border-t border-white/10 bg-[#0d1119] lg:hidden">
+            <nav className="mx-auto max-w-[92rem] space-y-1 px-4 py-4 sm:px-6" aria-label="Mobile navigation">
+              <div className="mb-3 grid grid-cols-2 gap-2 border-b border-white/10 pb-4 sm:grid-cols-3">
+                {mainNavigation.map((item) => {
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      aria-current={isActive ? 'page' : undefined}
+                      className={`flex items-center gap-2 rounded-xl border px-3 py-3 text-[10px] font-semibold uppercase tracking-[0.1em] transition-colors ${isActive ? 'border-red-500/40 bg-red-500/10 text-white' : 'border-white/5 bg-white/[0.02] text-gray-400 hover:border-white/15 hover:text-white'}`}
+                    >
+                      <item.icon className={`h-4 w-4 ${isActive ? 'text-red-400' : 'text-gray-600'}`} />
+                      <span>{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </div>
 
-              {/* Profile */}
               {isAuthenticated && (
-                <Link
-                  to="/profile"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    location.pathname === '/profile'
-                      ? 'text-gray-200 bg-gray-800/50'
-                      : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                  }`}
-                >
-                  <UserIcon className="w-4 h-4" />
+                <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-gray-300 transition-colors hover:bg-white/5 hover:text-white">
+                  <UserIcon className="h-4 w-4 text-gray-500" />
                   <span>Profile</span>
                 </Link>
               )}
 
-              {/* Shop Now Button (Mobile) */}
               <a
                 href="https://shop.gunguysii.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
+                className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-600 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.15em] text-white transition-colors hover:bg-red-500"
               >
-                <TrophyIcon className="w-4 h-4" />
-                <span>Shop Now</span>
+                <ShoppingBagIcon className="h-4 w-4" />
+                Shop Gun Guys II
+                <ArrowUpRightIcon className="h-3.5 w-3.5" />
               </a>
 
-              {/* Admin section */}
               {hasAdminAccess && (
-                <div className="pt-2 border-t border-red-900">
-                  <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    {isRangeAdmin ? 'Range Admin' : 'Admin'}
-                  </div>
-                  {(isRangeAdmin ? rangeAdminMenuItems : adminMenuItems)
-                    .filter(item => {
-                      if (item.href === '/admin/range-management' || item.href === '/admin/users') {
-                        return user?.role === 'admin';
-                      }
-                      // Show Sponsor Dashboard only to sponsors and admins
-                      if (item.href === '/dashboard/sponsor') {
-                        return showSponsorDashboard;
-                      }
-                      return true;
-                    })
-                    .map((item) => {
-                      const isActive = location.pathname === item.href;
-                      return (
-                        <Link
-                          key={item.name}
-                          to={item.href}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ml-4 ${
-                            isActive
-                              ? 'text-gray-200 bg-gray-800/50'
-                              : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                          }`}
-                        >
-                          <item.icon className="w-4 h-4" />
-                          <span>{item.name}</span>
-                        </Link>
-                      );
-                    })}
+                <div className="mt-3 border-t border-white/10 pt-3">
+                  <p className="px-3 py-2 text-[9px] font-semibold uppercase tracking-[0.24em] text-red-400">{isRangeAdmin ? 'Range admin' : 'Admin'}</p>
+                  {filteredAdminMenuItems.map((item) => {
+                    const isActive = location.pathname === item.href;
+                    return (
+                      <Link key={item.name} to={item.href} onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors ${isActive ? 'bg-red-500/10 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
+                        <item.icon className={`h-4 w-4 ${isActive ? 'text-red-400' : 'text-gray-600'}`} />
+                        <span>{item.name}</span>
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
 
-              {/* Logout/Login */}
               {isAuthenticated ? (
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 w-full"
-                >
-                  <ArrowRightOnRectangleIcon className="w-4 h-4" />
-                  <span>Logout</span>
+                <button onClick={() => { handleLogout(); setMobileMenuOpen(false); }} className="mt-3 flex w-full items-center gap-3 border-t border-white/10 px-3 pt-4 text-sm text-gray-400 transition-colors hover:text-white">
+                  <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                  <span>Log out</span>
                 </button>
               ) : (
-                <div className="flex items-center gap-2 px-3 py-2">
-                  <Link to="/login" className="text-sm text-gray-300 hover:text-white" onClick={() => setMobileMenuOpen(false)}>Login</Link>
-                  <Link to="/register" className="px-3 py-1 text-sm rounded-md bg-rifle-600 text-white hover:bg-rifle-700" onClick={() => setMobileMenuOpen(false)}>Register</Link>
+                <div className="mt-3 flex items-center gap-4 border-t border-white/10 px-3 pt-4">
+                  <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="text-sm text-gray-400 hover:text-white">Login</Link>
+                  <Link to="/register" onClick={() => setMobileMenuOpen(false)} className="rounded-lg border border-white/15 px-3 py-2 text-sm text-gray-300 hover:border-red-400/50 hover:text-white">Register</Link>
                 </div>
               )}
             </nav>
