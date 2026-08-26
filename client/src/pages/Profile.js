@@ -75,6 +75,9 @@ const Profile = () => {
   const displayClass = (classification) =>
     (classification || '').toString().replace(/^provisional\s+/i, '').trim();
 
+  const hasRankLogo = (classification) =>
+    ['grand master', 'master', 'diamond', 'platinum', 'gold', 'bronze'].includes(normalizeClass(classification));
+
   const getClassStyles = (classification) => {
     switch (normalizeClass(classification)) {
       case 'grand master':
@@ -175,8 +178,12 @@ const Profile = () => {
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
-            <div className="w-20 h-20 bg-rifle-600 rounded-full flex items-center justify-center">
-              <UserIcon className="w-10 h-10 text-white" />
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center overflow-hidden ${hasRankLogo(user?.classification) ? 'border-2 border-gray-200 bg-gray-50' : 'bg-rifle-600'}`}>
+              {hasRankLogo(user?.classification) ? (
+                <RankLogo classification={user.classification} size={68} className="h-16 w-16" />
+              ) : (
+                <UserIcon className="w-10 h-10 text-white" />
+              )}
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
