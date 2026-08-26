@@ -177,10 +177,10 @@ const Layout = () => {
                   </button>
 
                   {adminDropdownOpen && (
-                    <div className="absolute right-0 top-[calc(100%-0.5rem)] w-64 rounded-2xl border border-white/10 bg-[#111722]/98 p-2 shadow-2xl shadow-black/40 ring-1 ring-black/40">
-                      <div className="border-b border-white/10 px-3 pb-2 pt-1">
+                    <div className="absolute right-0 top-[calc(100%-0.5rem)] z-[9999] w-64 overflow-hidden rounded-2xl border-2 border-red-900/80 bg-gray-950 p-2 shadow-[0_20px_60px_rgba(0,0,0,0.8)] ring-1 ring-white/10">
+                      <div className="border-b border-white/15 px-3 pb-2 pt-1">
                         <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-red-400">Control room</p>
-                        <p className="mt-1 text-xs text-gray-500">Manage the competition platform</p>
+                        <p className="mt-1 text-xs text-gray-300">Manage the competition platform</p>
                       </div>
                       <div className="mt-2 space-y-1" role="menu">
                         {filteredAdminMenuItems.map((item) => {
@@ -190,7 +190,7 @@ const Layout = () => {
                               key={item.name}
                               to={item.href}
                               onClick={() => setAdminDropdownOpen(false)}
-                              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition-colors ${isActive ? 'bg-red-500/15 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs transition-colors ${isActive ? 'bg-red-500/25 text-white' : 'text-gray-200 hover:bg-white/10 hover:text-white'}`}
                               role="menuitem"
                             >
                               <item.icon className={`h-4 w-4 ${isActive ? 'text-red-400' : 'text-gray-600'}`} />
