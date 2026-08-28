@@ -3,6 +3,7 @@ import { auth as fbAuth, db } from '../services/firebaseClient';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { classificationFromScores } from '../services/classification';
+import { ensureRecurringCompetitions } from '../services/recurringCompetitions';
 
 const AuthContext = createContext();
 
@@ -94,6 +95,13 @@ const loadAuthenticatedUser = async (firebaseUser) => {
   };
 };
 
+const scheduleRecurringCompetitions = (user) => {
+  if (!['admin', 'range_admin'].includes(user?.role)) return;
+  ensureRecurringCompetitions(user).catch((error) => {
+    console.warn('Unable to ensure recurring competitions:', error);
+  });
+};
+
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
@@ -109,6 +117,7 @@ export const AuthProvider = ({ children }) => {
       const { user, token } = await loadAuthenticatedUser(firebaseUser);
       if (token) localStorage.setItem('token', token);
       dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token } });
+      scheduleRecurringCompetitions(user);
     });
     return () => unsub();
   }, []);
@@ -120,6 +129,7 @@ export const AuthProvider = ({ children }) => {
       const { user, token } = await loadAuthenticatedUser(credential.user);
       if (token) localStorage.setItem('token', token);
       dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token } });
+      scheduleRecurringCompetitions(user);
       return { success: true };
     } catch (error) {
       dispatch({ type: 'LOGIN_FAILURE', payload: error.message || 'Login failed' });
