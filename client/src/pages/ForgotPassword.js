@@ -34,7 +34,7 @@ const ForgotPassword = () => {
         <div>
           <div className="flex justify-center mb-6">
             <img 
-              src={`${process.env.PUBLIC_URL}/TheXringClassic.png`} 
+              src={`${process.env.PUBLIC_URL}/x-ring-classic-logo.png`}
               alt="The X-Ring Classic" 
               className="h-16 w-auto object-contain"
             />

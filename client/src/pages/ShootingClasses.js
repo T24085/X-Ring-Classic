@@ -92,13 +92,13 @@ const ShootingClasses = () => {
       <div className="text-center">
         <div className="mb-6">
           <img 
-            src={`${process.env.PUBLIC_URL}/TheXringClassic.png`} 
+            src={`${process.env.PUBLIC_URL}/x-ring-classic-logo.png`}
             alt="The X-Ring Classic" 
             className="h-20 w-auto mx-auto object-contain"
           />
         </div>
-        <h1 className="text-4xl font-bold text-white mb-4 drop-shadow-lg">Shooting Classes</h1>
-        <p className="text-xl text-white max-w-3xl mx-auto drop-shadow-md">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4 drop-shadow-lg">Shooting Classes</h1>
+        <p className="text-xl text-gray-700 max-w-3xl mx-auto drop-shadow-md">
           The X-Ring Classic features a comprehensive classification system designed to recognize 
           skill progression and create fair competition across all levels of marksmanship.
         </p>
@@ -115,7 +115,7 @@ const ShootingClasses = () => {
 
       {/* Classification Tiers */}
       <div className="space-y-6">
-        <h2 className="text-3xl font-bold text-white text-center mb-8 drop-shadow-lg">
+        <h2 className="text-3xl font-bold text-gray-900 text-center mb-8 drop-shadow-lg">
           📊 Classification Tiers
         </h2>
         
@@ -123,7 +123,7 @@ const ShootingClasses = () => {
           {classificationTiers.map((tier) => (
             <div 
               key={tier.id}
-              className={`${tier.bgColor} ${tier.borderColor} border-2 rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer`}
+              className={`site-panel ${tier.bgColor} ${tier.borderColor} cursor-pointer p-6 transition-all duration-300 hover:-translate-y-1 hover:border-red-400/50`}
               onClick={() => setSelectedClass(tier)}
             >
               <div className="flex items-center space-x-4 mb-4">
@@ -154,7 +154,7 @@ const ShootingClasses = () => {
       {/* Class Details Modal */}
       {selectedClass && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-6">
+          <div className="site-panel max-w-2xl w-full p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <RankLogo classification={selectedClass.name} size={40} />
@@ -188,7 +188,7 @@ const ShootingClasses = () => {
       )}
 
       {/* Additional Rules Section */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-8">
+      <div className="site-panel p-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
           📝 Additional Rules
         </h2>
@@ -227,7 +227,7 @@ const ShootingClasses = () => {
       </div>
 
       {/* Why This Works Section */}
-      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-8">
+      <div className="site-panel p-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
           ✅ Why This Works
         </h2>
@@ -257,7 +257,7 @@ const ShootingClasses = () => {
       </div>
 
       {/* Information Section */}
-      <div className="bg-blue-50 rounded-lg p-6">
+      <div className="site-panel-soft p-6">
         <div className="flex items-center space-x-3 mb-4">
           <Info className="w-6 h-6 text-blue-600" />
           <h2 className="text-xl font-semibold text-gray-900">How Classes Work</h2>

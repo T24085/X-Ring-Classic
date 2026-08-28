@@ -116,12 +116,12 @@ const XRingClassicRulebook = () => {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">The X-Ring Classic Rulebook</h1>
-        <p className="text-white drop-shadow-md">Official rules, scoring, and classifications</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2 drop-shadow-lg">The X-Ring Classic Rulebook</h1>
+        <p className="text-gray-700 drop-shadow-md">Official rules, scoring, and classifications</p>
       </div>
 
       {/* Table of contents */}
-      <div className="bg-white rounded-lg shadow-sm border p-4">
+      <div className="site-panel p-4">
         <h2 className="text-lg font-semibold mb-2">Table of Contents</h2>
         <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
           {sections.map(s => (
@@ -131,7 +131,7 @@ const XRingClassicRulebook = () => {
       </div>
 
       {/* Rules content */}
-      <div className="bg-white rounded-lg shadow-sm border p-6 space-y-8">
+      <div className="site-panel p-6 space-y-8">
         {sections.map(s => (
           <section key={s.id} id={s.id}>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">{s.title}</h3>
@@ -147,7 +147,7 @@ const XRingClassicRulebook = () => {
       </div>
 
       {/* Legacy PDF link for reference */}
-      <div className="bg-white rounded-lg shadow-sm border p-4">
+      <div className="site-panel p-4">
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-700">Looking for the previous PDF?</div>
           <a href={pdfPath} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-gray-800 text-white rounded hover:bg-gray-900 text-sm">Open Previous PDF</a>

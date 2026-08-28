@@ -146,7 +146,7 @@ const RangeAdminSignup = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2">
           <div className="p-8 lg:p-10 bg-slate-900 text-white">
             <img
-              src={`${process.env.PUBLIC_URL}/TheXringClassic.png`}
+              src={`${process.env.PUBLIC_URL}/x-ring-classic-logo.png`}
               alt="The X-Ring Classic"
               className="h-16 w-auto object-contain mb-6"
             />

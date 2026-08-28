@@ -46,15 +46,15 @@ const Ranges = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">Participating Ranges</h1>
-        <p className="text-white drop-shadow-md">
+        <h1 className="text-3xl font-bold text-gray-900 mb-4 drop-shadow-lg">Participating Ranges</h1>
+        <p className="text-gray-700 drop-shadow-md">
           Discover the shooting ranges that are part of the X-Ring Classic competition network
         </p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="site-panel p-6">
           <div className="flex items-center">
             <Building2 className="w-8 h-8 text-blue-500" />
             <div className="ml-4">
@@ -63,7 +63,7 @@ const Ranges = () => {
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="site-panel p-6">
           <div className="flex items-center">
             <MapPin className="w-8 h-8 text-green-500" />
             <div className="ml-4">
@@ -74,7 +74,7 @@ const Ranges = () => {
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="site-panel p-6">
           <div className="flex items-center">
             <Globe className="w-8 h-8 text-purple-500" />
             <div className="ml-4">
@@ -87,7 +87,7 @@ const Ranges = () => {
 
       {/* Ranges Grid */}
       {ranges.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
+        <div className="site-panel p-12 text-center">
           <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No ranges available yet</h3>
           <p className="text-gray-600">Check back soon as we expand our network of participating ranges.</p>
@@ -95,7 +95,7 @@ const Ranges = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {ranges.map((range) => (
-            <div key={range.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
+            <div key={range.id} className="site-panel group transition-all duration-300 hover:-translate-y-1 hover:border-red-400/40">
               <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-2">

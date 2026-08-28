@@ -294,7 +294,7 @@ const CompetitionDetail = () => {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="site-panel p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <div className="flex items-center space-x-3 mb-2">
@@ -387,7 +387,7 @@ const CompetitionDetail = () => {
 
       {/* Registration Button */}
       {(competition.status === 'published' || competition.status === 'active') && !isRegistered && !justRegistered && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="site-panel-soft p-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-medium text-blue-900">Ready to compete?</h3>
@@ -405,7 +405,7 @@ const CompetitionDetail = () => {
       )}
 
       {(isRegistered || justRegistered) && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="site-panel p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <CheckCircle className="h-5 w-5 text-green-600" />
@@ -423,7 +423,7 @@ const CompetitionDetail = () => {
 
       {/* Winner Announcement Section */}
       {winner && aggregatedScores.length > 0 && (
-        <div className="bg-gradient-to-r from-yellow-50 via-yellow-100 to-yellow-50 border-4 border-yellow-400 rounded-lg p-8 shadow-lg">
+        <div className="site-panel-soft p-8">
           <div className="text-center">
             <div className="flex items-center justify-center mb-4">
               <Trophy className="h-16 w-16 text-yellow-600" />
@@ -431,11 +431,11 @@ const CompetitionDetail = () => {
             <h2 className="text-3xl font-bold text-gray-900 mb-2">🏆 Competition Winner 🏆</h2>
             <div className="text-4xl font-bold text-yellow-700 mb-2">{winner.displayName}</div>
             <div className="grid grid-cols-2 gap-4 max-w-md mx-auto mt-6">
-              <div className="bg-white rounded-lg p-4 shadow">
+              <div className="site-panel p-4">
                 <div className="text-sm text-gray-600 mb-1">Total Score</div>
                 <div className="text-2xl font-bold text-gray-900">{winner.totalScore.toFixed(1)}</div>
               </div>
-              <div className="bg-white rounded-lg p-4 shadow">
+              <div className="site-panel p-4">
                 <div className="text-sm text-gray-600 mb-1">Total X Count</div>
                 <div className="text-2xl font-bold text-gray-900">{winner.totalXCount}</div>
               </div>
@@ -452,7 +452,7 @@ const CompetitionDetail = () => {
       )}
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow-sm border">
+      <div className="site-panel overflow-hidden">
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8 px-6">
             {[

@@ -34,15 +34,15 @@ const PUBLIC_EXACT_PATHS = new Set([
 ]);
 
 const ColbyChristieBanner = () => (
-  <aside className="hidden self-stretch lg:block">
-    <div className="sticky top-24 flex max-h-[calc(100vh-7rem)] min-h-[36rem] flex-col overflow-hidden rounded-xl border border-yellow-700/60 bg-black shadow-xl">
+  <aside className="block w-full self-stretch">
+    <div className="relative mx-auto flex w-full max-w-[18rem] flex-col overflow-hidden rounded-xl border border-yellow-700/60 bg-black shadow-xl lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:min-h-[36rem]">
       <img
         src={`${process.env.PUBLIC_URL}/colby-christie-gunsmithing.png`}
         alt="Colby Christie Gunsmithing — precision, reliability, performance"
-        className="block h-auto w-full flex-none object-cover"
+        className="block h-auto w-full flex-none object-contain"
         loading="lazy"
       />
-      <div className="flex min-h-[8rem] flex-1 flex-col items-center justify-center bg-gradient-to-b from-black via-gray-950 to-black px-3 py-6 text-center text-yellow-500">
+      <div className="flex min-h-[7rem] flex-1 flex-col items-center justify-center bg-gradient-to-b from-black via-gray-950 to-black px-3 py-5 text-center text-yellow-500">
         <div className="mb-3 h-px w-2/3 bg-yellow-600/60" />
         <p className="text-[10px] font-bold uppercase tracking-[0.18em]">Colby Christie</p>
         <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-gray-300">Gunsmithing</p>
@@ -154,9 +154,9 @@ const Layout = () => {
           <div className="flex min-h-[76px] items-center gap-4 lg:gap-6">
             {/* Brand lockup */}
             <Link to="/" className="group flex shrink-0 items-center gap-3" aria-label="The X-Ring Classic home">
-              <span className="relative flex h-12 w-[4.5rem] items-center justify-center overflow-hidden rounded-lg border border-white/15 bg-white shadow-lg shadow-black/20 transition-transform duration-300 group-hover:-translate-y-0.5">
+              <span className="relative flex h-12 w-[4.5rem] items-center justify-center overflow-hidden rounded-lg border border-white/15 bg-black/45 shadow-lg shadow-black/20 backdrop-blur-sm transition-transform duration-300 group-hover:-translate-y-0.5">
                 <img
-                  src={`${process.env.PUBLIC_URL}/TheXringClassic.png`}
+                  src={`${process.env.PUBLIC_URL}/x-ring-classic-logo.png`}
                   alt="The X-Ring Classic"
                   className="h-full w-full object-contain"
                 />
@@ -375,11 +375,11 @@ const Layout = () => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="mx-auto max-w-7xl px-3 py-5 sm:px-6 sm:py-8 lg:px-8">
         {isPublicPage ? (
-          <div className="relative grid items-start gap-4 lg:grid-cols-[minmax(0,10rem)_minmax(0,1fr)_minmax(0,10rem)] xl:grid-cols-[minmax(0,14rem)_minmax(0,1fr)_minmax(0,14rem)] 2xl:grid-cols-[minmax(0,16rem)_minmax(0,1fr)_minmax(0,16rem)] xl:gap-6">
+          <div className="relative grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,10rem)_minmax(0,1fr)_minmax(0,10rem)] xl:grid-cols-[minmax(0,14rem)_minmax(0,1fr)_minmax(0,14rem)] 2xl:grid-cols-[minmax(0,16rem)_minmax(0,1fr)_minmax(0,16rem)] xl:gap-6">
             <ColbyChristieBanner />
-            <div className="min-w-0">
+            <div className="order-2 min-w-0 lg:order-none">
               <Outlet />
             </div>
             <ColbyChristieBanner />
@@ -396,7 +396,7 @@ const Layout = () => {
             {/* Banner in Footer */}
             <div className="mb-6">
               <img 
-                src={`${process.env.PUBLIC_URL}/TheXringClassic.png`} 
+                src={`${process.env.PUBLIC_URL}/x-ring-classic-logo.png`}
                 alt="The X-Ring Classic" 
                 className="h-16 w-auto mx-auto object-contain"
               />

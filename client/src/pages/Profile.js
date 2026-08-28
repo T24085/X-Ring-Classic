@@ -175,7 +175,7 @@ const Profile = () => {
   const renderOverview = () => (
     <div className="space-y-6">
       {/* Profile Header */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="site-panel p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
             <div className={`w-20 h-20 rounded-full flex items-center justify-center overflow-hidden ${hasRankLogo(user?.classification) ? 'border-2 border-gray-200 bg-gray-50' : 'bg-rifle-600'}`}>
@@ -314,7 +314,7 @@ const Profile = () => {
 
       {/* Edit Profile Form */}
       {isEditing && isViewingOwnProfile && (
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="site-panel p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Edit Profile</h3>
           <form onSubmit={handleSubmit(handleProfileUpdate)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -783,7 +783,7 @@ const Profile = () => {
     return (
       <div className="space-y-6">
         {/* Statistics Snapshot */}
-        <div className="bg-white rounded-lg shadow p-6 border border-gray-100">
+        <div className="site-panel p-6">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Statistics Snapshot</h3>
@@ -831,22 +831,22 @@ const Profile = () => {
 
         {/* Core Performance */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
+          <div className="site-panel p-4">
             <p className="text-sm text-gray-600">Average Score</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">{avgScore.toFixed(1)}</p>
             <p className="text-xs text-gray-500 mt-1">Median: {medianScore.toFixed(1)}</p>
           </div>
-          <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
+          <div className="site-panel p-4">
             <p className="text-sm text-gray-600">Discipline Bests</p>
             <p className="text-lg font-bold text-gray-900 mt-1">Indoor: {bestIndoor || 'N/A'}</p>
             <p className="text-lg font-bold text-gray-900">Outdoor: {bestOutdoor || 'N/A'}</p>
           </div>
-          <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
+          <div className="site-panel p-4">
             <p className="text-sm text-gray-600">Consistency (Std Dev)</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">{consistency.toFixed(1)}</p>
             <p className="text-xs text-gray-500 mt-1">Lower means steadier results</p>
           </div>
-          <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
+          <div className="site-panel p-4">
             <p className="text-sm text-gray-600">Improvement</p>
             <p className={`text-2xl font-bold mt-1 ${improvement >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {improvement >= 0 ? '+' : ''}{improvement.toFixed(1)}
@@ -857,17 +857,17 @@ const Profile = () => {
 
         {/* Momentum */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
+          <div className="site-panel p-4">
             <p className="text-sm text-gray-600">Current Streak</p>
             <p className="text-2xl font-bold text-blue-600 mt-1">{currentStreak}</p>
             <p className="text-xs text-gray-500 mt-1">Consecutive above-average scores</p>
           </div>
-          <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
+          <div className="site-panel p-4">
             <p className="text-sm text-gray-600">Best Streak</p>
             <p className="text-2xl font-bold text-purple-600 mt-1">{bestStreak}</p>
             <p className="text-xs text-gray-500 mt-1">All-time best run</p>
           </div>
-          <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
+          <div className="site-panel p-4">
             <p className="text-sm text-gray-600">Average X Count</p>
             <p className="text-2xl font-bold text-amber-700 mt-1">{avgXCount.toFixed(1)}</p>
             <p className="text-xs text-gray-500 mt-1">Total X hits: {totalXCount}</p>
@@ -875,7 +875,7 @@ const Profile = () => {
         </div>
 
         {/* Score Trend Chart */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="site-panel p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-1">Score Trend (Last 20 Entries)</h3>
           <p className="text-sm text-gray-600 mb-4">Hover each point for score, competition, and full date details.</p>
           {scoreTrend.length > 0 ? (
@@ -933,7 +933,7 @@ const Profile = () => {
         {totalShots > 0 && (
           <>
             {/* Shot Value Distribution */}
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="site-panel p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Shot Value Distribution</h3>
               <p className="text-sm text-gray-600 mb-4">Distribution of individual shot values across all competitions</p>
               {shotValueDistribution.some(s => s.count > 0) ? (
@@ -992,7 +992,7 @@ const Profile = () => {
             </div>
 
             {/* Shot Position Performance */}
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="site-panel p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Average Score by Shot Position</h3>
               <p className="text-sm text-gray-600 mb-4">Performance analysis across shot positions (1-{shotPositionPerformance.length})</p>
               {shotPositionPerformance.some(p => p.count > 0) ? (
@@ -1042,7 +1042,7 @@ const Profile = () => {
             </div>
 
             {/* Shot Grouping Analysis */}
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="site-panel p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance by Shot Grouping</h3>
               <p className="text-sm text-gray-600 mb-4">Average score comparison: First 5 shots vs Middle vs Last 5 shots</p>
               {shotGroupingData.some(g => g.avgScore > 0) ? (
@@ -1085,7 +1085,7 @@ const Profile = () => {
             </div>
 
             {/* X-Hit Rate Trend */}
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="site-panel p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">X-Hit Rate Trend</h3>
               <p className="text-sm text-gray-600 mb-4">Percentage of X-shots over time (Last 20 competitions)</p>
               {xHitRateTrend.length > 0 ? (
@@ -1140,7 +1140,7 @@ const Profile = () => {
 
         {/* Indoor vs Outdoor Comparison */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="site-panel p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Indoor vs Outdoor</h3>
             {indoorVsOutdoor.some(d => d.count > 0) ? (
               <ResponsiveContainer width="100%" height={250}>
@@ -1167,7 +1167,7 @@ const Profile = () => {
             )}
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="site-panel p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Indoor vs Outdoor Average</h3>
             {indoorVsOutdoor.some(d => d.count > 0) ? (
               <ResponsiveContainer width="100%" height={250}>
@@ -1204,7 +1204,7 @@ const Profile = () => {
         </div>
 
         {/* Recent Performance */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="site-panel p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Performance</h3>
           <div className="space-y-4">
             {sortedScores.slice(0, 10).map((score) => {
@@ -1241,7 +1241,7 @@ const Profile = () => {
       {/* Shots Modal */}
       {shotsModalScore && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="site-panel max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-xl font-semibold text-gray-900">Shots — {getCompetitionTitle(shotsModalScore)}</h4>
@@ -1292,7 +1292,7 @@ const Profile = () => {
 
       {/* Rank Information */}
       {user?.classification && user.classification !== 'Unclassified' && (
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="site-panel p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Rank Information</h3>
           <div className="flex items-center justify-center p-6 bg-gradient-to-r from-rifle-50 to-rifle-100 rounded-lg border border-rifle-200">
             <div className="text-center">
@@ -1319,7 +1319,7 @@ const Profile = () => {
 
   const renderHistory = () => (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="site-panel p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Competition History</h3>
         {competitionsLoading ? (
           <div className="text-center py-8">
@@ -1370,7 +1370,7 @@ const Profile = () => {
 
   const renderSettings = () => (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="site-panel p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Settings</h3>
         <div className="space-y-4">
           <div>
@@ -1436,7 +1436,7 @@ const Profile = () => {
           <h1 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">Profile</h1>
           <p className="text-white drop-shadow-md">Manage your account and view your statistics</p>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="site-panel p-6">
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rifle-600 mx-auto"></div>
             <p className="mt-2 text-gray-600">Loading profile...</p>
@@ -1458,7 +1458,7 @@ const Profile = () => {
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white rounded-lg shadow">
+      <div className="site-panel">
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8 px-6">
             {tabs.map((tab) => {
@@ -1488,7 +1488,7 @@ const Profile = () => {
       {/* Change Password Modal */}
       {showChangePasswordModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full">
+          <div className="site-panel max-w-md w-full">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-semibold text-gray-900">Change Password</h3>

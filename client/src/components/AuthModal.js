@@ -62,7 +62,7 @@ const AuthModal = () => {
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative">
         <div className="text-center mb-6">
           <img 
-            src={`${process.env.PUBLIC_URL}/TheXringClassic.png`} 
+            src={`${process.env.PUBLIC_URL}/x-ring-classic-logo.png`}
             alt="The X-Ring Classic" 
             className="h-16 w-auto object-contain mx-auto mb-4"
           />

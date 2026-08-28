@@ -85,24 +85,24 @@ const Leaderboard = () => {
 
   const getClassBadgeStyles = (classification) => {
     const cls = normalizeClass(classification);
-    if (cls === 'grand master') return 'bg-purple-50 text-purple-700 border border-purple-200';
-    if (cls === 'master') return 'bg-blue-50 text-blue-700 border border-blue-200';
-    if (cls === 'diamond') return 'bg-cyan-50 text-cyan-700 border border-cyan-200';
-    if (cls === 'platinum') return 'bg-gray-50 text-gray-700 border border-gray-200';
-    if (cls === 'gold') return 'bg-yellow-50 text-yellow-800 border border-yellow-200';
-    if (cls === 'bronze') return 'bg-orange-50 text-orange-700 border border-orange-200';
-    return 'bg-gray-50 text-gray-700 border border-gray-200';
+    if (cls === 'grand master') return 'bg-purple-500/15 text-purple-200 border border-purple-300/30';
+    if (cls === 'master') return 'bg-blue-500/15 text-blue-200 border border-blue-300/30';
+    if (cls === 'diamond') return 'bg-cyan-500/15 text-cyan-200 border border-cyan-300/30';
+    if (cls === 'platinum') return 'bg-white/10 text-gray-200 border border-white/20';
+    if (cls === 'gold') return 'bg-yellow-500/15 text-yellow-200 border border-yellow-300/30';
+    if (cls === 'bronze') return 'bg-orange-500/15 text-orange-200 border border-orange-300/30';
+    return 'bg-white/10 text-gray-200 border border-white/20';
   };
 
   const getClassRowBg = (classification) => {
     const cls = normalizeClass(classification);
-    if (cls === 'grand master') return 'bg-purple-50';
-    if (cls === 'master') return 'bg-blue-50';
-    if (cls === 'diamond') return 'bg-cyan-50';
-    if (cls === 'platinum') return 'bg-gray-50';
-    if (cls === 'gold') return 'bg-yellow-50';
-    if (cls === 'bronze') return 'bg-orange-50';
-    return 'bg-white';
+    if (cls === 'grand master') return 'bg-purple-500/10';
+    if (cls === 'master') return 'bg-blue-500/10';
+    if (cls === 'diamond') return 'bg-cyan-500/10';
+    if (cls === 'platinum') return 'bg-white/[0.03]';
+    if (cls === 'gold') return 'bg-yellow-500/10';
+    if (cls === 'bronze') return 'bg-orange-500/10';
+    return 'bg-white/[0.02]';
   };
 
   const displayClass = (classification) =>
@@ -140,18 +140,18 @@ const Leaderboard = () => {
       <div className="text-center">
         <div className="mb-6">
           <img
-            src={`${process.env.PUBLIC_URL}/TheXringClassic.png`}
+            src={`${process.env.PUBLIC_URL}/x-ring-classic-logo.png`}
             alt="The X-Ring Classic"
             className="h-20 w-auto mx-auto object-contain"
           />
         </div>
-        <h1 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">Competition Leaderboard</h1>
-        <p className="text-white drop-shadow-md">
+        <h1 className="text-3xl font-bold text-gray-900 mb-4 drop-shadow-lg">Competition Leaderboard</h1>
+        <p className="text-gray-700 drop-shadow-md">
           Ranked by average score across all approved scorecards, with X average as tie-breaker
         </p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="site-panel p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Weapon Category</label>
@@ -183,7 +183,7 @@ const Leaderboard = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow-sm border p-4">
+        <div className="site-panel p-4">
           <div className="flex items-center">
             <Users className="h-8 w-8 text-blue-600 mr-3" />
             <div>
@@ -193,7 +193,7 @@ const Leaderboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border p-4">
+        <div className="site-panel p-4">
           <div className="flex items-center">
             <Target className="h-8 w-8 text-green-600 mr-3" />
             <div>
@@ -203,7 +203,7 @@ const Leaderboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border p-4">
+        <div className="site-panel p-4">
           <div className="flex items-center">
             <Trophy className="h-8 w-8 text-yellow-600 mr-3" />
             <div>
@@ -215,7 +215,7 @@ const Leaderboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border p-4">
+        <div className="site-panel p-4">
           <div className="flex items-center">
             <Calendar className="h-8 w-8 text-purple-600 mr-3" />
             <div>
@@ -226,7 +226,7 @@ const Leaderboard = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+      <div className="site-panel overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Rankings</h2>
         </div>
@@ -254,17 +254,17 @@ const Leaderboard = () => {
                 </span>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                <div className="bg-white/80 rounded p-2">
+                <div className="rounded-xl border border-white/10 bg-white/[0.06] p-2">
                   <p className="text-gray-600">Avg/Card</p>
                   <p className="font-semibold text-gray-900">{entry.averageScore?.toFixed(1) ?? '0.0'}</p>
                 </div>
-                <div className="bg-white/80 rounded p-2">
+                <div className="rounded-xl border border-white/10 bg-white/[0.06] p-2">
                   <p className="text-gray-600">Avg X/Card</p>
                   <p className="font-semibold text-gray-900">
                     {getAvgXPerCard(entry).toFixed(1)}
                   </p>
                 </div>
-                <div className="bg-white/80 rounded p-2">
+                <div className="rounded-xl border border-white/10 bg-white/[0.06] p-2">
                   <p className="text-gray-600">Cards</p>
                   <p className="font-semibold text-gray-900">{entry.scoresCount ?? 0}</p>
                 </div>

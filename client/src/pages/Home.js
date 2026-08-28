@@ -296,7 +296,7 @@ const Home = () => {
   // Small-screen quick auth CTA
   const MobileAuthCta = () => (
       <div className="sm:hidden mb-4">
-      <div className="bg-white border-2 border-red-800 rounded-xl p-4 flex items-center justify-between">
+      <div className="site-panel p-4 flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-600">Welcome to The X-Ring Classic</p>
           <p className="text-base font-medium text-gray-900">Sign in or create an account</p>
@@ -338,22 +338,22 @@ const Home = () => {
       )}
       <MobileAuthCta />
       {/* Hero Section with Banner */}
-      <section className="relative overflow-hidden rounded-2xl">
+      <section className="site-panel relative overflow-hidden p-3 shadow-[0_24px_70px_rgba(0,0,0,0.42)] sm:-mt-12 sm:p-5">
         {/* Banner Image */}
-        <div className="relative">
+        <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#07090f]/90 shadow-inner shadow-black/40 backdrop-blur-xl">
           <img 
-            src={`${process.env.PUBLIC_URL}/TheXringClassic.png`} 
+            src={`${process.env.PUBLIC_URL}/x-ring-classic-logo.png`}
             alt="The X-Ring Classic Banner" 
-            className="w-full h-auto object-cover"
+            className="mx-auto block h-auto max-h-[30rem] w-full object-contain"
           />
           
-          {/* Content Overlay - Positioned in bottom section to avoid conflicts */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-8">
+          {/* Content bar keeps the page background and logo details from competing with the CTA. */}
+          <div className="relative border-t border-red-500/20 bg-[#07090f]/90 p-5 backdrop-blur-xl sm:p-7">
             <div className="text-center text-white">
-              <p className="text-lg md:text-xl mb-4 drop-shadow-lg font-medium">
+              <p className="mx-auto mb-4 max-w-2xl text-base font-medium leading-relaxed text-gray-100 drop-shadow-lg sm:text-lg md:text-xl">
                 The premier platform for precision .22 rifle competitions and marksmanship excellence
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
                 <Link
                   to="/competitions"
                   className="bg-white text-gray-900 px-6 py-2 rounded-lg font-semibold hover:bg-gray-200 transition-colors shadow-lg text-sm"
@@ -376,7 +376,7 @@ const Home = () => {
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Link
           to="/competitions"
-          className="group bg-white rounded-2xl border-2 border-red-800/70 shadow-sm hover:shadow-md transition-shadow p-6"
+          className="site-panel group p-6 transition-all duration-300 hover:-translate-y-1 hover:border-red-400/40"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -392,7 +392,7 @@ const Home = () => {
 
         <Link
           to="/leaderboard"
-          className="group bg-white rounded-2xl border-2 border-red-800/70 shadow-sm hover:shadow-md transition-shadow p-6"
+          className="site-panel group p-6 transition-all duration-300 hover:-translate-y-1 hover:border-red-400/40"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -408,7 +408,7 @@ const Home = () => {
 
         <Link
           to={isAuthenticated ? "/profile" : "/login"}
-          className="group bg-white rounded-2xl border-2 border-red-800/70 shadow-sm hover:shadow-md transition-shadow p-6"
+          className="site-panel group p-6 transition-all duration-300 hover:-translate-y-1 hover:border-red-400/40"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -425,7 +425,7 @@ const Home = () => {
 
       {/* Latest Competition Winner */}
       {latestCompetitionWinner && latestCompetitionWinner.winner && (
-        <section className="relative overflow-hidden rounded-3xl border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 via-yellow-100 to-yellow-50 shadow-xl">
+        <section className="site-panel-soft relative overflow-hidden">
           <div
             className="absolute inset-0 opacity-20"
             style={{
@@ -471,14 +471,14 @@ const Home = () => {
 
               <div className="flex-1">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white rounded-2xl p-5 shadow-sm border border-yellow-600/15">
+                  <div className="site-panel p-5">
                     <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Total Score</div>
                     <div className="text-3xl font-extrabold text-gray-900 mt-1">
                       {latestCompetitionWinner.winner.totalScore.toFixed(1)}
                     </div>
                     <div className="text-sm text-gray-600 mt-1">Across submitted scorecards</div>
                   </div>
-                  <div className="bg-white rounded-2xl p-5 shadow-sm border border-yellow-600/15">
+                  <div className="site-panel p-5">
                     <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Total X Count</div>
                     <div className="text-3xl font-extrabold text-gray-900 mt-1">
                       {latestCompetitionWinner.winner.totalXCount}
@@ -622,7 +622,7 @@ const Home = () => {
           </Link>
         </div>
         
-            <div className="bg-white rounded-2xl border-2 border-red-800 shadow-sm p-6">
+            <div className="site-panel p-6">
               {(() => {
                 const lb = topShooters?.leaderboard || [];
                 const podium = lb.slice(0, 3);
@@ -749,7 +749,7 @@ const Home = () => {
               })()}
             </div>
         {/* Classification Legend */}
-        <div className="mt-4 bg-white rounded-lg shadow-sm border-2 border-red-800 p-4">
+        <div className="site-panel mt-4 p-4">
           <h3 className="text-sm font-semibold text-gray-900 mb-3">Classification Legend</h3>
           <div className="flex flex-wrap gap-2">
             {[
@@ -772,7 +772,7 @@ const Home = () => {
       </section>
 
       {/* Call to Action */}
-      <section className="text-center py-16 bg-white rounded-2xl border-2 border-red-800">
+      <section className="site-panel text-center py-16">
         <h2 className="text-3xl font-bold text-gray-900 mb-4">
           Ready to Compete?
         </h2>
