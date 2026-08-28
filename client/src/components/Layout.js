@@ -33,8 +33,8 @@ const PUBLIC_EXACT_PATHS = new Set([
   '/sponsorship',
 ]);
 
-const ColbyChristieBanner = () => (
-  <aside className="block w-full self-stretch">
+const ColbyChristieBanner = ({ className = '' }) => (
+  <aside className={`block w-full self-stretch ${className}`}>
     <div className="relative mx-auto flex w-full max-w-[18rem] flex-col overflow-hidden rounded-xl border border-yellow-700/60 bg-black shadow-xl lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:min-h-[36rem]">
       <img
         src={`${process.env.PUBLIC_URL}/colby-christie-gunsmithing.png`}
@@ -132,17 +132,17 @@ const Layout = () => {
   return (
     <div className="min-h-screen relative z-10">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0a0d13]/95 shadow-[0_16px_45px_rgba(0,0,0,0.3)] backdrop-blur-xl">
-        <div className="border-b border-white/5 bg-black/20">
+      <header className="sticky top-0 z-50 border-b border-transparent bg-transparent">
+        <div className="border-b border-transparent bg-transparent">
           <div className="mx-auto flex max-w-[92rem] items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-gray-500 sm:text-[10px]">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-gray-700/75 sm:text-[10px]">
               The X-Ring Classic <span className="px-1 text-red-500">/</span> Precision in every round
             </p>
             <a
               href="https://shop.gunguysii.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-400 transition-colors hover:text-yellow-400 sm:flex"
+              className="hidden items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-700/75 transition-colors hover:text-red-600 sm:flex"
             >
               Gun Guys II online shop
               <ArrowUpRightIcon className="h-3 w-3" />
@@ -154,17 +154,17 @@ const Layout = () => {
           <div className="flex min-h-[76px] items-center gap-4 lg:gap-6">
             {/* Brand lockup */}
             <Link to="/" className="group flex shrink-0 items-center gap-3" aria-label="The X-Ring Classic home">
-              <span className="relative flex h-12 w-[4.5rem] items-center justify-center overflow-hidden rounded-lg border border-white/15 bg-black/45 shadow-lg shadow-black/20 backdrop-blur-sm transition-transform duration-300 group-hover:-translate-y-0.5">
+              <span className="relative flex h-14 w-[5.5rem] items-center justify-center overflow-hidden transition-transform duration-300 group-hover:-translate-y-0.5">
                 <img
                   src={`${process.env.PUBLIC_URL}/x-ring-classic-logo.png`}
                   alt="The X-Ring Classic"
-                  className="h-full w-full object-contain"
+                  className="h-full w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.3)]"
                 />
               </span>
             </Link>
 
             {/* Desktop navigation */}
-            <nav className="ml-auto hidden items-center gap-0.5 lg:flex" aria-label="Primary navigation">
+            <nav className="ml-auto hidden items-center gap-0.5 rounded-full border border-white/15 bg-black/80 p-1 shadow-[0_12px_32px_rgba(0,0,0,0.28)] backdrop-blur-xl lg:flex" aria-label="Primary navigation">
               {mainNavigation.map((item) => {
                 const isActive = location.pathname === item.href;
                 return (
@@ -172,13 +172,13 @@ const Layout = () => {
                     key={item.name}
                     to={item.href}
                     aria-current={isActive ? 'page' : undefined}
-                    className={`group relative flex items-center gap-2 px-3 py-7 text-[10px] font-semibold uppercase tracking-[0.13em] transition-colors duration-200 xl:px-3.5 ${
-                      isActive ? 'text-white' : 'text-gray-500 hover:text-gray-100'
+                    className={`group relative flex items-center gap-2 rounded-full px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.13em] transition-colors duration-200 xl:px-3.5 ${
+                      isActive ? 'bg-red-500/20 text-white' : 'text-gray-300 hover:bg-white/10 hover:text-white'
                     }`}
                   >
-                    <item.icon className={`h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5 ${isActive ? 'text-red-400' : 'text-gray-600 group-hover:text-red-400'}`} />
+                    <item.icon className={`h-4 w-4 transition-transform duration-200 group-hover:-translate-y-0.5 ${isActive ? 'text-red-300' : 'text-gray-400 group-hover:text-red-300'}`} />
                     <span>{item.name}</span>
-                    <span className={`absolute bottom-0 left-3 right-3 h-0.5 origin-center rounded-full bg-red-500 transition-transform duration-200 xl:left-3.5 xl:right-3.5 ${isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
+                    <span className={`absolute bottom-1 left-3 right-3 h-0.5 origin-center rounded-full bg-red-500 transition-transform duration-200 xl:left-3.5 xl:right-3.5 ${isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
                   </Link>
                 );
               })}
@@ -187,11 +187,11 @@ const Layout = () => {
                 <Link
                   to="/profile"
                   aria-current={location.pathname === '/profile' ? 'page' : undefined}
-                  className={`group relative flex items-center gap-2 px-3 py-7 text-[10px] font-semibold uppercase tracking-[0.13em] transition-colors duration-200 ${location.pathname === '/profile' ? 'text-white' : 'text-gray-500 hover:text-gray-100'}`}
+                  className={`group relative flex items-center gap-2 rounded-full px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.13em] transition-colors duration-200 ${location.pathname === '/profile' ? 'bg-red-500/20 text-white' : 'text-gray-300 hover:bg-white/10 hover:text-white'}`}
                 >
-                  <UserIcon className={`h-4 w-4 ${location.pathname === '/profile' ? 'text-red-400' : 'text-gray-600 group-hover:text-red-400'}`} />
+                  <UserIcon className={`h-4 w-4 ${location.pathname === '/profile' ? 'text-red-300' : 'text-gray-400 group-hover:text-red-300'}`} />
                   <span>Profile</span>
-                  <span className={`absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-red-500 transition-transform duration-200 ${location.pathname === '/profile' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
+                  <span className={`absolute bottom-1 left-3 right-3 h-0.5 rounded-full bg-red-500 transition-transform duration-200 ${location.pathname === '/profile' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
                 </Link>
               )}
 
@@ -201,12 +201,12 @@ const Layout = () => {
                     type="button"
                     onClick={() => setAdminDropdownOpen(!adminDropdownOpen)}
                     aria-expanded={adminDropdownOpen}
-                    className={`group relative flex items-center gap-2 px-3 py-7 text-[10px] font-semibold uppercase tracking-[0.13em] transition-colors duration-200 ${isAdminRoute ? 'text-white' : 'text-gray-500 hover:text-gray-100'}`}
+                    className={`group relative flex items-center gap-2 rounded-full px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.13em] transition-colors duration-200 ${isAdminRoute ? 'bg-red-500/20 text-white' : 'text-gray-300 hover:bg-white/10 hover:text-white'}`}
                   >
-                    <CogIcon className={`h-4 w-4 ${isAdminRoute ? 'text-red-400' : 'text-gray-600 group-hover:text-red-400'}`} />
+                    <CogIcon className={`h-4 w-4 ${isAdminRoute ? 'text-red-300' : 'text-gray-400 group-hover:text-red-300'}`} />
                     <span>Admin</span>
                     <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform duration-200 ${adminDropdownOpen ? 'rotate-180 text-red-400' : ''}`} />
-                    <span className={`absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-red-500 transition-transform duration-200 ${isAdminRoute ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
+                    <span className={`absolute bottom-1 left-3 right-3 h-0.5 rounded-full bg-red-500 transition-transform duration-200 ${isAdminRoute ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}`} />
                   </button>
 
                   {adminDropdownOpen && (
@@ -236,21 +236,21 @@ const Layout = () => {
                   )}
                 </div>
               )}
+            </nav>
 
               <a
                 href="https://shop.gunguysii.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="ml-2 flex items-center gap-2 rounded-lg border border-red-400/30 bg-red-600 px-3.5 py-3 text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-lg shadow-red-950/30 transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-500 hover:shadow-red-950/50"
+                className="ml-2 flex items-center gap-2 rounded-full border border-red-500/40 bg-red-600 px-4 py-3 text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-lg shadow-red-950/25 transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-500 hover:shadow-red-950/40"
               >
                 <ShoppingBagIcon className="h-4 w-4" />
                 <span>Shop</span>
                 <ArrowUpRightIcon className="h-3.5 w-3.5" />
               </a>
-            </nav>
 
             {/* Desktop account utility */}
-            <div className="hidden items-center gap-3 border-l border-white/10 pl-4 lg:flex">
+            <div className="hidden items-center gap-3 border-l border-black/10 pl-4 lg:flex">
               {isAuthenticated ? (
                 <>
                   <Link to="/profile" className="group flex items-center gap-2" title="Open profile">
@@ -265,21 +265,21 @@ const Layout = () => {
                         }}
                       />
                     ) : null}
-                    <span className={`flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/10 text-xs font-semibold text-gray-200 ${user?.classification && typeof user.classification === 'string' ? 'hidden' : ''}`}>
+                    <span className={`flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/60 text-xs font-semibold text-gray-700 ${user?.classification && typeof user.classification === 'string' ? 'hidden' : ''}`}>
                       {user?.profile?.firstName?.[0] || user?.username?.[0] || 'U'}
                     </span>
-                    <span className="hidden max-w-20 truncate text-xs font-medium text-gray-400 transition-colors group-hover:text-white xl:block">
+                    <span className="hidden max-w-20 truncate text-xs font-medium text-gray-700/80 transition-colors group-hover:text-gray-950 xl:block">
                       {user?.profile?.firstName || user?.username}
                     </span>
                   </Link>
-                  <button onClick={handleLogout} className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-white/5 hover:text-white" aria-label="Log out" title="Log out">
+                  <button onClick={handleLogout} className="rounded-lg p-2 text-gray-600 transition-colors hover:bg-black/5 hover:text-gray-950" aria-label="Log out" title="Log out">
                     <ArrowRightOnRectangleIcon className="h-4 w-4" />
                   </button>
                 </>
               ) : (
                 <>
-                  <Link to="/login" className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500 transition-colors hover:text-white">Login</Link>
-                  <Link to="/register" className="rounded-lg border border-white/15 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-300 transition-colors hover:border-red-400/50 hover:bg-white/5 hover:text-white">Register</Link>
+                  <Link to="/login" className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-700/80 transition-colors hover:text-gray-950">Login</Link>
+                  <Link to="/register" className="rounded-lg border border-black/15 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-700 transition-colors hover:border-red-400/50 hover:bg-white/50 hover:text-gray-950">Register</Link>
                 </>
               )}
             </div>
@@ -287,12 +287,12 @@ const Layout = () => {
             {/* Mobile actions */}
             <div className="ml-auto flex items-center gap-2 lg:hidden">
               {!isAuthenticated && (
-                <Link to="/login" className="hidden text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400 transition-colors hover:text-white sm:block">Login</Link>
+                <Link to="/login" className="hidden text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-700/80 transition-colors hover:text-gray-950 sm:block">Login</Link>
               )}
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="rounded-lg border border-white/10 p-2 text-gray-300 transition-colors hover:border-red-400/40 hover:bg-white/5 hover:text-white"
+                className="rounded-lg border border-black/10 bg-white/55 p-2 text-gray-700 shadow-sm transition-colors hover:border-red-400/40 hover:bg-white/80 hover:text-gray-950"
                 aria-expanded={mobileMenuOpen}
                 aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               >
@@ -304,7 +304,7 @@ const Layout = () => {
 
         {/* Mobile navigation */}
         {mobileMenuOpen && (
-          <div className="border-t border-white/10 bg-[#0d1119] lg:hidden">
+          <div className="border-t border-white/10 bg-black/90 shadow-[0_18px_35px_rgba(0,0,0,0.3)] backdrop-blur-xl lg:hidden">
             <nav className="mx-auto max-w-[92rem] space-y-1 px-4 py-4 sm:px-6" aria-label="Mobile navigation">
               <div className="mb-3 grid grid-cols-2 gap-2 border-b border-white/10 pb-4 sm:grid-cols-3">
                 {mainNavigation.map((item) => {
@@ -315,9 +315,9 @@ const Layout = () => {
                       to={item.href}
                       onClick={() => setMobileMenuOpen(false)}
                       aria-current={isActive ? 'page' : undefined}
-                      className={`flex items-center gap-2 rounded-xl border px-3 py-3 text-[10px] font-semibold uppercase tracking-[0.1em] transition-colors ${isActive ? 'border-red-500/40 bg-red-500/10 text-white' : 'border-white/5 bg-white/[0.02] text-gray-400 hover:border-white/15 hover:text-white'}`}
+                      className={`flex items-center gap-2 rounded-xl border px-3 py-3 text-[10px] font-semibold uppercase tracking-[0.1em] transition-colors ${isActive ? 'border-red-500/40 bg-red-500/15 text-white' : 'border-white/10 bg-white/[0.04] text-gray-300 hover:border-red-500/30 hover:text-white'}`}
                     >
-                      <item.icon className={`h-4 w-4 ${isActive ? 'text-red-400' : 'text-gray-600'}`} />
+                      <item.icon className={`h-4 w-4 ${isActive ? 'text-red-300' : 'text-gray-500'}`} />
                       <span>{item.name}</span>
                     </Link>
                   );
@@ -349,8 +349,8 @@ const Layout = () => {
                   {filteredAdminMenuItems.map((item) => {
                     const isActive = location.pathname === item.href;
                     return (
-                      <Link key={item.name} to={item.href} onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors ${isActive ? 'bg-red-500/10 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
-                        <item.icon className={`h-4 w-4 ${isActive ? 'text-red-400' : 'text-gray-600'}`} />
+                      <Link key={item.name} to={item.href} onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors ${isActive ? 'bg-red-500/10 text-white' : 'text-gray-300 hover:bg-white/5 hover:text-white'}`}>
+                        <item.icon className={`h-4 w-4 ${isActive ? 'text-red-300' : 'text-gray-500'}`} />
                         <span>{item.name}</span>
                       </Link>
                     );
@@ -359,13 +359,13 @@ const Layout = () => {
               )}
 
               {isAuthenticated ? (
-                <button onClick={() => { handleLogout(); setMobileMenuOpen(false); }} className="mt-3 flex w-full items-center gap-3 border-t border-white/10 px-3 pt-4 text-sm text-gray-400 transition-colors hover:text-white">
+                <button onClick={() => { handleLogout(); setMobileMenuOpen(false); }} className="mt-3 flex w-full items-center gap-3 border-t border-white/10 px-3 pt-4 text-sm text-gray-300 transition-colors hover:text-white">
                   <ArrowRightOnRectangleIcon className="h-4 w-4" />
                   <span>Log out</span>
                 </button>
               ) : (
                 <div className="mt-3 flex items-center gap-4 border-t border-white/10 px-3 pt-4">
-                  <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="text-sm text-gray-400 hover:text-white">Login</Link>
+                  <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="text-sm text-gray-300 hover:text-white">Login</Link>
                   <Link to="/register" onClick={() => setMobileMenuOpen(false)} className="rounded-lg border border-white/15 px-3 py-2 text-sm text-gray-300 hover:border-red-400/50 hover:text-white">Register</Link>
                 </div>
               )}
@@ -382,7 +382,7 @@ const Layout = () => {
             <div className="order-2 min-w-0 lg:order-none">
               <Outlet />
             </div>
-            <ColbyChristieBanner />
+            <ColbyChristieBanner className="hidden lg:block" />
           </div>
         ) : (
           <Outlet />

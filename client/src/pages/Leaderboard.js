@@ -111,7 +111,22 @@ const Leaderboard = () => {
   const hasRankLogo = (classification) =>
     ['grand master', 'master', 'diamond', 'platinum', 'gold', 'bronze'].includes(normalizeClass(classification));
 
-  const getInitial = (entry) => entry?.competitor?.firstName?.charAt(0)?.toUpperCase() || '?';
+  const getCompetitorName = (entry) => {
+    const competitor = entry?.competitor || {};
+    const firstName = typeof competitor.firstName === 'string' ? competitor.firstName.trim() : '';
+    const lastName = typeof competitor.lastName === 'string' ? competitor.lastName.trim() : '';
+    const username = typeof competitor.username === 'string' ? competitor.username.trim() : '';
+    const emailName = typeof competitor.email === 'string' ? competitor.email.split('@')[0].trim() : '';
+    const isPlaceholder = (value) => !value || /^[.\s]+$/.test(value);
+
+    if (!isPlaceholder(firstName)) {
+      return `${firstName}${!isPlaceholder(lastName) ? ` ${lastName.charAt(0).toUpperCase()}.` : ''}`;
+    }
+
+    return [username, emailName, 'Shooter'].find((value) => !isPlaceholder(value));
+  };
+
+  const getInitial = (entry) => getCompetitorName(entry).charAt(0).toUpperCase() || '?';
 
   if (isLoading) {
     return (
@@ -250,7 +265,7 @@ const Leaderboard = () => {
                   )}
                 </div>
                 <span className="truncate">
-                  {entry.competitor?.firstName} {entry.competitor?.lastName?.charAt(0)?.toUpperCase() || ''}.
+                  {getCompetitorName(entry)}
                 </span>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
@@ -332,7 +347,7 @@ const Leaderboard = () => {
                       <div>
                         <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
                           <span>
-                            {entry.competitor?.firstName} {entry.competitor?.lastName?.charAt(0)?.toUpperCase() || ''}.
+                            {getCompetitorName(entry)}
                           </span>
                           {entry.competitor?.classification && (
                             <span
