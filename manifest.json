@@ -1,0 +1,15 @@
+{
+  "short_name": "X-Ring Classic",
+  "name": "The X-Ring Classic - Precision .22 Rifle Competitions",
+  "icons": [
+    {
+      "src": "TheXringClassic.png",
+      "sizes": "any",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
