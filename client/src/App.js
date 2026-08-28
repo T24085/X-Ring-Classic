@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
-import Home from './pages/Home';
+import HomeEntry from './pages/HomeEntry';
 import Competitions from './pages/Competitions';
 import CompetitionDetail from './pages/CompetitionDetail';
 import Leaderboard from './pages/Leaderboard';
@@ -45,7 +45,7 @@ function App() {
 
         {/* Protected routes with layout */}
         <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
+          <Route index element={<HomeEntry />} />
           <Route path="competitions" element={<Competitions />} />
           <Route path="competitions/:id" element={<CompetitionDetail />} />
           <Route path="competitions/:id/edit" element={
